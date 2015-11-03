@@ -332,9 +332,9 @@
     handler: 'processSection'
   }];
 
-  CNFlexFormServiceProvider.$inject = ['schemaFormDecoratorsProvider'];
+  cnFlexFormServiceProvider.$inject = ['schemaFormDecoratorsProvider'];
 
-  function CNFlexFormServiceProvider(schemaFormDecoratorsProvider) {
+  function cnFlexFormServiceProvider(schemaFormDecoratorsProvider) {
     return {
       registerField: registerField,
       $get: CNFlexFormService
