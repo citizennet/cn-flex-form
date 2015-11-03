@@ -5,6 +5,7 @@ Flex Form library by CitizenNet
 
 ## 1. bower
 To get started, install CitizenNet's `angular-schema-form` fork and `cn-flex-form`:
+
     bower install https://github.com/citizennet/angular-schema-form.git\#master --save-dev
     bower install https://github.com/citizennet/cn-flex-form.git\#master --save-dev
 
