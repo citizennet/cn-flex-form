@@ -1,0 +1,26 @@
+{
+  "name": "cn-flex-form",
+  "description": "Flex Form library by CitizenNet",
+  "main": "index.js",
+  "authors": [
+    "dzuch"
+  ],
+  "license": "ISC",
+  "homepage": "https://github.com/citizennet/cn-flex-form",
+  "moduleType": [
+    "amd"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "1.3.18"
+  },
+  "devDependencies": {
+    "angular": "1.3.18"
+  }
+}
