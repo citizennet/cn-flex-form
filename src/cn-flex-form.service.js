@@ -2,7 +2,7 @@
   'use strict';
   angular
       .module('cn.flex-form')
-      .provider('CNFlexFormService', CNFlexFormServiceProvider);
+      .provider('cnFlexFormService', cnFlexFormServiceProvider);
 
   var fieldTypeRegister = [{
     condition: function(field) { return field.type === 'hidden'; },
