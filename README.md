@@ -11,6 +11,7 @@ To get started, install CitizenNet's `angular-schema-form` fork and `cn-flex-for
 ## 2. grunt/gulp
 Make sure to add the necessary files to your `grunt` or `gulp` build. For
 `angular-schema-form` you'll want:
+
     "dist/schema-form.min.js",
     "dist/bootstrap-decorator.min.js"
 
@@ -19,6 +20,7 @@ And for `cn-flex-form`:
 
 ## 3. angular
 And last be sure to add it as a dependency for your angular app:
+
     angular.module("yourapp", [
         "schemaForm",
         "cn.flex-form"
@@ -26,6 +28,7 @@ And last be sure to add it as a dependency for your angular app:
 
 # Usage
 Controller:
+
     vm.config = {
         formCtrl: vm.ffForm,
         schema: vm.schema,
@@ -33,6 +36,7 @@ Controller:
     };
 
 Template:
+
     <form name="vm.ffForm">
         <cn-flex-form
             ff-config="vm.config"
