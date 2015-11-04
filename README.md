@@ -24,6 +24,7 @@ For `angular-schema-form`:
 
 
 And for `cn-flex-form`:
+
     "dist/all.min.js"
 
 ## 3. angular
