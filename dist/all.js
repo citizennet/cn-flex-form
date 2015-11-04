@@ -1,6 +1,6 @@
 (function() {
   'use strict';
-  angular.module('cn.flex-form', ['schemaForm']);
+  angular.module('cn.flex-form', ['schemaForm', 'cnTagsInput']);
 })();
 (function() {
   'use strict';
