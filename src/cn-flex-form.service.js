@@ -76,6 +76,7 @@
                              $interpolate, $compile, $rootScope, $timeout, cnUtil) {
 
     var omitParams = ['page', 'debug', 'sandbox'];
+    var optionalFormKeys = ['error', 'type', 'notitle'];
     var services = [];
 
     function CNFlexFormConstructor(schema, model, config) {
@@ -1102,7 +1103,9 @@
 
     function reprocessField(current, update) {
       _.extend(current, update);
-      if(!update.error) current.error = null;
+      _.each(optionalFormKeys, function(key) {
+        if(!update[key]) delete current[key];
+      });
     }
 
     function reprocessSchema(schema, key, keys) {
