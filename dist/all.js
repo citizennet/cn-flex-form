@@ -570,6 +570,8 @@
         service.processFieldset(field);
       }
       else {
+        if(!field._ogKeys) field._ogKeys = _.without(_.keys(field), 'key');
+
         var key = service.getKey(field.key);
 
         if(field.key) {
@@ -1304,6 +1306,7 @@
 
         if(diff || force) {
           var keys = _.keys(diff);
+
           if(keys.length > 1) {
             diff = _.omit(diff, _.isNull);
             keys = _.keys(diff);
@@ -1312,7 +1315,16 @@
           //  cur: _.clone(params),
           //  prev: _.clone(service.schema.params)
           //});
+
           params.updateSchema = _.first(keys);
+
+          if(!params.updateSchema) {
+            diff = cnUtil.diff(params, _.omit(service.schema.params, 'updateSchema'));
+            keys = _.keys(diff);
+
+            //console.log('keys, diff:', keys, diff);
+            params.updateSchema = _.first(keys);
+          }
 
           refresh(params).then(function(schema) {
             ++service.updates;
@@ -1397,9 +1409,11 @@
 
     function reprocessField(current, update) {
       _.extend(current, update);
-      _.each(optionalFormKeys, function(key) {
+      _.each(current._ogKeys, function(key) {
         if(!update[key]) delete current[key];
       });
+      current._ogKeys = _.keys(update);
+      if(current.redraw) current.redraw();
     }
 
     function reprocessSchema(schema, key, keys) {
