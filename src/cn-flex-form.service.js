@@ -252,6 +252,7 @@
 
     function processFieldset(fieldset) {
       var service = this;
+
       fieldset.type = 'cn-fieldset';
       _.each(fieldset.items, service.processField.bind(service));
 
@@ -920,39 +921,40 @@
         }
       }
 
-      if(select.items) {
-        select.detailedList = true;
+      if(!select.type.includes('cn-autocomplete')) {
+        if(select.items) {
+          select.detailedList = true;
 
-        if(select.items.length > 1) {
-          select.items = [{
-            type: "component",
-            items: select.items
-          }];
-        }
+          if(select.items[0].type !== 'component') {
+            if(select.items.length > 1) {
+              select.items = [{
+                type: "component",
+                items: select.items
+              }];
+            }
 
-        service.processFieldset(select);
+            service.processFieldset(select);
+          }
 
-        select.type = 'cn-autocomplete-detailed';
-      }
-      else {
-        if(select.key === 'tags') {
-          select.selectionStyle = 'tags';
-        }
-        else if(select.getSchemaType() === 'array' && select.schema.maxItems !== 1) {
-          select.selectionStyle = 'list';
+          select.type = 'cn-autocomplete-detailed';
         }
         else {
-          select.selectionStyle = 'select';
+          if(select.key === 'tags') {
+            select.selectionStyle = 'tags';
+          }
+          else if(select.getSchemaType() === 'array' && select.schema.maxItems !== 1) {
+            select.selectionStyle = 'list';
+          }
+          else {
+            select.selectionStyle = 'select';
+          }
+          select.type = 'cn-autocomplete';
         }
-        select.type = 'cn-autocomplete';
       }
 
       if(select.displayFormat) {
         select.itemFormatter = service.processTemplate(select.displayFormat);
       }
-      //service.setValidity(select);
-
-      //select.handlers = select.handlers || [];
 
       service.registerHandler(select.key, function(val) {
         var form = service.formCtrl && service.formCtrl[service.getKey(select.key)];
@@ -1113,13 +1115,22 @@
       }
     }
 
-    function reprocessField(current, update) {
-      _.extend(current, update);
+    function reprocessField(current, update, isChild) {
+      _.extend(current, _.omit(update, 'items', 'key'));
+
       _.each(current._ogKeys, function(key) {
         if(!update[key]) delete current[key];
       });
       current._ogKeys = _.keys(update);
-      if(current.redraw) current.redraw();
+
+      // we shouldn't reprocess all child items if they haven't changed, let
+      // the diff tell us which specific fields to update
+      //_.each(update.items, function(child, i) {
+      //  //console.log('child:', child, current.items[i]);
+      //  if(child.key) reprocessField(current.items[i], child, true);
+      //});
+
+      if(!isChild && current.redraw) current.redraw();
     }
 
     function reprocessSchema(schema, key, keys) {
