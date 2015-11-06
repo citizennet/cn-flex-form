@@ -587,7 +587,7 @@
 
         if(field.watch) service.processFieldWatch(field);
 
-        if(field.schema && field.readonly && !field.schema.readonly) field.readonly = false;
+        if(field.readonly && field.schema && !field.schema.readonly) field.readonly = false;
 
         if(field.type === 'section' || field.type === 'tabarray') {
           service.processSection(field);
