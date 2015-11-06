@@ -578,6 +578,11 @@
         if(field.key) {
           service.addToFormCache(field, key);
           field.schema = service.getSchema(key);
+
+          if(field.schema) {
+            if(field.schema.description) field.description = field.schema.description;
+            if(field.readonly && !field.schema.readonly) field.readonly = false;
+          }
         }
 
         service.processSchema(field);
@@ -587,8 +592,6 @@
         if(field.resolve) service.processResolve(field);
 
         if(field.watch) service.processFieldWatch(field);
-
-        if(field.readonly && field.schema && !field.schema.readonly) field.readonly = false;
 
         if(field.type === 'section' || field.type === 'tabarray') {
           service.processSection(field);
