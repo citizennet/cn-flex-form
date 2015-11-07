@@ -105,6 +105,7 @@
       this.arrayListeners = {};
       this.defaults = {};
       this.errors = [];
+      this.events = [];
       this.formCache = {};
       this.listeners = {};
       this.dataCache = {};
@@ -125,6 +126,7 @@
       //assignHandlers: assignHandlers,
       broadcastErrors: broadcastErrors,
       buildError: buildError,
+      cleanup: cleanup,
       deregisterHandlers: deregisterHandlers,
       getArrayCopies: getArrayCopies,
       getFromDataCache: getFromDataCache,
@@ -676,11 +678,11 @@
 
     function initArrayCopyWatch() {
       var service = this;
-      $rootScope.$on('schemaFormPropagateScope', function(event, scope) {
+      service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
         //console.log('propagated scope:', service.getKey(scope.form.key), scope);
         var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
         service.addArrayCopy(scope.form, key);
-      });
+      }));
     }
 
     function addArrayCopy(form, key) {
@@ -1046,13 +1048,13 @@
       }, 100);
 
       service.refreshData = _.debounce(function() {
-        refresh(_.extend({updateSchema: 'refreshData'}, service.schema.params)).then(function(schema) {
+        refresh(_.extend(service.schema.params, {updateSchema: 'refreshData'})).then(function(schema) {
           service.processUpdatedSchema(schema);
           console.log('service.schema.params:', service.schema.params);
         });
       }, 100);
 
-      $rootScope.$on('ffRefreshData', service.refreshData);
+      service.events.push($rootScope.$on('ffRefreshData', service.refreshData));
     }
 
     function processUpdatedSchema(schema) {
@@ -1173,6 +1175,13 @@
       var re = new RegExp(arrayIndexKey[1] + '\\[(\\d+)\\]');
       var index = re.exec(key);
       return resolve.replace(arrayIndexKey[0], index[0]);
+    }
+
+    function cleanup() {
+      var service = this;
+      _.each(service.events, function(listener) {
+        listener();
+      });
     }
   }
 })();

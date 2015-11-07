@@ -32,14 +32,18 @@
   function FlexForm(cnFlexFormService, $scope) {
     var vm = this;
     vm.service = undefined;
+    vm.events = [];
 
     vm.activate = activate;
+    vm.cleanup = cleanup;
     vm.process = process;
     vm.showForm = showForm;
 
-    $scope.$watch(function() { return vm.config.schema; }, vm.process);
+    vm.events.push($scope.$watch(function() { return vm.config.schema; }, vm.process));
 
     vm.activate();
+
+    $scope.$on('$destroy', vm.cleanup);
 
     //////////
 
@@ -79,6 +83,13 @@
     function updateSchema(schema) {
       vm.config.schema = schema;
       vm.activate();
+    }
+
+    function cleanup() {
+      _.each(vm.events, function(listener) {
+        listener();
+      });
+      vm.service.cleanup();
     }
 
   }
