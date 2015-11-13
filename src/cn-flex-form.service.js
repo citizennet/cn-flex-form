@@ -431,12 +431,15 @@
           //console.log('resolution:', resolution);
 
           var handler = function() {
-            var updatePath;
+            var updatePath, fromPath;
             if(resolution[1].includes('arrayIndex')) {
               updatePath = replaceArrayIndex(resolution[1], arguments[2]);
             }
+            if (resolution[2].includes('arrayIndex')) {
+              fromPath = replaceArrayIndex(resolution[2], arguments[2]);
+            }
             var update = service.parseExpression(updatePath || resolution[1]);
-            var from = service.parseExpression(resolution[2]);
+            var from = service.parseExpression(fromPath || resolution[2]);
 
             var functionCondition = service.isConditionFunction(condition);
             var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
