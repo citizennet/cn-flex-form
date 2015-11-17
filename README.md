@@ -48,9 +48,9 @@ Controller:
 
 Template:
 
-    <form name="vm.ffForm">
+    <div name="{{vm.ffForm}}">
         <cn-flex-form
             ff-config="vm.config"
             ff-model="vm.model"
         </cn-flex-form>
-    </form>
+    </div>
