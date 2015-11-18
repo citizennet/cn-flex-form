@@ -248,7 +248,7 @@
             model.set(schema.default);
           }
         }
-        service.defaults[key] = _.cloneDeep(schema.default);
+        service.defaults[key] = angular.copy(schema.default);
       }
     }
 
@@ -550,7 +550,7 @@
       }
 
       if(!service.listeners[key]) {
-        var prev = _.clone(service.parseExpression(key, service.model).get(), true);
+        var prev = angular.copy(service.parseExpression(key, service.model).get());
         //console.log('key, prev:', key, prev, prev === service.parseExpression(key, service.model).get());
         service.listeners[key] = {
           handlers: [],
@@ -626,7 +626,7 @@
       var service = this;
       if(!angular.equals(cur, prev)) {
 
-        service.prevParams = _.clone(service.params, true);
+        service.prevParams = angular.copy(service.params);
         service.params = {};
 
         _.each(service.arrayListeners, function(listener, key) {
@@ -635,7 +635,7 @@
             _.each(listener.handlers, function(handler) {
               handler(val, listener.prev);
             });
-            listener.prev = _.clone(val, true);
+            listener.prev = angular.copy(val);
           }
         });
 
@@ -647,7 +647,7 @@
               _.each(listener.handlers, function(handler) {
                 handler(val, listener.prev, key);
               });
-              listener.prev = _.clone(val, true);
+              listener.prev = angular.copy(val);
             }
             if(listener.updateSchema && !angular.isUndefined(val) && val !== null) {
               service.params[key] = val;
