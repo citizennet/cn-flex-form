@@ -784,6 +784,7 @@
                     result = _.round(result, p);
                   }
                 }
+                service.listeners[update.path().exp].prev = result;
                 update.set(result || 0);
               }
               else {
