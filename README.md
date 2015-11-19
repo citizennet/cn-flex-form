@@ -4,17 +4,22 @@ Flex Form library by CitizenNet
 # Installation
 
 ## 1. bower
-To get started, install CitizenNet's `cn-util`, `cn-tags-input`, `angular-schema-form` fork
+To get started, install CitizenNet's `cn-util`, `cn-datetimepicker`, `cn-tags-input`, `angular-schema-form` fork
 and `cn-flex-form`:
 
-    bower install https://github.com/citizennet/cn-util.git\#master --save-dev
-    bower install https://github.com/citizennet/cn-tags-input.git\#master --save-dev
-    bower install https://github.com/citizennet/angular-schema-form.git\#master --save-dev
-    bower install https://github.com/citizennet/cn-flex-form.git\#master --save-dev
+    bower install https://github.com/citizennet/cn-util.git#master --save-dev
+    bower install https://github.com/citizennet/cn-datetimepicker.git#master --save-dev
+    bower install https://github.com/citizennet/cn-tags-input.git#master --save-dev
+    bower install https://github.com/citizennet/angular-schema-form.git#master --save-dev
+    bower install https://github.com/citizennet/cn-flex-form.git#master --save-dev
 
 ## 2. grunt/gulp
 Make sure to add the necessary files to your `grunt` or `gulp` build.
 For `cn-util` you'll want:
+
+    "dist/all.min.js"
+
+For `cn-datetimepicker` you'll want:
 
     "dist/all.min.js"
 
