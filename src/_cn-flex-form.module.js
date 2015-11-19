@@ -3,7 +3,7 @@
   angular.module('cn.flex-form', [
     'ui.router',
     'schemaForm',
-    'cn-datetimepicker',
+    'ui.bootstrap.datetimepicker',
     'cnTagsInput',
     'cn.util'
   ]);
