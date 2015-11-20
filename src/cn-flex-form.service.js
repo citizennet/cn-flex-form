@@ -68,11 +68,11 @@
   }
 
   CNFlexFormService.$inject = [
-    '$http', '$parse', '$q', '$stateParams',
+    'Api', '$parse', '$q', '$stateParams',
     '$interpolate', '$compile', '$rootScope', '$timeout', 'cnUtil'
   ];
 
-  function CNFlexFormService($http, $parse, $q, $stateParams,
+  function CNFlexFormService(Api, $parse, $q, $stateParams,
                              $interpolate, $compile, $rootScope, $timeout, cnUtil) {
 
     var omitParams = ['page', 'debug', 'sandbox'];
@@ -891,12 +891,9 @@
           if(key) {
             params[key] = q;
           }
-          return $http({
-            method: 'GET',
+          return Api.get({
             url: select.titleMapQuery.url,
             params: params
-          }).then(function(response) {
-            return response.data;
           });
         };
 
