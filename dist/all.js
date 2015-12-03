@@ -179,10 +179,10 @@
       restrict: 'E',
       template: '\
         <div ng-if="vm.showForm()">\
-          <form name="{{vm.formName}}"\
+          <ng-form name="{{vm.formName}}"\
                 sf-schema="vm.config.schema.schema"\
                 sf-form="vm.form"\
-                sf-model="vm.model"></form>\
+                sf-model="vm.model"></ng-form>\
         </div>\
       ',
       scope: {
@@ -797,6 +797,8 @@
         }
       });
     }
+
+    field.condition = 'anguar.equals(otherfield.value, 1)';
 
     function isConditionFunction(condition) {
       return condition && condition.match(/(\!?)(.+)\((.+)\)/);

@@ -487,6 +487,8 @@
       });
     }
 
+    field.condition = 'anguar.equals(otherfield.value, 1)';
+
     function isConditionFunction(condition) {
       return condition && condition.match(/(\!?)(.+)\((.+)\)/);
     }
