@@ -319,11 +319,11 @@
     condition: function(field) { return field.type === 'hidden'; },
     handler: _.noop
   }, {
-    condition: function(field) { return field.type === 'boolean'; },
-    handler: 'processToggle'
-  }, {
     condition: function(field) { return field.type === 'radiobuttons'; },
     handler: 'processRadiobuttons'
+  }, {
+    condition: function(field) { return field.titleMap || field.titleMapResolve || field.titleMapQuery; },
+    handler: 'processSelect'
   }, {
     condition: function(field) { return field.type === 'datetime-local'; },
     handler: 'processDate'
@@ -342,8 +342,8 @@
     condition: function(field) { return field.schema && field.schema.format === 'percentage'; },
     handler: 'processPercentage'
   }, {
-    condition: function(field) { return field.titleMap || field.titleMapResolve || field.titleMapQuery; },
-    handler: 'processSelect'
+    condition: function(field) { return field.type === 'boolean'; },
+    handler: 'processToggle'
   }, {
     condition: function(field) { return field.type === 'array'; },
     handler: 'processSection'
