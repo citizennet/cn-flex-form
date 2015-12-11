@@ -334,9 +334,7 @@
     condition: function(field) { return field.type === 'display'; },
     handler: 'processDisplay'
   }, {
-    condition: function(field) {
-      return field.schema && (field.schema.format.includes('currency'));
-    },
+    condition: function(field) { return field.schema && field.schema.format && field.schema.format.includes('currency'); },
     handler: 'processCurrency'
   }, {
     condition: function(field) { return field.schema && field.schema.format === 'percentage'; },
