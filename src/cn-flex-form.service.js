@@ -24,7 +24,7 @@
     handler: 'processDisplay'
   }, {
     condition: function(field) {
-      return field.schema && (field.schema.format === 'currency' || field.schema.format === 'currency-dollars');
+      return field.schema && (field.schema.format.includes('currency'));
     },
     handler: 'processCurrency'
   }, {
@@ -828,7 +828,12 @@
 
     function processCurrency(field) {
       //console.log('processCurrency:', field);
-      field.currencyFormat = field.schema.format === 'currency-dollars' ? 'dollars' : 'cents';
+      field.currencyFormat = {
+        'currency-dollars': 'dollars',
+        'currency-microcents': 'microcents',
+        'currency': 'cents'
+      }[field.schema.format];
+
       field.type = 'cn-currency';
     }
 
