@@ -66,15 +66,13 @@
   }
 
   CNFlexFormService.$inject = [
-    'Api', '$parse', '$q', '$stateParams',
+    'Api', '$parse', '$q', '$stateParams', 'cnFlexFormConfig',
     '$interpolate', '$compile', '$rootScope', '$timeout', 'cnUtil'
   ];
 
-  function CNFlexFormService(Api, $parse, $q, $stateParams,
+  function CNFlexFormService(Api, $parse, $q, $stateParams, cnFlexFormConfig,
                              $interpolate, $compile, $rootScope, $timeout, cnUtil) {
 
-    var omitParams = ['page', 'debug', 'sandbox'];
-    var optionalFormKeys = ['error', 'type', 'notitle'];
     var services = [];
 
     function CNFlexFormConstructor(schema, model, config) {
@@ -110,7 +108,7 @@
       this.model = model;
       this.updates = 0;
 
-      this.params = this.getStateParams();
+      this.params = cnFlexFormConfig.getStateParams();
 
       this.compile(schema, model, config);
     }
@@ -131,7 +129,6 @@
       getFromFormCache: getFromFormCache,
       getKey: getKey,
       getSchema: getSchema,
-      getStateParams: getStateParams,
       initArrayCopyWatch: initArrayCopyWatch,
       initModelWatch: initModelWatch,
       initSchemaParams: initSchemaParams,
@@ -1010,20 +1007,10 @@
       };
     }
 
-    function getStateParams() {
-      return _
-          .chain($stateParams)
-          .omit(omitParams)
-          .omit(function(v) {
-            return _.isUndefined(v) || _.isNull(v);
-          })
-          .value();
-    }
-
     function setupSchemaRefresh(refresh) {
       var service = this;
       service.refreshSchema = _.debounce(function(force) {
-        var params = _.extend(service.getStateParams(), service.params);
+        var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
         var diff = cnUtil.diff(service.schema.params, params, true);
 
         if(diff || force) {
