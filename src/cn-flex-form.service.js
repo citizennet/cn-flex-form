@@ -172,6 +172,8 @@
       var service = this;
 
       service.schema = schema;
+      service.model = model;
+
       //console.log('compile:schema, model:', schema.compiled, service.isCompiled(), schema, model);
       if(!service.isCompiled()) {
         service.setupConfig(config);
@@ -736,20 +738,22 @@
       exp = service.getKey(exp);
 
       var key;
-      var cached;
       var match = exp.match(/^(model\.)?(\S+)$/);
 
-      // return from cache if possible
-      if(!/\[]/.test(exp) && match && match[2]) {
-        if(!depth || depth === service.model) {
-          key = match[2];
+      // cache fucks shit up if the model changes so disabling
+      //var cached;
 
-          cached = service.getFromDataCache(key);
-          if(cached) {
-            return cached;
-          }
-        }
-      }
+      // return from cache if possible
+      //if(!/\[]/.test(exp) && match && match[2]) {
+      //  if(!depth || depth === service.model) {
+      //    key = match[2];
+      //
+      //    cached = service.getFromDataCache(key);
+      //    if(cached) {
+      //      return cached;
+      //    }
+      //  }
+      //}
 
       var modelValue = {
         "get": function() {
@@ -789,9 +793,9 @@
         }
       };
 
-      if(key) {
-        service.addToDataCache(key, modelValue);
-      }
+      //if(key) {
+      //  service.addToDataCache(key, modelValue);
+      //}
 
       return modelValue;
     }
@@ -860,7 +864,7 @@
         select.onInit = function(val, form, event, setter) {
           var modelValue = service.parseExpression(form.key, service.model);
           // make sure we have correct value
-          //console.log('init:', form.key, val, event);
+          // console.log('init:', form.key, val, event);
           val = modelValue.get();
           if(event === 'tag-init') {
             var newVal;

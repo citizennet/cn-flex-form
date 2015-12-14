@@ -13,6 +13,8 @@
                 sf-schema="vm.config.schema.schema"\
                 sf-form="vm.form"\
                 sf-model="vm.model"></ng-form>\
+          <!-- debug panel to display model -->\
+          <pre ng-if="vm.debug">{{vm.model|json}}</pre>\
         </div>\
       ',
       scope: {
@@ -28,8 +30,8 @@
     };
   }
 
-  FlexForm.$inject = ['cnFlexFormService', '$scope'];
-  function FlexForm(cnFlexFormService, $scope) {
+  FlexForm.$inject = ['cnFlexFormService', '$scope', '$location'];
+  function FlexForm(cnFlexFormService, $scope, $location) {
     var vm = this;
     vm.service = undefined;
     vm.events = [];
@@ -54,6 +56,11 @@
       }
       else {
         vm.form = vm.config.schema.form;
+      }
+
+      // debug
+      if($location.search().debug) {
+        vm.debug = true;
       }
     }
 
