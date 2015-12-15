@@ -397,6 +397,9 @@
   }, {
     condition: function(field) { return field.type === 'array'; },
     handler: 'processSection'
+  }, {
+    condition: function(field) { return field.type === 'collapse-array'; },
+    handler: 'processCollapseArray'
   }];
 
   cnFlexFormServiceProvider.$inject = ['schemaFormDecoratorsProvider'];
@@ -498,6 +501,7 @@
       isCompiled: isCompiled,
       isConditionFunction: isConditionFunction,
       onModelWatch: onModelWatch,
+      processCollapseArray: processCollapseArray,
       parseCondition: parseCondition,
       parseExpression: parseExpression,
       processDefault: processDefault,
@@ -833,7 +837,7 @@
                     result = _.round(result, p);
                   }
                 }
-                service.listeners[update.path().exp].prev = result;
+                service.listeners[update.path().key].prev = result;
                 update.set(result || 0);
               }
               else {
@@ -888,7 +892,7 @@
       }
     }
 
-    function registerHandler(key, handler, updateSchema) {
+    function registerHandler(key, handler, updateSchema, runHandler) {
       var service = this;
 
       // if field is passed instead of key
@@ -908,7 +912,7 @@
       var arrMatch = key.match(/([^[\]]*)\[]\.?(.+)/);
 
       if(arrMatch) {
-        service.registerArrayHandlers(arrMatch[1], arrMatch[2], handler, updateSchema);
+        service.registerArrayHandlers(arrMatch[1], arrMatch[2], handler, updateSchema, runHandler);
         return;
       }
 
@@ -925,25 +929,31 @@
       if(handler) service.listeners[key].handlers.push(handler);
     }
 
-    function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema) {
+    function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
       var service = this;
       var onArray = function(cur, prev) {
         var i, l, key;
 
         if(prev && prev > cur) {
-          for(i = 0, l = prev; i < l; i++) {
-            key = arrKey + '[' + i + ']' + '.' + fieldKey;
-            service.deregisterHandlers(key);
+          var lastKey = arrKey + '[' + (prev - 1) + ']' + '.' + fieldKey;
+          // only deregister handlers once each time an element is removed
+          if (service.listeners[lastKey]) {
+            for(i = 0, l = prev; i < l; i++) {
+              key = arrKey + '[' + i + ']' + '.' + fieldKey;
+              service.deregisterHandlers(key);
+            }
           }
           for(i = 0, l = cur; i < l; i++) {
             key = arrKey + '[' + i + ']' + '.' + fieldKey;
             service.registerHandler(key, handler, updateSchema);
+            runHandler && handler(null, null, key);
           }
         }
         else if(cur > (prev || 0)) {
           for(i = prev, l = cur; i < l; i++) {
             key = arrKey + '[' + i + ']' + '.' + fieldKey;
             service.registerHandler(key, handler, updateSchema);
+            runHandler && handler(null, null, key);
           }
         }
       };
@@ -952,6 +962,7 @@
       _.each(arrVal, function(field, i) {
         var key = arrKey + '[' + i + ']' + '.' + fieldKey;
         service.registerHandler(key, handler, updateSchema);
+        runHandler && handler(null, null, key);
       });
 
       if(service.arrayListeners[arrKey + '.length']) {
@@ -1047,8 +1058,15 @@
       service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
         //console.log('propagated scope:', service.getKey(scope.form.key), scope);
         var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
+        if (scope.form.condition !== 'false') scope.form.condition = 'true';
         service.addArrayCopy(scope.form, key);
       }));
+      service.events.push($rootScope.$on('schemaFormDeleteFromArray', function(event, scope, index) {
+        if (scope.form.link) {
+          var list = service.parseExpression(scope.form.link, service.model).get();
+          list.splice(index, 1);
+        }
+      }))
     }
 
     function addArrayCopy(form, key) {
@@ -1100,7 +1118,7 @@
 
       exp = service.getKey(exp);
 
-      var key;
+      //var key;
       var match = exp.match(/^(model\.)?(\S+)$/);
 
       // cache fucks shit up if the model changes so disabling
@@ -1151,7 +1169,8 @@
         "path": function() {
           return {
             exp: exp,
-            depth: depth
+            depth: depth,
+            key: match[2]
           };
         }
       };
@@ -1374,6 +1393,46 @@
       };
     }
 
+    function processCollapseArray(collapseArray) {
+      var service = this;
+      var collapseField = _.find(collapseArray.items, 'collapseField');
+      _.each(collapseArray.items, function(item) {
+        if (item.condition !== 'false') {
+          item.condition = 'true';
+        }
+      });
+
+      var handler = function() {
+        var index = getArrayIndex(arguments[2]);
+        _.each(collapseArray.items, function(item) {
+          if (collapseField.key === item.key) return;
+          var itemKey = setArrayIndex(item.key, index);
+          var collapseKey = service.getKey(setArrayIndex(collapseField.key, index));
+          var collapseValue = service.parseExpression(collapseKey, service.model).get();
+          var formCopies = service.getArrayCopies(service.getKey(item.key));
+          if (_.includes(collapseValue, itemKey[itemKey.length - 1])) {
+            _.each(formCopies, function(copy) {
+              if (getArrayIndex(copy) == index) {
+                copy.condition = 'true';
+              }
+            })
+          } else {
+            _.each(formCopies, function(copy) {
+              if (getArrayIndex(copy) == index) {
+                copy.condition = 'false';
+                service.parseExpression(service.getKey(copy.key), service.model).set();
+              }
+            })
+          }
+        })
+      };
+
+      service.registerHandler(collapseField.key, handler, collapseField.updateSchema, true);
+      collapseArray.type = 'array';
+      collapseArray.schema.type = 'array';
+      service.processSection(collapseArray);
+    }
+
     function setupSchemaRefresh(refresh) {
       var service = this;
       service.refreshSchema = _.debounce(function(force) {
@@ -1538,6 +1597,23 @@
       var re = new RegExp(arrayIndexKey[1] + '\\[(\\d+)\\]');
       var index = re.exec(key);
       return resolve.replace(arrayIndexKey[0], index[0]);
+    }
+
+    function getArrayIndex(key) {
+      if (_.isObject(key)) {
+        return _.find(key.key, function(key) {
+          return _.isNumber(key);
+        });
+      } else {
+        return /\[(\d+)\]/.exec(key)[1];
+      }
+    }
+
+    function setArrayIndex(key, index) {
+      var indexOfIndex = key.indexOf('');
+      var keyCopy = _.clone(key);
+      keyCopy[indexOfIndex] = index;
+      return keyCopy;
     }
 
     function cleanup() {
