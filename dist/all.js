@@ -397,9 +397,6 @@
   }, {
     condition: function(field) { return field.type === 'array'; },
     handler: 'processSection'
-  }, {
-    condition: function(field) { return field.type === 'collapse-array'; },
-    handler: 'processCollapseArray'
   }];
 
   cnFlexFormServiceProvider.$inject = ['schemaFormDecoratorsProvider'];
@@ -501,7 +498,6 @@
       isCompiled: isCompiled,
       isConditionFunction: isConditionFunction,
       onModelWatch: onModelWatch,
-      processCollapseArray: processCollapseArray,
       parseCondition: parseCondition,
       parseExpression: parseExpression,
       processDefault: processDefault,
@@ -516,6 +512,7 @@
       processHelp: processHelp,
       processRadiobuttons: processRadiobuttons,
       processSchema: processSchema,
+      processSelectDisplay: processSelectDisplay,
       processResolve: processResolve,
       //processSchemaUpdate: processSchemaUpdate,
       processSection: processSection,
@@ -638,6 +635,10 @@
 
     function processField(field) {
       var service = this;
+
+      if (field.selectDisplay) {
+        service.processSelectDisplay(field, service.getSchema(field.key));
+      }
 
       if(field.type === 'fieldset') {
         service.processFieldset(field);
@@ -1393,44 +1394,61 @@
       };
     }
 
-    function processCollapseArray(collapseArray) {
+    function processSelectDisplay(selectDisplay, schema) {
       var service = this;
-      var collapseField = _.find(collapseArray.items, 'collapseField');
-      _.each(collapseArray.items, function(item) {
+      var selectField = _.find(selectDisplay.items, 'selectField');
+      _.each(selectDisplay.items, function(item) {
         if (item.condition !== 'false') {
           item.condition = 'true';
         }
       });
 
-      var handler = function() {
-        var index = getArrayIndex(arguments[2]);
-        _.each(collapseArray.items, function(item) {
-          if (collapseField.key === item.key) return;
-          var itemKey = setArrayIndex(item.key, index);
-          var collapseKey = service.getKey(setArrayIndex(collapseField.key, index));
-          var collapseValue = service.parseExpression(collapseKey, service.model).get();
-          var formCopies = service.getArrayCopies(service.getKey(item.key));
-          if (_.includes(collapseValue, itemKey[itemKey.length - 1])) {
-            _.each(formCopies, function(copy) {
-              if (getArrayIndex(copy) == index) {
-                copy.condition = 'true';
-              }
-            })
-          } else {
-            _.each(formCopies, function(copy) {
-              if (getArrayIndex(copy) == index) {
-                copy.condition = 'false';
-                service.parseExpression(service.getKey(copy.key), service.model).set();
-              }
-            })
-          }
-        })
-      };
+      var handler;
 
-      service.registerHandler(collapseField.key, handler, collapseField.updateSchema, true);
-      collapseArray.type = 'array';
-      collapseArray.schema.type = 'array';
-      service.processSection(collapseArray);
+      if (schema && schema.type === 'array') {
+        handler = function() {
+          var index = getArrayIndex(arguments[2]);
+          _.each(selectDisplay.items, function(item) {
+            if (selectField.key === item.key) return;
+            var itemKey = setArrayIndex(item.key, index);
+            var selectKey = service.getKey(setArrayIndex(selectField.key, index));
+            var selectValue = service.parseExpression(selectKey, service.model).get();
+            var formCopies = service.getArrayCopies(service.getKey(item.key));
+            if (_.includes(selectValue, itemKey[itemKey.length - 1])) {
+              _.each(formCopies, function(copy) {
+                if (getArrayIndex(copy) == index) {
+                  copy.condition = 'true';
+                }
+              })
+            } else {
+              _.each(formCopies, function(copy) {
+                if (getArrayIndex(copy) == index) {
+                  copy.condition = 'false';
+                  service.parseExpression(service.getKey(copy.key), service.model).set();
+                }
+              })
+            }
+          })
+        };
+      } else {
+        handler = function() {
+          var selectKey = service.getKey(selectField.key);
+          _.each(selectDisplay.items, function(item) {
+            if (selectField.key === item.key) return;
+            var selectValue = service.parseExpression(selectKey, service.model).get();
+            if (_.includes(selectValue, item.key[item.key.length - 1])) {
+              item.condition = "true";
+            } else {
+              item.condition = "false";
+              service.parseExpression(service.getKey(item.key), service.model).set();
+            }
+          })
+        }
+      }
+
+      selectDisplay.selectDisplay = false;
+      service.registerHandler(selectField.key, handler, selectField.updateSchema, true);
+      service.processField(selectDisplay);
     }
 
     function setupSchemaRefresh(refresh) {
