@@ -947,14 +947,14 @@
           for(i = 0, l = cur; i < l; i++) {
             key = arrKey + '[' + i + ']' + '.' + fieldKey;
             service.registerHandler(key, handler, updateSchema);
-            runHandler && handler(null, null, key);
+            if(runHandler) handler(null, null, key);
           }
         }
         else if(cur > (prev || 0)) {
           for(i = prev, l = cur; i < l; i++) {
             key = arrKey + '[' + i + ']' + '.' + fieldKey;
             service.registerHandler(key, handler, updateSchema);
-            runHandler && handler(null, null, key);
+            if(runHandler) handler(null, null, key);
           }
         }
       };
@@ -963,7 +963,7 @@
       _.each(arrVal, function(field, i) {
         var key = arrKey + '[' + i + ']' + '.' + fieldKey;
         service.registerHandler(key, handler, updateSchema);
-        runHandler && handler(null, null, key);
+        if(runHandler) handler(null, null, key);
       });
 
       if(service.arrayListeners[arrKey + '.length']) {
@@ -1067,7 +1067,7 @@
           var list = service.parseExpression(scope.form.link, service.model).get();
           list.splice(index, 1);
         }
-      }))
+      }));
     }
 
     function addArrayCopy(form, key) {
@@ -1337,14 +1337,16 @@
           select.type = 'cn-autocomplete-detailed';
         }
         else {
-          if(select.key === 'tags') {
-            select.selectionStyle = 'tags';
-          }
-          else if(select.getSchemaType() === 'array' && select.schema.maxItems !== 1) {
-            select.selectionStyle = 'list';
-          }
-          else {
-            select.selectionStyle = 'select';
+          if(!select.selectionStyle) {
+            if(select.key === 'tags') {
+              select.selectionStyle = 'tags';
+            }
+            else if(select.getSchemaType() === 'array' && select.schema.maxItems !== 1) {
+              select.selectionStyle = 'list';
+            }
+            else {
+              select.selectionStyle = 'select';
+            }
           }
           select.type = 'cn-autocomplete';
         }
@@ -1419,16 +1421,16 @@
                 if (getArrayIndex(copy) == index) {
                   copy.condition = 'true';
                 }
-              })
+              });
             } else {
               _.each(formCopies, function(copy) {
                 if (getArrayIndex(copy) == index) {
                   copy.condition = 'false';
                   service.parseExpression(service.getKey(copy.key), service.model).set();
                 }
-              })
+              });
             }
-          })
+          });
         };
       } else {
         handler = function() {
@@ -1442,8 +1444,8 @@
               item.condition = "false";
               service.parseExpression(service.getKey(item.key), service.model).set();
             }
-          })
-        }
+          });
+        };
       }
 
       selectDisplay.selectDisplay = false;
@@ -1774,7 +1776,8 @@
             display-property="{{form.displayProperty || \'name\'}}"\
             value-property="{{form.valueProperty || \'value\'}}"\
             placeholder="{{form.placeholder || \' \'}}"\
-            add-on-blur="{{form.allowNew}}"\
+            add-on-blur="false"\
+            add-on-comma="false"\
             add-from-autocomplete-only="{{!form.allowNew}}"\
             on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\
             on-init="form.onInit($tag, form, $event, $setter)"\

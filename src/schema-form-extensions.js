@@ -91,7 +91,8 @@
             display-property="{{form.displayProperty || \'name\'}}"\
             value-property="{{form.valueProperty || \'value\'}}"\
             placeholder="{{form.placeholder || \' \'}}"\
-            add-on-blur="{{form.allowNew}}"\
+            add-on-blur="false"\
+            add-on-comma="false"\
             add-from-autocomplete-only="{{!form.allowNew}}"\
             on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\
             on-init="form.onInit($tag, form, $event, $setter)"\
