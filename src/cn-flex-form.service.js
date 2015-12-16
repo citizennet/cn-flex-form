@@ -564,7 +564,10 @@
         };
       }
 
-      if(handler) service.listeners[key].handlers.push(handler);
+      if(handler) {
+        service.listeners[key].handlers.push(handler);
+        runHandler && handler(null, null, key);
+      }
     }
 
     function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
@@ -1046,12 +1049,14 @@
         handler = function() {
           var index = getArrayIndex(arguments[2]);
           _.each(selectDisplay.items, function(item) {
-            if (selectField.key === item.key) return;
-            var itemKey = setArrayIndex(item.key, index);
-            var selectKey = service.getKey(setArrayIndex(selectField.key, index));
-            var selectValue = service.parseExpression(selectKey, service.model).get();
-            var formCopies = service.getArrayCopies(service.getKey(item.key));
-            if (_.includes(selectValue, itemKey[itemKey.length - 1])) {
+            var selectKey = service.getKey(selectField.key);
+            var key = service.getKey(item.key);
+            var splitKey = ObjectPath.parse(key);
+            if (selectKey === key) return;
+            var indexedSelectKey = service.getKey(setArrayIndex(ObjectPath.parse(selectKey), index));
+            var selectValue = service.parseExpression(indexedSelectKey, service.model).get();
+            var formCopies = service.getArrayCopies(key);
+            if (_.includes(selectValue, splitKey[splitKey.length - 1])) {
               _.each(formCopies, function(copy) {
                 if (getArrayIndex(copy) == index) {
                   copy.condition = 'true';
@@ -1071,16 +1076,35 @@
         handler = function() {
           var selectKey = service.getKey(selectField.key);
           _.each(selectDisplay.items, function(item) {
-            if (selectField.key === item.key) return;
+            var key = service.getKey(item.key);
+            var splitKey = ObjectPath.parse(key);
+            if (selectKey === key) return;
             var selectValue = service.parseExpression(selectKey, service.model).get();
-            if (_.includes(selectValue, item.key[item.key.length - 1])) {
+            if (_.includes(selectValue, splitKey[splitKey.length - 1])) {
               item.condition = "true";
             } else {
               item.condition = "false";
-              service.parseExpression(service.getKey(item.key), service.model).set();
+              service.parseExpression(key, service.model).set();
             }
           })
-        }
+        };
+
+        var selectKey = service.getKey(selectField.key);
+        var selectModel = service.parseExpression(selectKey, service.model);
+        var selectValue = selectModel.get();
+        _.each(selectDisplay.items, function(item) {
+          var key = service.getKey(item.key);
+          if (selectKey === key) return;
+          var splitKey = ObjectPath.parse(key);
+          var itemValue = service.parseExpression(key, service.model).get();
+          if (itemValue && !_.includes(selectValue, splitKey[splitKey.length - 1])) {
+            if (!selectValue) {
+              selectValue = [];
+            }
+            selectValue.push(splitKey[splitKey.length - 1]);
+            selectModel.set(selectValue);
+          }
+        })
       }
 
       selectDisplay.selectDisplay = false;
