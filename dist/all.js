@@ -1479,21 +1479,23 @@
         });
       });
       // run handler once all arrayCopies have been instantiated; needed for existing objects
-      var count = 0;
-      var keyMap = _.pluck(_.reject(selectDisplay.items, {"condition":"false"}), 'key');
-      var total = model.length * (keyMap.length);
-      var once = $rootScope.$on('flexFormArrayCopyAdded', function(event, key) {
-        if (_.includes(keyMap, key)) {
-          count++;
-        }
-        if (count === total) {
-          for (var i = 0; i < model.length; i++) {
-            handler(null, null, '[' + i + ']');
+      if (model) {
+        var count = 0;
+        var keyMap = _.pluck(_.reject(selectDisplay.items, {"condition":"false"}), 'key');
+        var total = model.length * (keyMap.length);
+        var once = $rootScope.$on('flexFormArrayCopyAdded', function(event, key) {
+          if (_.includes(keyMap, key)) {
+            count++;
           }
-          once();
-        }
-      });
-      service.events.push(once);
+          if (count === total) {
+            for (var i = 0; i < model.length; i++) {
+              handler(null, null, '[' + i + ']');
+            }
+            once();
+          }
+        });
+        service.events.push(once);
+      }
 
       return handler;
     }
