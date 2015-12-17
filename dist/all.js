@@ -522,6 +522,7 @@
       processUpdatedSchema: processUpdatedSchema,
       registerArrayHandlers: registerArrayHandlers,
       registerHandler: registerHandler,
+      setArrayIndex: setArrayIndex,
       setupConfig: setupConfig,
       setupSchemaRefresh: setupSchemaRefresh//,
       //startEventWatch: startEventWatch,
@@ -1064,6 +1065,7 @@
         var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
         if (scope.form.condition !== 'false') scope.form.condition = 'true';
         service.addArrayCopy(scope.form, key);
+        scope.$emit('flexFormArrayCopyAdded', key);
       }));
       service.events.push($rootScope.$on('schemaFormDeleteFromArray', function(event, scope, index) {
         if (scope.form.link) {
@@ -1157,11 +1159,16 @@
         "set": function(val) {
           var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
           var start = depth || service;
-
+          //console.log(path, exp);
           while(start && path.length > 1) {
             var key = path.shift();
             if(!start[key]) {
-              start[key] = {};
+              if(/^\d?$/.test(path[0])) {
+                start[key] = []
+              }
+              else {
+                start[key] = {};
+              }
             }
             start = start[key];
           }
@@ -1400,81 +1407,132 @@
     }
 
     function processSelectDisplay(selectDisplay, schema) {
-      var service = this;
-      var selectField = _.find(selectDisplay.items, 'selectField');
-      _.each(selectDisplay.items, function(item) {
-        if (item.condition !== 'false') {
-          item.condition = 'true';
-        }
-      });
-
-      var handler;
+      var service = this,
+          selectField = _.find(selectDisplay.items, 'selectField'),
+          handler;
 
       if (schema && schema.type === 'array') {
-        handler = function() {
-          var index = getArrayIndex(arguments[2]);
-          _.each(selectDisplay.items, function(item) {
-            var selectKey = service.getKey(selectField.key);
-            var key = service.getKey(item.key);
-            var splitKey = ObjectPath.parse(key);
-            if (selectKey === key) return;
-            var indexedSelectKey = service.getKey(setArrayIndex(ObjectPath.parse(selectKey), index));
-            var selectValue = service.parseExpression(indexedSelectKey, service.model).get();
-            var formCopies = service.getArrayCopies(key);
-            if (_.includes(selectValue, splitKey[splitKey.length - 1])) {
-              _.each(formCopies, function(copy) {
-                if (getArrayIndex(copy) == index) {
-                  copy.condition = 'true';
-                }
-              });
-            } else {
-              _.each(formCopies, function(copy) {
-                if (getArrayIndex(copy) == index) {
-                  copy.condition = 'false';
-                  service.parseExpression(service.getKey(copy.key), service.model).set();
-                }
-              });
-            }
-          });
-        };
+        handler = setupArraySelectDisplay(selectDisplay, selectField, service);
       } else {
-        handler = function() {
-          var selectKey = service.getKey(selectField.key);
-          _.each(selectDisplay.items, function(item) {
-            var key = service.getKey(item.key);
-            var splitKey = ObjectPath.parse(key);
-            if (selectKey === key) return;
-            var selectValue = service.parseExpression(selectKey, service.model).get();
-            if (_.includes(selectValue, splitKey[splitKey.length - 1])) {
-              item.condition = "true";
-            } else {
-              item.condition = "false";
-              service.parseExpression(key, service.model).set();
-            }
-          });
-        };
-
-        var selectKey = service.getKey(selectField.key);
-        var selectModel = service.parseExpression(selectKey, service.model);
-        var selectValue = selectModel.get();
-        _.each(selectDisplay.items, function(item) {
-          var key = service.getKey(item.key);
-          if (selectKey === key) return;
-          var splitKey = ObjectPath.parse(key);
-          var itemValue = service.parseExpression(key, service.model).get();
-          if (itemValue && !_.includes(selectValue, splitKey[splitKey.length - 1])) {
-            if (!selectValue) {
-              selectValue = [];
-            }
-            selectValue.push(splitKey[splitKey.length - 1]);
-            selectModel.set(selectValue);
-          }
-        });
+        handler = setupSelectDisplay(selectDisplay, selectField, service);
       }
 
       selectDisplay.selectDisplay = false;
       service.registerHandler(selectField.key, handler, selectField.updateSchema, true);
       service.processField(selectDisplay);
+    }
+
+    function setupArraySelectDisplay(selectDisplay, selectField, service) {
+
+
+      _.each(selectDisplay.items, function(item) {
+        if (item.condition !== 'false') {
+          item.condition = 'true';
+        }
+      });
+      var handler = function() {
+        var index = getArrayIndex(arguments[2]);
+        _.each(selectDisplay.items, function(item) {
+          var selectKey = service.getKey(selectField.key);
+          var key = service.getKey(item.key);
+          var splitKey = ObjectPath.parse(key);
+          if (selectKey === key) return;
+          var indexedSelectKey = service.setArrayIndex(selectKey, index);
+          var selectValue = service.parseExpression(indexedSelectKey, service.model).get();
+          var formCopies = service.getArrayCopies(key);
+          if (_.includes(selectValue, splitKey[splitKey.length - 1])) {
+            _.each(formCopies, function(copy) {
+              if (getArrayIndex(copy) == index) {
+                copy.condition = 'true';
+              }
+            });
+          } else {
+            _.each(formCopies, function(copy) {
+              if (getArrayIndex(copy) == index) {
+                copy.condition = 'false';
+                service.parseExpression(service.getKey(copy.key), service.model).set();
+              }
+            });
+          }
+        });
+      };
+      // handle legacy objects that don't have values set in the selectField
+      var model = service.parseExpression(service.getKey(selectDisplay.key), service.model).get();
+      _.each(selectDisplay.items, function(item) {
+        var key = service.getKey(item.key);
+        var selectKey = service.getKey(selectField.key);
+        if (key === selectKey) return;
+        _.each(model, function(elem, i) {
+          var indexedKey = service.setArrayIndex(key, i);
+          var splitIndexedKey = ObjectPath.parse(indexedKey);
+          var indexedSelectKey = service.setArrayIndex(selectKey, i);
+          var selectModel = service.parseExpression(indexedSelectKey, service.model);
+          var selectValue = selectModel.get();
+          var itemValue = service.parseExpression(indexedKey, service.model).get();
+          if (itemValue && !_.includes(selectValue, splitIndexedKey[splitIndexedKey.length - 1])) {
+            if (!selectValue) {
+              selectValue = [];
+            }
+            selectValue.push(splitIndexedKey[splitIndexedKey.length - 1]);
+            selectModel.set(selectValue);
+          }
+        });
+      });
+      // run handler once all arrayCopies have been instantiated; needed for existing objects
+      var count = 0;
+      var keyMap = _.pluck(_.reject(selectDisplay.items, {"condition":"false"}), 'key');
+      var total = model.length * (keyMap.length);
+      var once = $rootScope.$on('flexFormArrayCopyAdded', function(event, key) {
+        if (_.includes(keyMap, key)) {
+          count++;
+        }
+        if (count === total) {
+          for (var i = 0; i < model.length; i++) {
+            handler(null, null, '[' + i + ']');
+          }
+          once();
+        }
+      });
+      service.events.push(once);
+
+      return handler;
+    }
+
+    function setupSelectDisplay(selectDisplay, selectField, service) {
+      var handler = function() {
+        var selectKey = service.getKey(selectField.key);
+        _.each(selectDisplay.items, function(item) {
+          var key = service.getKey(item.key);
+          var splitKey = ObjectPath.parse(key);
+          if (selectKey === key) return;
+          var selectValue = service.parseExpression(selectKey, service.model).get();
+          if (_.includes(selectValue, splitKey[splitKey.length - 1])) {
+            item.condition = "true";
+          } else {
+            item.condition = "false";
+            service.parseExpression(key, service.model).set();
+          }
+        });
+      };
+      // handle legacy objects that don't have values set in the selectField
+      var selectKey = service.getKey(selectField.key);
+      var selectModel = service.parseExpression(selectKey, service.model);
+      var selectValue = selectModel.get();
+      _.each(selectDisplay.items, function(item) {
+        var key = service.getKey(item.key);
+        if (selectKey === key) return;
+        var splitKey = ObjectPath.parse(key);
+        var itemValue = service.parseExpression(key, service.model).get();
+        if (itemValue && !_.includes(selectValue, splitKey[splitKey.length - 1])) {
+          if (!selectValue) {
+            selectValue = [];
+          }
+          selectValue.push(splitKey[splitKey.length - 1]);
+          selectModel.set(selectValue);
+        }
+      });
+
+      return handler;
     }
 
     function setupSchemaRefresh(refresh) {
@@ -1653,11 +1711,22 @@
       }
     }
 
-    function setArrayIndex(key, index) {
-      var indexOfIndex = key.indexOf('');
-      var keyCopy = _.clone(key);
+    function setArrayIndex(key, index, asArray) {
+      var service = this;
+      var keyCopy;
+      if (_.isString(key)) {
+        keyCopy = ObjectPath.parse(key);
+      } else {
+        keyCopy = _.clone(key);
+      }
+      var indexOfIndex = keyCopy.indexOf('');
       keyCopy[indexOfIndex] = index;
-      return keyCopy;
+
+      if (asArray) {
+        return keyCopy;
+      } else {
+        return service.getKey(keyCopy);
+      }
     }
 
     function cleanup() {
