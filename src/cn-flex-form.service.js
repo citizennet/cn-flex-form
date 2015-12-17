@@ -66,12 +66,12 @@
   }
 
   CNFlexFormService.$inject = [
-    'Api', '$parse', '$q', '$stateParams', 'cnFlexFormConfig',
-    '$interpolate', '$compile', '$rootScope', '$timeout', 'cnUtil'
+    'Api', '$parse', 'cnFlexFormConfig',
+    '$interpolate', '$rootScope', '$timeout', 'cnUtil'
   ];
 
-  function CNFlexFormService(Api, $parse, $q, $stateParams, cnFlexFormConfig,
-                             $interpolate, $compile, $rootScope, $timeout, cnUtil) {
+  function CNFlexFormService(Api, $parse, cnFlexFormConfig,
+                             $interpolate, $rootScope, $timeout, cnUtil) {
 
     var services = [];
 
