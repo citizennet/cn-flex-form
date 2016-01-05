@@ -22,7 +22,8 @@
         model: '=ffModel',
         formIndex: '=ffFormIndex',
         formName: '=ffFormName',
-        delayForm: '=ffDelayForm'
+        delayForm: '=ffDelayForm',
+        cleanupEvent: '=ffCleanupEvent'
       },
       controller: FlexForm,
       controllerAs: 'vm',
@@ -45,7 +46,7 @@
 
     vm.activate();
 
-    $scope.$on('$destroy', vm.cleanup);
+    $scope.$on(vm.cleanupEvent || '$destroy', vm.cleanup);
 
     //////////
 

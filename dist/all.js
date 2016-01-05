@@ -237,7 +237,8 @@
         model: '=ffModel',
         formIndex: '=ffFormIndex',
         formName: '=ffFormName',
-        delayForm: '=ffDelayForm'
+        delayForm: '=ffDelayForm',
+        cleanupEvent: '=ffCleanupEvent'
       },
       controller: FlexForm,
       controllerAs: 'vm',
@@ -260,7 +261,7 @@
 
     vm.activate();
 
-    $scope.$on('$destroy', vm.cleanup);
+    $scope.$on(vm.cleanupEvent || '$destroy', vm.cleanup);
 
     //////////
 
@@ -852,8 +853,6 @@
         }
       });
     }
-
-    field.condition = 'anguar.equals(otherfield.value, 1)';
 
     function isConditionFunction(condition) {
       return condition && condition.match(/(\!?)(.+)\((.+)\)/);
@@ -1478,25 +1477,26 @@
           }
         });
       });
-      // run handler once all arrayCopies have been instantiated; needed for existing objects
-      if (model) {
-        var count = 0;
-        var keyMap = _.pluck(_.reject(selectDisplay.items, {"condition":"false"}), 'key');
+      // run handler once all arrayCopies have been instantiated
+      var count = 0;
+      var keyMap = _.pluck(_.reject(selectDisplay.items, {"condition":"false"}), 'key');
+      var once = $rootScope.$on('flexFormArrayCopyAdded', function(event, key) {
         var total = model.length * (keyMap.length);
-        var once = $rootScope.$on('flexFormArrayCopyAdded', function(event, key) {
-          if (_.includes(keyMap, key)) {
-            count++;
+        if (_.includes(keyMap, key)) {
+          count++;
+        }
+        if (count === total) {
+          for (var i = 0; i < model.length; i++) {
+            handler(null, null, '[' + i + ']');
           }
-          if (count === total) {
-            for (var i = 0; i < model.length; i++) {
-              handler(null, null, '[' + i + ']');
-            }
-            once();
-          }
-        });
-        service.events.push(once);
-      }
-
+          count = 0;
+        }
+      });
+      var resetCount = $rootScope.$on('flexForm.updatePage', function() {
+        count = 0;
+      });
+      service.events.push(once);
+      service.events.push(resetCount);
       return handler;
     }
 
