@@ -1113,19 +1113,37 @@
           }
         });
       });
+      // handle new objects with values set in defaults
+      var defaults = service.getSchema(selectDisplay.key).default;
+      _.each(defaults, function(elem, i) {
+        var selectKey = service.getKey(selectField.key);
+        var indexedSelectKey = service.setArrayIndex(selectKey, i);
+        var selectModel = service.parseExpression(indexedSelectKey, service.model);
+        var selectValue = selectModel.get();
+        _.each(elem, function(val, key) {
+          if (!selectValue) {
+            selectValue = [];
+          }
+          selectValue.push(key);
+          selectModel.set(selectValue);
+        })
+      });
       // run handler once all arrayCopies have been instantiated
       var count = 0;
       var keyMap = _.pluck(_.reject(selectDisplay.items, {"condition":"false"}), 'key');
       var once = $rootScope.$on('flexFormArrayCopyAdded', function(event, key) {
-        var total = model.length * (keyMap.length);
-        if (_.includes(keyMap, key)) {
-          count++;
-        }
-        if (count === total) {
-          for (var i = 0; i < model.length; i++) {
-            handler(null, null, '[' + i + ']');
+        var model = service.parseExpression(service.getKey(selectDisplay.key), service.model).get();
+        if (model) {
+          var total = model.length * (keyMap.length);
+          if (_.includes(keyMap, key)) {
+            count++;
           }
-          count = 0;
+          if (count === total) {
+            for (var i = 0; i < model.length; i++) {
+              handler(null, null, '[' + i + ']');
+            }
+            count = 0;
+          }
         }
       });
       var resetCount = $rootScope.$on('flexForm.updatePage', function() {
