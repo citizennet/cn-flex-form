@@ -1187,6 +1187,20 @@
           selectModel.set(selectValue);
         }
       });
+      // handle new objects with values set in the defaults
+      var defaults = service.getSchema(selectDisplay.key).default;
+      _.each(defaults, function(val, key) {
+        if (!selectValue) {
+          selectValue = [];
+        }
+        selectValue.push(key);
+        selectModel.set(selectValue);
+      });
+      // set default values here
+      var model = service.parseExpression(selectDisplay.key, service.model);
+      if (defaults && !model.get()) {
+        model.set(defaults);
+      }
 
       return handler;
     }
