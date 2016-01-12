@@ -698,7 +698,7 @@
       service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
         //console.log('propagated scope:', service.getKey(scope.form.key), scope);
         var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
-        if (scope.form.condition !== 'false') scope.form.condition = 'true';
+        if (!scope.form.condition) scope.form.condition = 'true';
         service.addArrayCopy(scope.form, key);
         scope.$emit('flexFormArrayCopyAdded', key);
       }));
