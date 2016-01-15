@@ -29,6 +29,9 @@
     condition: function(field) { return field.schema && field.schema.format === 'percentage'; },
     handler: 'processPercentage'
   }, {
+    condition: function(field) { return field.type === 'mediaupload'; },
+    handler: 'processMediaUpload'
+  }, {
     condition: function(field) { return field.type === 'boolean'; },
     handler: 'processToggle'
   }, {
@@ -157,6 +160,7 @@
       processTemplate: processTemplate,
       processToggle: processToggle,
       processUpdatedSchema: processUpdatedSchema,
+      processMediaUpload: processMediaUpload,
       registerArrayHandlers: registerArrayHandlers,
       registerHandler: registerHandler,
       setArrayIndex: setArrayIndex,
@@ -866,6 +870,10 @@
 
     function processPercentage(field) {
       field.type = 'cn-percentage';
+    }
+
+    function processMediaUpload(field) {
+      field.type = 'cn-mediaupload';
     }
 
     function processRadiobuttons(radios) {

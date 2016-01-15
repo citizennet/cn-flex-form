@@ -17,7 +17,8 @@
       'cn-currency',
       'cn-radiobuttons',
       'cn-percentage',
-      'cn-display'
+      'cn-display',
+      'cn-mediaupload'
     ];
 
     _.each(extensions, function(extension) {
@@ -286,6 +287,28 @@
             </div>\
           </div>\
         </fieldset>\
+        '
+    );
+
+    $templateCache.put(
+        'app/components/cn-flex-form/forms/cn-mediaupload.html',
+        '\
+        <div class="form-group {{form.htmlClass}}"\
+             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
+          <label class="control-label"\
+                 ng-show="showTitle()"\
+                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\
+          <media-upload ng-model="$$value$$"\
+                        cn-file-type="form.fileType"\
+                        cn-upload-path="form.uploadPath"\
+                        ng-model-options="form.ngModelOptions"\
+                        sf-changed="form"\
+                        schema-validate="form"\
+                        ff-form="form"\
+                        class="clearfix">\
+          </media-upload>\
+          <span class="help-block" sf-message="form.description"></span>\
+       </div>\
         '
     );
   }
