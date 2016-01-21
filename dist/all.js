@@ -191,6 +191,98 @@
   'use strict';
   angular
       .module('cn.flex-form')
+      .provider('cnFlexFormTypes', cnFlexFormTypesProvider);
+
+  function cnFlexFormTypesProvider() {
+
+    var fieldTypeRegister = [{
+      condition: function(field) {
+        return field.type === 'hidden';
+      },
+      type: 'hidden'
+    }, {
+      condition: function(field) {
+        return field.type.includes('radiobuttons');
+      },
+      type: 'cn-radiobuttons'
+    }, {
+      condition: function(field) {
+        return field.type.includes('autocomplete') || field.titleMap || field.titleMapResolve || field.titleMapQuery;
+      },
+      type: 'cn-autocomplete'
+    }, {
+      condition: function(field) {
+        return field.type === 'cn-datetimepicker' || field.type === 'datetime-local';
+      },
+      type: 'cn-datetimepicker'
+    }, {
+      condition: function(field) {
+        return field.type === 'help';
+      },
+      type: 'help'
+    }, {
+      condition: function(field) {
+        return field.type.includes('display');
+      },
+      type: 'cn-display'
+    }, {
+      condition: function(field) {
+        return field.schema && field.schema.format && field.schema.format.includes('currency');
+      },
+      type: 'cn-currency'
+    }, {
+      condition: function(field) {
+        return field.schema && field.schema.format === 'percentage';
+      },
+      type: 'cn-percentage'
+    }, {
+      condition: function(field) {
+        return field.type === 'boolean';
+      },
+      type: 'cn-toggle'
+    }, {
+      condition: function(field) {
+        return field.type === 'array';
+      },
+      type: 'section'
+    }];
+
+    return {
+      registerFieldType: registerFieldType,
+      $get: cnFlexFormTypes
+    };
+
+    ////////
+
+    function registerFieldType(fieldType) {
+      fieldTypeRegister.unshift(fieldType);
+    }
+
+    function cnFlexFormTypes() {
+      return {
+        fieldTypeRegister: fieldTypeRegister,
+        getFieldType: getFieldType
+      };
+
+      /////////
+
+      function getFieldType(field) {
+        for(var i = 0, l = fieldTypeRegister.length; i < l; i++) {
+          if(fieldTypeRegister[i].condition(field)) {
+            return fieldTypeRegister[i].type;
+          }
+        }
+        return field.schema && field.schema.type;
+      }
+    }
+
+  }
+
+})();
+(function() {
+  'use strict';
+  angular
+      .module('cn.flex-form')
       .directive('ffValidate', ffValidate);
 
   function ffValidate() {
@@ -367,41 +459,25 @@
       .module('cn.flex-form')
       .provider('cnFlexFormService', cnFlexFormServiceProvider);
 
-  var fieldTypeRegister = [{
-    condition: function(field) { return field.type === 'hidden'; },
-    handler: _.noop
-  }, {
-    condition: function(field) { return field.type === 'radiobuttons'; },
-    handler: 'processRadiobuttons'
-  }, {
-    condition: function(field) { return field.titleMap || field.titleMapResolve || field.titleMapQuery; },
-    handler: 'processSelect'
-  }, {
-    condition: function(field) { return field.type === 'datetime-local'; },
-    handler: 'processDate'
-  }, {
-    condition: function(field) { return field.type === 'help'; },
-    handler: 'processHelp'
-  }, {
-    condition: function(field) { return field.type === 'display'; },
-    handler: 'processDisplay'
-  }, {
-    condition: function(field) { return field.schema && field.schema.format && field.schema.format.includes('currency'); },
-    handler: 'processCurrency'
-  }, {
-    condition: function(field) { return field.schema && field.schema.format === 'percentage'; },
-    handler: 'processPercentage'
-  }, {
-    condition: function(field) { return field.type === 'boolean'; },
-    handler: 'processToggle'
-  }, {
-    condition: function(field) { return field.type === 'array'; },
-    handler: 'processSection'
-  }];
+  var fieldTypeHandlers = {
+    'cn-radiobuttons': 'processRadiobuttons',
+    'cn-autocomplete': 'processSelect',
+    'cn-datetimepicker': 'processDate',
+    'help': 'processHelp',
+    'cn-display': 'processDisplay',
+    'cn-currency': 'processCurrency',
+    'cn-percentage': 'processPercentage',
+    'cn-toggle': 'processToggle',
+    'section': 'processSection'
+  };
 
-  cnFlexFormServiceProvider.$inject = ['schemaFormDecoratorsProvider'];
+  cnFlexFormServiceProvider.$inject = [
+    'schemaFormDecoratorsProvider',
+    'cnFlexFormTypesProvider'
+  ];
 
-  function cnFlexFormServiceProvider(schemaFormDecoratorsProvider) {
+  function cnFlexFormServiceProvider(schemaFormDecoratorsProvider,
+                                     cnFlexFormTypesProvider) {
     return {
       registerField: registerField,
       $get: CNFlexFormService
@@ -410,11 +486,18 @@
     //////////
 
     function registerField(fieldType) {
-      if(fieldType.condition && fieldType.handler) {
-        fieldTypeRegister.unshift(fieldType);
+      if(fieldType.condition) {
+        cnFlexFormTypesProvider.registerFieldType({
+          condition: fieldType.condition,
+          type: fieldType.type
+        });
       }
 
-      if(fieldType.type && fieldType.templateUrl) {
+      if(fieldType.handler) {
+        fieldTypeHandlers[fieldType.type] = fieldType.handler;
+      }
+
+      if(fieldType.templateUrl) {
         schemaFormDecoratorsProvider.addMapping(
             'bootstrapDecorator',
             fieldType.type,
@@ -429,11 +512,11 @@
   }
 
   CNFlexFormService.$inject = [
-    'Api', '$parse', 'cnFlexFormConfig',
+    'Api', '$parse', 'cnFlexFormConfig', 'cnFlexFormTypes',
     '$interpolate', '$rootScope', '$timeout', 'cnUtil'
   ];
 
-  function CNFlexFormService(Api, $parse, cnFlexFormConfig,
+  function CNFlexFormService(Api, $parse, cnFlexFormConfig, cnFlexFormTypes,
                              $interpolate, $rootScope, $timeout, cnUtil) {
 
     var services = [];
@@ -478,11 +561,9 @@
 
     _.extend(CNFlexForm.prototype, {
       compile: compile,
-      //addChangeEvent: addChangeEvent,
       addArrayCopy: addArrayCopy,
       addToDataCache: addToDataCache,
       addToFormCache: addToFormCache,
-      //assignHandlers: assignHandlers,
       broadcastErrors: broadcastErrors,
       buildError: buildError,
       cleanup: cleanup,
@@ -514,7 +595,6 @@
       processSchema: processSchema,
       processSelectDisplay: processSelectDisplay,
       processResolve: processResolve,
-      //processSchemaUpdate: processSchemaUpdate,
       processSection: processSection,
       processSelect: processSelect,
       processTemplate: processTemplate,
@@ -523,9 +603,7 @@
       registerArrayHandlers: registerArrayHandlers,
       registerHandler: registerHandler,
       setupConfig: setupConfig,
-      setupSchemaRefresh: setupSchemaRefresh//,
-      //startEventWatch: startEventWatch,
-      //watchChange: watchChange
+      setupSchemaRefresh: setupSchemaRefresh
     });
 
     return CNFlexFormConstructor;
@@ -551,7 +629,6 @@
           _.each(schema.form, service.processField.bind(service));
         }
 
-        //service.assignHandlers();
         service.initModelWatch();
         service.initArrayCopyWatch();
         service.isCompiled(true);
@@ -674,22 +751,16 @@
         }
         else {
 
-          for(var i = 0, l = fieldTypeRegister.length; i < l; i++) {
-            var fieldType = fieldTypeRegister[i];
-            if(fieldType.condition(field)) {
-              if(_.isString(fieldType.handler)) {
-                service[fieldType.handler](field);
-              }
-              else if(_.isFunction(fieldType.handler)) {
-                fieldType.handler.call(service, field);
-              }
-              break;
-            }
+          var fieldType = cnFlexFormTypes.getFieldType(field);
+          var handler = fieldTypeHandlers[fieldType];
+          if(_.isString(handler)) {
+            service[handler](field);
+          }
+          else if(_.isFunction(handler)) {
+            handler.call(service, field);
           }
 
-          //if(field.updateSchema) service.processSchemaUpdate(field);
           if(field.updateSchema) service.registerHandler(field, null, field.updateSchema);
-          //if(field.handlers && field.handlers.length) service.addChangeEvent(field);
           if(field.error) service.errors.push(service.buildError(field));
         }
       }
@@ -767,92 +838,102 @@
       _.each(field.watch, function(watch) {
         if(watch.resolution) {
           var condition = watch.condition;
+          var functionCondition = service.isConditionFunction(condition);
+
           var resolution = watch.resolution;
-          var adjustment = {};
+          var handler;
 
-          adjustment.date = resolution.match(/\+ ?(\d+) days/);
-
-          if(adjustment.date) {
-            adjustment.date = adjustment.date[1];
-            resolution = resolution.replace(adjustment.date, '').trim();
+          if(_.isFunction(resolution)) {
+            handler = function() {
+              var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
+              if(!parsedCondition || $parse(parsedCondition)(service)) {
+                resolution();
+              }
+            };
           }
           else {
-            adjustment.math = resolution.match(/(\+|\-|\/|\*) ?(\S+)/);
+            var adjustment = {};
 
-            if(adjustment.math) {
-              adjustment.operator = {
-                '+': 'add',
-                '-': 'subtract',
-                '*': 'multiply',
-                '/': 'divide'
-              }[adjustment.math[1]];
+            adjustment.date = resolution.match(/\+ ?(\d+) days/);
 
-              //console.log('adjustment:', adjustment);
-              adjustment.adjuster = service.parseExpression(adjustment.math[2]);
+            if(adjustment.date) {
+              adjustment.date = adjustment.date[1];
+              resolution = resolution.replace(adjustment.date, '').trim();
             }
-          }
+            else {
+              adjustment.math = resolution.match(/(\+|\-|\/|\*) ?(\S+)/);
 
-          resolution = resolution.match(/(\S+) ?= ?(\S+)/);
-          //console.log('resolution:', resolution);
+              if(adjustment.math) {
+                adjustment.operator = {
+                  '+': 'add',
+                  '-': 'subtract',
+                  '*': 'multiply',
+                  '/': 'divide'
+                }[adjustment.math[1]];
 
-          var handler = function() {
-            var updatePath, fromPath;
-            if(resolution[1].includes('arrayIndex')) {
-              updatePath = replaceArrayIndex(resolution[1], arguments[2]);
-            }
-            if (resolution[2].includes('arrayIndex')) {
-              fromPath = replaceArrayIndex(resolution[2], arguments[2]);
-            }
-            var update = service.parseExpression(updatePath || resolution[1]);
-            var from = service.parseExpression(fromPath || resolution[2]);
-
-            var functionCondition = service.isConditionFunction(condition);
-            var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
-
-            //console.log('handler:resolution:', field.key, condition, condition && $parse(condition)(service));
-            if(!parsedCondition || $parse(parsedCondition)(service)) {
-              //console.log('update:', update.get(), from.get());
-              if(adjustment.date) {
-                update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
+                //console.log('adjustment:', adjustment);
+                adjustment.adjuster = service.parseExpression(adjustment.math[2]);
               }
-              else if(adjustment.math) {
-                //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
-                //console.log('_.%s(%s, %s):', adjustment.operator, from.get(), adjustment.adjuster.get(), result);
-                var result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
-                //console.log('eval(%s %s %s):', from.get(), adjustment.math[1], adjustment.adjuster.get(), result);
-                //console.log('result:', result);
-                //console.log('adjustment.math:', adjustment, from.get(), adjustment.adjuster.get(), result);
-                //console.log('schema.format:', schema.format);
-                schema = schema || field.items && (field.items[0].schema || (field.items[0].items && field.items[0].items[0].schema));
-                if(field.type === 'cn-currency') {
-                  //console.log('schema.format:', schema.format, result);
-                  var p = schema && schema.format === 'currency-dollars' ? 2 : 0;
+            }
 
-                  if(adjustment.math[1] === '*') {
-                    result = _.floor(result, p);
-                  }
-                  else if(adjustment.math[1] === '/') {
-                    result = _.ceil(result, p);
-                  }
-                  else {
-                    result = _.round(result, p);
-                  }
+            resolution = resolution.match(/(\S+) ?= ?(\S+)/);
+            //console.log('resolution:', resolution);
+
+            handler = function() {
+              var updatePath, fromPath;
+              if(resolution[1].includes('arrayIndex')) {
+                updatePath = replaceArrayIndex(resolution[1], arguments[2]);
+              }
+              if (resolution[2].includes('arrayIndex')) {
+                fromPath = replaceArrayIndex(resolution[2], arguments[2]);
+              }
+              var update = service.parseExpression(updatePath || resolution[1]);
+              var from = service.parseExpression(fromPath || resolution[2]);
+
+              //console.log('handler:resolution:', field.key, condition, condition && $parse(condition)(service));
+              var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
+              if(!parsedCondition || $parse(parsedCondition)(service)) {
+                //console.log('update:', update.get(), from.get());
+                if(adjustment.date) {
+                  update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
                 }
-                service.listeners[update.path().key].prev = result;
-                update.set(result || 0);
+                else if(adjustment.math) {
+                  //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
+                  //console.log('_.%s(%s, %s):', adjustment.operator, from.get(), adjustment.adjuster.get(), result);
+                  var result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
+                  //console.log('eval(%s %s %s):', from.get(), adjustment.math[1], adjustment.adjuster.get(), result);
+                  //console.log('result:', result);
+                  //console.log('adjustment.math:', adjustment, from.get(), adjustment.adjuster.get(), result);
+                  //console.log('schema.format:', schema.format);
+                  schema = schema || field.items && (field.items[0].schema || (field.items[0].items && field.items[0].items[0].schema));
+                  if(field.type === 'cn-currency') {
+                    //console.log('schema.format:', schema.format, result);
+                    var p = schema && schema.format === 'currency-dollars' ? 2 : 0;
+
+                    if(adjustment.math[1] === '*') {
+                      result = _.floor(result, p);
+                    }
+                    else if(adjustment.math[1] === '/') {
+                      result = _.ceil(result, p);
+                    }
+                    else {
+                      result = _.round(result, p);
+                    }
+                  }
+                  service.listeners[update.path().key].prev = result;
+                  update.set(result || 0);
+                }
+                else {
+                  update.set(from.get());
+                }
               }
-              else {
-                update.set(from.get());
-              }
-            }
-          };
+            };
+          }
 
           service.registerHandler(field, handler, field.updateSchema);
         }
       });
     }
-
-    field.condition = 'anguar.equals(otherfield.value, 1)';
 
     function isConditionFunction(condition) {
       return condition && condition.match(/(\!?)(.+)\((.+)\)/);
@@ -1194,7 +1275,6 @@
 
     function processComponent(component) {
       var service = this;
-      //if(component.handlers) service.addChangeEvent(component);
 
       component.type = 'section';
       component.htmlClass = 'row';
@@ -1490,10 +1570,10 @@
             diff = _.omit(diff, _.isNull);
             keys = _.keys(diff);
           }
-          //console.log('keys, diff:', keys, diff, {
-          //  cur: _.clone(params),
-          //  prev: _.clone(service.schema.params)
-          //});
+          console.log('keys, diff:', keys, diff, {
+            cur: _.clone(params),
+            prev: _.clone(service.schema.params)
+          });
 
           params.updateSchema = _.first(keys);
 
@@ -1527,6 +1607,7 @@
       var service = this;
       if(schema.diff) {
         service.schema.params = schema.params;
+
         if(schema.diff.data) {
           _.each(schema.diff.data, function(data, key) {
             service.schema.data[key] = data;
@@ -1536,12 +1617,12 @@
         var keys = [];
 
         if(schema.diff.schema) {
-          //_.extend(service.schema.schema, schema.diff.schema);
           _.each(schema.diff.schema, function(schema, key) {
             service.schema.schema.properties[key] = schema;
             reprocessSchema(schema, key, keys);
           });
         }
+
         if(schema.diff.form) {
           _.each(schema.diff.form, function(form) {
 
