@@ -873,7 +873,11 @@
     }
 
     function processMediaUpload(field) {
+      var service = this;
       field.type = 'cn-mediaupload';
+      _.each(field.data, function(dataKey, key) {
+        field.data[key] = service.parseExpression(dataKey).get();
+      });
     }
 
     function processRadiobuttons(radios) {

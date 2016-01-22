@@ -1237,7 +1237,11 @@
     }
 
     function processMediaUpload(field) {
+      var service = this;
       field.type = 'cn-mediaupload';
+      _.each(field.data, function(dataKey, key) {
+        field.data[key] = service.parseExpression(dataKey).get();
+      });
     }
 
     function processRadiobuttons(radios) {
@@ -2121,6 +2125,9 @@
           <media-upload ng-model="$$value$$"\
                         cn-file-type="form.fileType"\
                         cn-upload-path="form.uploadPath"\
+                        cn-data="form.data"\
+                        cn-preview-path="form.previewPath"\
+                        cn-model-value-key="form.modelValueKey"\
                         ng-model-options="form.ngModelOptions"\
                         sf-changed="form"\
                         schema-validate="form"\
