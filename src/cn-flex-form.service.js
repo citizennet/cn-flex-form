@@ -1016,6 +1016,8 @@
       service.registerHandler(select.key, function(val) {
         var form = service.formCtrl && service.formCtrl[service.getKey(select.key)];
         if(form && form.$setDirty) form.$setDirty();
+        // validate the field on change
+        $rootScope.$broadcast('schemaFormValidate');
       }, select.updateSchema);
     }
 
