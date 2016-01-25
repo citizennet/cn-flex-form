@@ -791,7 +791,7 @@
             var key = path.shift();
             if(!start[key]) {
               if(/^\d?$/.test(path[0])) {
-                start[key] = []
+                start[key] = [];
               }
               else {
                 start[key] = {};
@@ -1123,7 +1123,7 @@
           }
           selectValue.push(key);
           selectModel.set(selectValue);
-        })
+        });
       });
       // run handler once all arrayCopies have been instantiated
       var count = 0;
