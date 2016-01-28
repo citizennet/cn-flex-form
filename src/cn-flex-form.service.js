@@ -32,6 +32,9 @@
     condition: function(field) { return field.type === 'mediaupload'; },
     handler: 'processMediaUpload'
   }, {
+    condition: function(field) { return field.type === 'reusable'; },
+    handler: 'processReusable'
+  }, {
     condition: function(field) { return field.type === 'boolean'; },
     handler: 'processToggle'
   }, {
@@ -154,6 +157,7 @@
       processSchema: processSchema,
       processSelectDisplay: processSelectDisplay,
       processResolve: processResolve,
+      processReusable: processReusable,
       //processSchemaUpdate: processSchemaUpdate,
       processSection: processSection,
       processSelect: processSelect,
@@ -803,7 +807,7 @@
             var key = path.shift();
             if(!start[key]) {
               if(/^\d?$/.test(path[0])) {
-                start[key] = []
+                start[key] = [];
               }
               else {
                 start[key] = {};
@@ -870,6 +874,18 @@
 
     function processPercentage(field) {
       field.type = 'cn-percentage';
+    }
+
+    function processReusable(field) {
+      var service = this;
+      field.type = 'cn-reusable';
+
+      field.items.forEach(service.processField.bind(service));
+      field.items = [{
+        type: 'section',
+        items: field.items,
+        condition: '!model.' + service.getKey(field.key) + '.id'
+      }];
     }
 
     function processMediaUpload(field) {
@@ -1138,7 +1154,7 @@
           }
           selectValue.push(key);
           selectModel.set(selectValue);
-        })
+        });
       });
       // run handler once all arrayCopies have been instantiated
       var count = 0;

@@ -396,6 +396,9 @@
     condition: function(field) { return field.type === 'mediaupload'; },
     handler: 'processMediaUpload'
   }, {
+    condition: function(field) { return field.type === 'reusable'; },
+    handler: 'processReusable'
+  }, {
     condition: function(field) { return field.type === 'boolean'; },
     handler: 'processToggle'
   }, {
@@ -518,6 +521,7 @@
       processSchema: processSchema,
       processSelectDisplay: processSelectDisplay,
       processResolve: processResolve,
+      processReusable: processReusable,
       //processSchemaUpdate: processSchemaUpdate,
       processSection: processSection,
       processSelect: processSelect,
@@ -1167,7 +1171,7 @@
             var key = path.shift();
             if(!start[key]) {
               if(/^\d?$/.test(path[0])) {
-                start[key] = []
+                start[key] = [];
               }
               else {
                 start[key] = {};
@@ -1234,6 +1238,18 @@
 
     function processPercentage(field) {
       field.type = 'cn-percentage';
+    }
+
+    function processReusable(field) {
+      var service = this;
+      field.type = 'cn-reusable';
+
+      field.items.forEach(service.processField.bind(service));
+      field.items = [{
+        type: 'section',
+        items: field.items,
+        condition: '!model.' + service.getKey(field.key) + '.id'
+      }];
     }
 
     function processMediaUpload(field) {
@@ -1502,7 +1518,7 @@
           }
           selectValue.push(key);
           selectModel.set(selectValue);
-        })
+        });
       });
       // run handler once all arrayCopies have been instantiated
       var count = 0;
@@ -1842,7 +1858,8 @@
       'cn-radiobuttons',
       'cn-percentage',
       'cn-display',
-      'cn-mediaupload'
+      'cn-mediaupload',
+      'cn-reusable'
     ];
 
     _.each(extensions, function(extension) {
@@ -2136,6 +2153,33 @@
           </media-upload>\
           <span class="help-block" sf-message="form.description"></span>\
        </div>\
+        '
+    );
+
+    $templateCache.put(
+        'app/components/cn-flex-form/forms/cn-reusable.html',
+        '\
+        <div class="form-group cn-reusable {{form.htmlClass}}"\
+             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
+          <label class="control-label"\
+                 ng-show="showTitle()"\
+                 for="{{form.key.join(\'.\')}}">{{form.title}}</label>\
+          <cn-select-or\
+            ng-show="form.key"\
+            select-from="form.library"\
+            ng-model="$$value$$"\
+            ng-model-options="form.ngModelOptions"\
+            sf-changed="form"\
+            schema-validate="form"\
+            ff-form="form"\
+            directiveId="form.directiveId"\
+            item-template="form.itemTemplate"\
+            toggle-text="form.toggleText"\
+            disabled="form.readonly">\
+            <sf-decorator ng-repeat="item in form.items" form="item"/>\
+          </cn-select-or>\
+          <span class="help-block" sf-message="form.description"></span>\
+        </div>\
         '
     );
   }
