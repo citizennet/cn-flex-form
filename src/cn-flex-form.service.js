@@ -92,12 +92,13 @@
     function CNFlexForm(schema, model, config) {
       this.arrayCopies = {};
       this.arrayListeners = {};
+      this.dataCache = {};
       this.defaults = {};
       this.errors = [];
       this.events = [];
       this.formCache = {};
       this.listeners = {};
-      this.dataCache = {};
+      this.resolveRegister = {};
       this.model = model;
       this.updates = 0;
 
@@ -139,6 +140,7 @@
       processDate: processDate,
       processHelp: processHelp,
       processRadiobuttons: processRadiobuttons,
+      processReusable:processReusable,
       processSchema: processSchema,
       processSelectDisplay: processSelectDisplay,
       processResolve: processResolve,
@@ -150,6 +152,7 @@
       processMediaUpload: processMediaUpload,
       registerArrayHandlers: registerArrayHandlers,
       registerHandler: registerHandler,
+      registerResolve: registerResolve,
       setArrayIndex: setArrayIndex,
       setupConfig: setupConfig,
       setupSchemaRefresh: setupSchemaRefresh
@@ -370,12 +373,26 @@
       var service = this;
 
       _.each(field.resolve, function(dataKey, fieldKey) {
-        //field[fieldKey] = service.schema.data[dataKey];
-        //console.log('service.parseExpression(dataKey).get():', dataKey, fieldKey, service.parseExpression(dataKey).get());
         field[fieldKey] = service.parseExpression(dataKey).get();
+
+        var isData = dataKey.match(/^schema\.data\.(\w+)/);
+        if(isData) {
+          service.registerResolve(field, fieldKey, isData[1]);
+        }
       });
 
       return field;
+    }
+
+    function registerResolve(field, fieldKey, dataKey) {
+      console.log('registerResolve:', field, fieldKey, dataKey);
+      var service = this;
+
+      service.resolveRegister[dataKey] = service.resolveRegister[dataKey] || {};
+      service.resolveRegister[dataKey][service.getKey(field.key)] = {
+        field: field,
+        key: fieldKey
+      };
     }
 
     function processFieldWatch(field) {
@@ -1270,6 +1287,13 @@
         if(schema.diff.data) {
           _.each(schema.diff.data, function(data, key) {
             service.schema.data[key] = data;
+            console.log('key, service.resolveRegister[key]:', key, service.resolveRegister[key]);
+            if(service.resolveRegister[key]) {
+              _.each(service.resolveRegister[key], function(register) {
+                console.log('register, data:', register, data);
+                register.field[register.key] = data;
+              });
+            }
           });
         }
 
