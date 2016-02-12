@@ -587,6 +587,7 @@
       getFromFormCache: getFromFormCache,
       getKey: getKey,
       getSchema: getSchema,
+      handleResolve: handleResolve,
       initArrayCopyWatch: initArrayCopyWatch,
       initModelWatch: initModelWatch,
       initSchemaParams: initSchemaParams,
@@ -839,15 +840,28 @@
       var service = this;
 
       _.each(field.resolve, function(dataKey, fieldKey) {
-        field[fieldKey] = service.parseExpression(dataKey).get();
+        service.handleResolve(field, fieldKey, dataKey);
 
-        var isData = dataKey.match(/^schema\.data\.(\w+)/);
-        if(isData) {
-          service.registerResolve(field, fieldKey, isData[1]);
+        var resolveType = dataKey.match(/^(schema\.data\.|model\.)(\w+)/);
+
+        if(resolveType) {
+          if(resolveType[0] === 'schema.data.') {
+            service.registerResolve(field, fieldKey, resolveType[1]);
+          }
+          else if(resolveType[0] === 'model.') {
+            service.registerHandler(resolveType[1], function() {
+              service.handleResolve(field, fieldKey, dataKey);
+            });
+          }
         }
       });
 
       return field;
+    }
+
+    function handleResolve(field, fieldKey, exp) {
+      var service = this;
+      field[fieldKey] = service.parseExpression(exp).get();
     }
 
     function registerResolve(field, fieldKey, dataKey) {
@@ -2043,7 +2057,7 @@
             display-property="{{form.displayProperty || \'name\'}}"\
             value-property="{{form.valueProperty || \'value\'}}"\
             placeholder="{{form.placeholder || \' \'}}"\
-            add-on-blur="false"\
+            add-on-blur="true"\
             add-on-comma="false"\
             add-from-autocomplete-only="{{!form.allowNew}}"\
             on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\
