@@ -844,14 +844,16 @@
 
         var resolveType = dataKey.match(/^(schema\.data\.|model\.)(\w+)/);
 
+        console.log('resolveType:', resolveType);
         if(resolveType) {
-          if(resolveType[0] === 'schema.data.') {
-            service.registerResolve(field, fieldKey, resolveType[1]);
+          if(resolveType[1] === 'schema.data.') {
+            service.registerResolve(field, fieldKey, resolveType[2]);
           }
-          else if(resolveType[0] === 'model.') {
-            service.registerHandler(resolveType[1], function() {
+          else if(resolveType[1] === 'model.') {
+            service.registerHandler(resolveType[2], function() {
               service.handleResolve(field, fieldKey, dataKey);
             });
+            console.log('service.listeners:', service.listeners);
           }
         }
       });
