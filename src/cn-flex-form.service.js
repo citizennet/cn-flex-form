@@ -666,6 +666,8 @@
     function onModelWatch(cur, prev) {
       var service = this;
       if(!angular.equals(cur, prev)) {
+        console.log('service.model === cur:', service.model === cur);
+        cnUtil.cleanModel(service.model);
 
         service.prevParams = angular.copy(service.params);
         service.params = {};
