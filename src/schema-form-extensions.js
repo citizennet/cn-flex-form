@@ -335,9 +335,14 @@
             directiveId="form.directiveId"\
             item-template="form.itemTemplate"\
             toggle-text="form.toggleText"\
-            disabled="form.readonly">\
+            disabled="form.readonly"\
+            view="form.view">\
             <sf-decorator ng-repeat="item in form.items" form="item"/>\
           </cn-select-or>\
+          <p ng-if="form.loadMore && form.view === \'list\'">\
+            <a ng-click="form.loadMore()"\
+               class="btn btn-default btn-block">Load More</a>\
+          </p>\
           <span class="help-block" sf-message="form.description"></span>\
         </div>\
         '

@@ -16,7 +16,8 @@ gulp.task('lint', function() {
       .pipe(jshint({
         multistr: true,
         validthis: true,
-        evil: true
+        evil: true,
+        esnext: true
       }))
       .pipe(jshint.reporter('default'));
 });

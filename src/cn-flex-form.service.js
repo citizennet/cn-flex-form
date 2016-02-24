@@ -397,7 +397,16 @@
 
     function handleResolve(field, fieldKey, exp) {
       var service = this;
-      field[fieldKey] = service.parseExpression(exp).get();
+      var data = service.parseExpression(exp).get();
+      if (data && data.cursor) {
+        field.loadMore = function() {
+          var dataKey = exp.match(/schema\.data\.(.+)/)[1];
+          service.refreshSchema(`data:${dataKey}:${data.cursor}`);
+        };
+      } else {
+        delete field.loadMore;
+      }
+      field[fieldKey] = (data && data.cursor) ? data.data : data;
     }
 
     function registerResolve(field, fieldKey, dataKey) {
@@ -1253,23 +1262,26 @@
 
     function setupSchemaRefresh(refresh) {
       var service = this;
-      service.refreshSchema = _.debounce(function(force) {
+      service.refreshSchema = _.debounce(function(updateSchema) {
         var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
         var diff = cnUtil.diff(service.schema.params, params, true);
 
-        if(diff || force) {
-          var keys = _.keys(diff);
+        if(diff || updateSchema) {
+          if (updateSchema) params.updateSchema = updateSchema;
+          else {
+            var keys = _.keys(diff);
 
-          if(keys.length > 1) {
-            diff = _.omit(diff, _.isNull);
-            keys = _.keys(diff);
+            if(keys.length > 1) {
+              diff = _.omit(diff, _.isNull);
+              keys = _.keys(diff);
+            }
+            //console.log('keys, diff:', keys, diff, {
+            //  cur: _.clone(params),
+            //  prev: _.clone(service.schema.params)
+            //});
+
+            params.updateSchema = _.first(keys);
           }
-          //console.log('keys, diff:', keys, diff, {
-          //  cur: _.clone(params),
-          //  prev: _.clone(service.schema.params)
-          //});
-
-          params.updateSchema = _.first(keys);
 
           if(!params.updateSchema) {
             diff = cnUtil.diff(params, _.omit(service.schema.params, 'updateSchema'));
@@ -1304,12 +1316,15 @@
 
         if(schema.diff.data) {
           _.each(schema.diff.data, function(data, key) {
+            if (data.cursor) {
+              data.data = service.schema.data[key].data.concat(data.data);
+            }
             service.schema.data[key] = data;
             console.log('key, service.resolveRegister[key]:', key, service.resolveRegister[key]);
             if(service.resolveRegister[key]) {
               _.each(service.resolveRegister[key], function(register) {
                 console.log('register, data:', register, data);
-                register.field[register.key] = data;
+                service.handleResolve(register.field, register.key, `schema.data.${key}`);
               });
             }
           });
