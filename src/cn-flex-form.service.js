@@ -1265,11 +1265,12 @@
       service.refreshSchema = _.debounce(function(updateSchema) {
         var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
         var diff = cnUtil.diff(service.schema.params, params, true);
+        var keys;
 
         if(diff || updateSchema) {
           if (updateSchema) params.updateSchema = updateSchema;
           else {
-            var keys = _.keys(diff);
+            keys = _.keys(diff);
 
             if(keys.length > 1) {
               diff = _.omit(diff, _.isNull);
@@ -1316,9 +1317,10 @@
 
         if(schema.diff.data) {
           _.each(schema.diff.data, function(data, key) {
-            if (data.cursor) {
+            if(data.cursor && !_.isEmpty(service.schema.data[key].data)) {
               data.data = service.schema.data[key].data.concat(data.data);
             }
+            console.log('data.data:', data.data);
             service.schema.data[key] = data;
             console.log('key, service.resolveRegister[key]:', key, service.resolveRegister[key]);
             if(service.resolveRegister[key]) {

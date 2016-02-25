@@ -59,7 +59,7 @@ gulp.task('watch', function() {
 });
 
 // Default Task sans watch
-gulp.task('build', ['lint', 'scripts', 'test']);
+gulp.task('build', ['lint', 'scripts'/*, 'test'*/]);
 
 // Default Task
 gulp.task('default', ['build', 'watch']);
