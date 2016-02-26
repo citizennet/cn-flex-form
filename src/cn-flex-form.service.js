@@ -108,55 +108,55 @@
     }
 
     _.extend(CNFlexForm.prototype, {
-      compile: compile,
-      addArrayCopy: addArrayCopy,
-      addToDataCache: addToDataCache,
-      addToFormCache: addToFormCache,
-      broadcastErrors: broadcastErrors,
-      buildError: buildError,
-      cleanup: cleanup,
-      deregisterHandlers: deregisterHandlers,
-      getArrayCopies: getArrayCopies,
-      getFromDataCache: getFromDataCache,
-      getFromFormCache: getFromFormCache,
-      getKey: getKey,
-      getSchema: getSchema,
-      handleResolve: handleResolve,
-      initArrayCopyWatch: initArrayCopyWatch,
-      initModelWatch: initModelWatch,
-      initSchemaParams: initSchemaParams,
-      isCompiled: isCompiled,
-      isConditionFunction: isConditionFunction,
-      onModelWatch: onModelWatch,
-      parseCondition: parseCondition,
-      parseExpression: parseExpression,
-      processDefault: processDefault,
-      processDisplay: processDisplay,
-      processField: processField,
-      processFieldset: processFieldset,
-      processFieldWatch: processFieldWatch,
-      processComponent: processComponent,
-      processCurrency: processCurrency,
-      processPercentage: processPercentage,
-      processDate: processDate,
-      processHelp: processHelp,
-      processRadiobuttons: processRadiobuttons,
-      processReusable:processReusable,
-      processSchema: processSchema,
-      processSelectDisplay: processSelectDisplay,
-      processResolve: processResolve,
-      processSection: processSection,
-      processSelect: processSelect,
-      processTemplate: processTemplate,
-      processToggle: processToggle,
-      processUpdatedSchema: processUpdatedSchema,
-      processMediaUpload: processMediaUpload,
-      registerArrayHandlers: registerArrayHandlers,
-      registerHandler: registerHandler,
-      registerResolve: registerResolve,
-      setArrayIndex: setArrayIndex,
-      setupConfig: setupConfig,
-      setupSchemaRefresh: setupSchemaRefresh
+      compile,
+      addArrayCopy,
+      addToDataCache,
+      addToFormCache,
+      broadcastErrors,
+      buildError,
+      cleanup,
+      deregisterHandlers,
+      getArrayCopies,
+      getFromDataCache,
+      getFromFormCache,
+      getKey,
+      getSchema,
+      handleResolve,
+      initArrayCopyWatch,
+      initModelWatch,
+      initSchemaParams,
+      isCompiled,
+      isConditionFunction,
+      onModelWatch,
+      parseCondition,
+      parseExpression,
+      processDefault,
+      processDisplay,
+      processField,
+      processFieldset,
+      processFieldWatch,
+      processComponent,
+      processCurrency,
+      processPercentage,
+      processDate,
+      processHelp,
+      processRadiobuttons,
+      processReusable,
+      processSchema,
+      processSelectDisplay,
+      processResolve,
+      processSection,
+      processSelect,
+      processTemplate,
+      processToggle,
+      processUpdatedSchema,
+      processMediaUpload,
+      registerArrayHandlers,
+      registerHandler,
+      registerResolve,
+      setArrayIndex,
+      setupConfig,
+      setupSchemaRefresh
     });
 
     return CNFlexFormConstructor;
@@ -378,7 +378,6 @@
 
         var resolveType = dataKey.match(/^(schema\.data\.|model\.)(\w+)/);
 
-        console.log('resolveType:', resolveType);
         if(resolveType) {
           if(resolveType[1] === 'schema.data.') {
             service.registerResolve(field, fieldKey, resolveType[2]);
@@ -387,7 +386,6 @@
             service.registerHandler(resolveType[2], function() {
               service.handleResolve(field, fieldKey, dataKey);
             });
-            console.log('service.listeners:', service.listeners);
           }
         }
       });
@@ -406,11 +404,10 @@
       } else {
         delete field.loadMore;
       }
-      field[fieldKey] = (data && data.cursor) ? data.data : data;
+      field[fieldKey] = (data && data.data) ? data.data : data;
     }
 
     function registerResolve(field, fieldKey, dataKey) {
-      console.log('registerResolve:', field, fieldKey, dataKey);
       var service = this;
 
       service.resolveRegister[dataKey] = service.resolveRegister[dataKey] || {};
@@ -675,7 +672,6 @@
     function onModelWatch(cur, prev) {
       var service = this;
       if(!angular.equals(cur, prev)) {
-        console.log('service.model === cur:', service.model === cur);
         cnUtil.cleanModel(service.model);
 
         service.prevParams = angular.copy(service.params);
@@ -1116,7 +1112,8 @@
 
     function setupArraySelectDisplay(selectDisplay, selectField, service) {
       _.each(selectDisplay.items, function(item) {
-        if (item.condition !== 'false') {
+        console.log('item.condition:', item.condition, item.key);
+        if(item.condition !== 'false') {
           item.condition = 'true';
         }
       });
@@ -1132,6 +1129,7 @@
           var formCopies = service.getArrayCopies(key);
           if (_.includes(selectValue, splitKey[splitKey.length - 1])) {
             _.each(formCopies, function(copy) {
+              console.log('copy.condition, copy:', copy.condition, copy);
               if (getArrayIndex(copy) == index) {
                 copy.condition = 'true';
               }
@@ -1139,6 +1137,7 @@
           } else {
             _.each(formCopies, function(copy) {
               if (getArrayIndex(copy) == index) {
+                console.log('copy.condition, copy:', copy.condition, copy);
                 copy.condition = 'false';
                 service.parseExpression(service.getKey(copy.key), service.model).set();
               }
@@ -1317,15 +1316,12 @@
 
         if(schema.diff.data) {
           _.each(schema.diff.data, function(data, key) {
-            if(data.cursor && !_.isEmpty(service.schema.data[key].data)) {
+            if(data.data && !_.isEmpty(service.schema.data[key].data)) {
               data.data = service.schema.data[key].data.concat(data.data);
             }
-            console.log('data.data:', data.data);
             service.schema.data[key] = data;
-            console.log('key, service.resolveRegister[key]:', key, service.resolveRegister[key]);
             if(service.resolveRegister[key]) {
               _.each(service.resolveRegister[key], function(register) {
-                console.log('register, data:', register, data);
                 service.handleResolve(register.field, register.key, `schema.data.${key}`);
               });
             }
