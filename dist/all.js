@@ -1387,7 +1387,7 @@
     function processReusable(field) {
       var service = this;
       field.type = 'cn-reusable';
-
+      field.view = field.view || 'new';
       field.items.forEach(service.processField.bind(service));
       field.items = [{
         type: 'section',
