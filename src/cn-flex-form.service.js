@@ -12,6 +12,8 @@
     'cn-display': 'processDisplay',
     'cn-currency': 'processCurrency',
     'cn-percentage': 'processPercentage',
+    'cn-mediaupload': 'processMediaUpload',
+    'cn-reusable': 'processReusable',
     'cn-toggle': 'processToggle',
     'section': 'processSection'
   };
@@ -90,12 +92,13 @@
     function CNFlexForm(schema, model, config) {
       this.arrayCopies = {};
       this.arrayListeners = {};
+      this.dataCache = {};
       this.defaults = {};
       this.errors = [];
       this.events = [];
       this.formCache = {};
       this.listeners = {};
-      this.dataCache = {};
+      this.resolveRegister = {};
       this.model = model;
       this.updates = 0;
 
@@ -105,52 +108,56 @@
     }
 
     _.extend(CNFlexForm.prototype, {
-      compile: compile,
-      addArrayCopy: addArrayCopy,
-      addToDataCache: addToDataCache,
-      addToFormCache: addToFormCache,
-      broadcastErrors: broadcastErrors,
-      buildError: buildError,
-      cleanup: cleanup,
-      deregisterHandlers: deregisterHandlers,
-      getArrayCopies: getArrayCopies,
-      getFromDataCache: getFromDataCache,
-      getFromFormCache: getFromFormCache,
-      getKey: getKey,
-      getSchema: getSchema,
-      initArrayCopyWatch: initArrayCopyWatch,
-      initModelWatch: initModelWatch,
-      initSchemaParams: initSchemaParams,
-      isCompiled: isCompiled,
-      isConditionFunction: isConditionFunction,
-      onModelWatch: onModelWatch,
-      parseCondition: parseCondition,
-      parseExpression: parseExpression,
-      processDefault: processDefault,
-      processDisplay: processDisplay,
-      processField: processField,
-      processFieldset: processFieldset,
-      processFieldWatch: processFieldWatch,
-      processComponent: processComponent,
-      processCurrency: processCurrency,
-      processPercentage: processPercentage,
-      processDate: processDate,
-      processHelp: processHelp,
-      processRadiobuttons: processRadiobuttons,
-      processSchema: processSchema,
-      processSelectDisplay: processSelectDisplay,
-      processResolve: processResolve,
-      processSection: processSection,
-      processSelect: processSelect,
-      processTemplate: processTemplate,
-      processToggle: processToggle,
-      processUpdatedSchema: processUpdatedSchema,
-      processMediaUpload: processMediaUpload,
-      registerArrayHandlers: registerArrayHandlers,
-      registerHandler: registerHandler,
-      setArrayIndex: setArrayIndex,
-      setupConfig: setupConfig,
-      setupSchemaRefresh: setupSchemaRefresh
+      compile,
+      addArrayCopy,
+      addToDataCache,
+      addToFormCache,
+      broadcastErrors,
+      buildError,
+      cleanup,
+      deregisterHandlers,
+      getArrayCopies,
+      getArrayCopiesFor,
+      getFromDataCache,
+      getFromFormCache,
+      getKey,
+      getSchema,
+      handleResolve,
+      initArrayCopyWatch,
+      initModelWatch,
+      initSchemaParams,
+      isCompiled,
+      isConditionFunction,
+      onModelWatch,
+      parseCondition,
+      parseExpression,
+      processDefault,
+      processDisplay,
+      processField,
+      processFieldset,
+      processFieldWatch,
+      processComponent,
+      processCurrency,
+      processPercentage,
+      processDate,
+      processHelp,
+      processRadiobuttons,
+      processReusable,
+      processSchema,
+      processSelectDisplay,
+      processResolve,
+      processSection,
+      processSelect,
+      processTemplate,
+      processToggle,
+      processUpdatedSchema,
+      processMediaUpload,
+      registerArrayHandlers,
+      registerHandler,
+      registerResolve,
+      setArrayIndex,
+      setupConfig,
+      setupSchemaRefresh
     });
 
     return CNFlexFormConstructor;
@@ -368,12 +375,47 @@
       var service = this;
 
       _.each(field.resolve, function(dataKey, fieldKey) {
-        //field[fieldKey] = service.schema.data[dataKey];
-        //console.log('service.parseExpression(dataKey).get():', dataKey, fieldKey, service.parseExpression(dataKey).get());
-        field[fieldKey] = service.parseExpression(dataKey).get();
+        service.handleResolve(field, fieldKey, dataKey);
+
+        var resolveType = dataKey.match(/^(schema\.data\.|model\.)(\w+)/);
+
+        if(resolveType) {
+          if(resolveType[1] === 'schema.data.') {
+            service.registerResolve(field, fieldKey, resolveType[2]);
+          }
+          else if(resolveType[1] === 'model.') {
+            service.registerHandler(resolveType[2], function() {
+              service.handleResolve(field, fieldKey, dataKey);
+            });
+          }
+        }
       });
 
       return field;
+    }
+
+    function handleResolve(field, fieldKey, exp) {
+      var service = this;
+      var data = service.parseExpression(exp).get();
+      if (data && data.cursor) {
+        field.loadMore = function() {
+          var dataKey = exp.match(/schema\.data\.(.+)/)[1];
+          service.refreshSchema(`data:${dataKey}:${data.cursor}`);
+        };
+      } else {
+        delete field.loadMore;
+      }
+      field[fieldKey] = (data && data.data) ? data.data : data;
+    }
+
+    function registerResolve(field, fieldKey, dataKey) {
+      var service = this;
+
+      service.resolveRegister[dataKey] = service.resolveRegister[dataKey] || {};
+      service.resolveRegister[dataKey][service.getKey(field.key)] = {
+        field: field,
+        key: fieldKey
+      };
     }
 
     function processFieldWatch(field) {
@@ -631,6 +673,7 @@
     function onModelWatch(cur, prev) {
       var service = this;
       if(!angular.equals(cur, prev)) {
+        cnUtil.cleanModel(service.model);
 
         service.prevParams = angular.copy(service.params);
         service.params = {};
@@ -687,30 +730,61 @@
 
     function initArrayCopyWatch() {
       var service = this;
+
       service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
-        //console.log('propagated scope:', service.getKey(scope.form.key), scope);
-        var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
+        var key = service.getKey(scope.form.key);
+        var index = key.match(/^.*\[(\d+)].*$/);
+
+        key = key.replace(/\[\d+]/g, '[]');
+        index = index && parseInt(index[1]);
+        //console.log('key, index, scope.form.key, scope.form:', key, index, scope.form.key, scope.form);
+
         if(!scope.form.condition) scope.form.condition = 'true';
-        service.addArrayCopy(scope.form, key);
+
+        service.addArrayCopy(scope.form, key, index);
+        //console.log('service.arrayCopies:', service.arrayCopies);
         scope.$emit('flexFormArrayCopyAdded', key);
       }));
-      service.events.push($rootScope.$on('schemaFormDeleteFromArray', function(event, scope, index) {
-        if (scope.form.link) {
+
+      service.events.push($rootScope.$on('schemaFormDeleteScope', function(event, scope, index) {
+        console.log('schemaFormDeleteScope:', index, scope.form, scope);
+        var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
+        var copies = service.getArrayCopiesFor(key);
+
+        copies.forEach((list) => {
+          list.splice(index, 1);
+        });
+
+        if(scope.form.link) {
           var list = service.parseExpression(scope.form.link, service.model).get();
           list.splice(index, 1);
         }
       }));
     }
 
-    function addArrayCopy(form, key) {
+    function addArrayCopy(form, key, index) {
       var service = this;
+      if(!index || index < 0) index = 0;
       if(!service.arrayCopies[key]) service.arrayCopies[key] = [];
-      service.arrayCopies[key].push(form);
+      service.arrayCopies[key][index] = form;
+      //service.arrayCopies[key].push(form);
     }
 
     function getArrayCopies(key) {
       var service = this;
       return service.arrayCopies[key];
+    }
+
+    function getArrayCopiesFor(keyStart) {
+      var service = this;
+      var copiesList = [];
+      keyStart += '[]';
+
+      _.each(service.arrayCopies, (copies, key) => {
+        if(key.includes(keyStart)) copiesList.push(copies);
+      });
+
+      return copiesList;
     }
 
     function addToFormCache(field, key) {
@@ -857,6 +931,18 @@
 
     function processPercentage(field) {
       field.type = 'cn-percentage';
+    }
+
+    function processReusable(field) {
+      var service = this;
+      field.type = 'cn-reusable';
+      field.view = field.view || 'new';
+      field.items.forEach(service.processField.bind(service));
+      field.items = [{
+        type: 'section',
+        items: field.items,
+        condition: '!model.' + service.getKey(field.key) + '.id'
+      }];
     }
 
     function processMediaUpload(field) {
@@ -1058,7 +1144,7 @@
 
     function setupArraySelectDisplay(selectDisplay, selectField, service) {
       _.each(selectDisplay.items, function(item) {
-        if (item.condition !== 'false') {
+        if(item.condition !== 'false') {
           item.condition = 'true';
         }
       });
@@ -1160,9 +1246,9 @@
           if (selectKey === key) return;
           var selectValue = service.parseExpression(selectKey, service.model).get();
           if (_.includes(selectValue, splitKey[splitKey.length - 1])) {
-            item.condition = "true";
+            item.condition = 'true';
           } else {
-            item.condition = "false";
+            item.condition = 'false';
             service.parseExpression(key, service.model).set();
           }
         });
@@ -1204,23 +1290,27 @@
 
     function setupSchemaRefresh(refresh) {
       var service = this;
-      service.refreshSchema = _.debounce(function(force) {
+      service.refreshSchema = _.debounce(function(updateSchema) {
         var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
         var diff = cnUtil.diff(service.schema.params, params, true);
+        var keys;
 
-        if(diff || force) {
-          var keys = _.keys(diff);
-
-          if(keys.length > 1) {
-            diff = _.omit(diff, _.isNull);
+        if(diff || updateSchema) {
+          if (updateSchema) params.updateSchema = updateSchema;
+          else {
             keys = _.keys(diff);
-          }
-          //console.log('keys, diff:', keys, diff, {
-          //  cur: _.clone(params),
-          //  prev: _.clone(service.schema.params)
-          //});
 
-          params.updateSchema = _.first(keys);
+            if(keys.length > 1) {
+              diff = _.omit(diff, _.isNull);
+              keys = _.keys(diff);
+            }
+            //console.log('keys, diff:', keys, diff, {
+            //  cur: _.clone(params),
+            //  prev: _.clone(service.schema.params)
+            //});
+
+            params.updateSchema = _.first(keys);
+          }
 
           if(!params.updateSchema) {
             diff = cnUtil.diff(params, _.omit(service.schema.params, 'updateSchema'));
@@ -1255,7 +1345,15 @@
 
         if(schema.diff.data) {
           _.each(schema.diff.data, function(data, key) {
+            if(data.data && !_.isEmpty(service.schema.data[key].data)) {
+              data.data = service.schema.data[key].data.concat(data.data);
+            }
             service.schema.data[key] = data;
+            if(service.resolveRegister[key]) {
+              _.each(service.resolveRegister[key], function(register) {
+                service.handleResolve(register.field, register.key, `schema.data.${key}`);
+              });
+            }
           });
         }
 

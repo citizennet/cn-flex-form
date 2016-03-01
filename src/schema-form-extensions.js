@@ -18,7 +18,8 @@
       'cn-radiobuttons',
       'cn-percentage',
       'cn-display',
-      'cn-mediaupload'
+      'cn-mediaupload',
+      'cn-reusable'
     ];
 
     _.each(extensions, function(extension) {
@@ -92,7 +93,7 @@
             display-property="{{form.displayProperty || \'name\'}}"\
             value-property="{{form.valueProperty || \'value\'}}"\
             placeholder="{{form.placeholder || \' \'}}"\
-            add-on-blur="false"\
+            add-on-blur="true"\
             add-on-comma="false"\
             add-from-autocomplete-only="{{!form.allowNew}}"\
             on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\
@@ -312,6 +313,38 @@
           </media-upload>\
           <span class="help-block" sf-message="form.description"></span>\
        </div>\
+        '
+    );
+
+    $templateCache.put(
+        'app/components/cn-flex-form/forms/cn-reusable.html',
+        '\
+        <div class="form-group cn-reusable {{form.htmlClass}}"\
+             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
+          <label class="control-label"\
+                 ng-show="showTitle()"\
+                 for="{{form.key.join(\'.\')}}">{{form.title}}</label>\
+          <cn-select-or\
+            ng-show="form.key"\
+            select-from="form.library"\
+            ng-model="$$value$$"\
+            ng-model-options="form.ngModelOptions"\
+            sf-changed="form"\
+            schema-validate="form"\
+            ff-form="form"\
+            directiveId="form.directiveId"\
+            item-template="form.itemTemplate"\
+            toggle-text="form.toggleText"\
+            disabled="form.readonly"\
+            view="form.view">\
+            <sf-decorator ng-repeat="item in form.items" form="item"/>\
+          </cn-select-or>\
+          <p ng-if="form.loadMore && form.view === \'list\'">\
+            <a ng-click="form.loadMore()"\
+               class="btn btn-default btn-block">Load More</a>\
+          </p>\
+          <span class="help-block" sf-message="form.description"></span>\
+        </div>\
         '
     );
   }

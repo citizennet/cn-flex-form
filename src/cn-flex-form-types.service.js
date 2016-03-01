@@ -53,6 +53,16 @@
       type: 'cn-toggle'
     }, {
       condition: function(field) {
+        return field.type === 'mediaupload';
+      },
+      type: 'cn-mediaupload'
+    }, {
+      condition: function(field) {
+        return field.type === 'reusable';
+      },
+      type: 'cn-reusable'
+    }, {
+      condition: function(field) {
         return field.type === 'array';
       },
       type: 'section'
@@ -83,7 +93,7 @@
             return fieldTypeRegister[i].type;
           }
         }
-        return field.schema && field.schema.type;
+        return field.type || field.schema && field.schema.type;
       }
     }
 
