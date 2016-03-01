@@ -16,7 +16,8 @@ gulp.task('lint', function() {
       .pipe(jshint({
         multistr: true,
         validthis: true,
-        evil: true
+        evil: true,
+        esnext: true
       }))
       .pipe(jshint.reporter('default'));
 });
@@ -58,7 +59,7 @@ gulp.task('watch', function() {
 });
 
 // Default Task sans watch
-gulp.task('build', ['lint', 'scripts', 'test']);
+gulp.task('build', ['lint', 'scripts'/*, 'test'*/]);
 
 // Default Task
 gulp.task('default', ['build', 'watch']);
