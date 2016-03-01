@@ -117,6 +117,7 @@
       cleanup,
       deregisterHandlers,
       getArrayCopies,
+      getArrayCopiesFor,
       getFromDataCache,
       getFromFormCache,
       getKey,
@@ -729,30 +730,61 @@
 
     function initArrayCopyWatch() {
       var service = this;
+
       service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
-        //console.log('propagated scope:', service.getKey(scope.form.key), scope);
-        var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
+        var key = service.getKey(scope.form.key);
+        var index = key.match(/^.*\[(\d+)].*$/);
+
+        key = key.replace(/\[\d+]/g, '[]');
+        index = index && parseInt(index[1]);
+        //console.log('key, index, scope.form.key, scope.form:', key, index, scope.form.key, scope.form);
+
         if(!scope.form.condition) scope.form.condition = 'true';
-        service.addArrayCopy(scope.form, key);
+
+        service.addArrayCopy(scope.form, key, index);
+        //console.log('service.arrayCopies:', service.arrayCopies);
         scope.$emit('flexFormArrayCopyAdded', key);
       }));
-      service.events.push($rootScope.$on('schemaFormDeleteFromArray', function(event, scope, index) {
-        if (scope.form.link) {
+
+      service.events.push($rootScope.$on('schemaFormDeleteScope', function(event, scope, index) {
+        console.log('schemaFormDeleteScope:', index, scope.form, scope);
+        var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
+        var copies = service.getArrayCopiesFor(key);
+
+        copies.forEach((list) => {
+          list.splice(index, 1);
+        });
+
+        if(scope.form.link) {
           var list = service.parseExpression(scope.form.link, service.model).get();
           list.splice(index, 1);
         }
       }));
     }
 
-    function addArrayCopy(form, key) {
+    function addArrayCopy(form, key, index) {
       var service = this;
+      if(!index || index < 0) index = 0;
       if(!service.arrayCopies[key]) service.arrayCopies[key] = [];
-      service.arrayCopies[key].push(form);
+      service.arrayCopies[key][index] = form;
+      //service.arrayCopies[key].push(form);
     }
 
     function getArrayCopies(key) {
       var service = this;
       return service.arrayCopies[key];
+    }
+
+    function getArrayCopiesFor(keyStart) {
+      var service = this;
+      var copiesList = [];
+      keyStart += '[]';
+
+      _.each(service.arrayCopies, (copies, key) => {
+        if(key.includes(keyStart)) copiesList.push(copies);
+      });
+
+      return copiesList;
     }
 
     function addToFormCache(field, key) {
@@ -1112,7 +1144,6 @@
 
     function setupArraySelectDisplay(selectDisplay, selectField, service) {
       _.each(selectDisplay.items, function(item) {
-        console.log('item.condition:', item.condition, item.key);
         if(item.condition !== 'false') {
           item.condition = 'true';
         }
@@ -1129,7 +1160,6 @@
           var formCopies = service.getArrayCopies(key);
           if (_.includes(selectValue, splitKey[splitKey.length - 1])) {
             _.each(formCopies, function(copy) {
-              console.log('copy.condition, copy:', copy.condition, copy);
               if (getArrayIndex(copy) == index) {
                 copy.condition = 'true';
               }
@@ -1137,7 +1167,6 @@
           } else {
             _.each(formCopies, function(copy) {
               if (getArrayIndex(copy) == index) {
-                console.log('copy.condition, copy:', copy.condition, copy);
                 copy.condition = 'false';
                 service.parseExpression(service.getKey(copy.key), service.model).set();
               }
@@ -1217,9 +1246,9 @@
           if (selectKey === key) return;
           var selectValue = service.parseExpression(selectKey, service.model).get();
           if (_.includes(selectValue, splitKey[splitKey.length - 1])) {
-            item.condition = "true";
+            item.condition = 'true';
           } else {
-            item.condition = "false";
+            item.condition = 'false';
             service.parseExpression(key, service.model).set();
           }
         });
