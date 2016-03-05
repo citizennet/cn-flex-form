@@ -73,7 +73,8 @@
             schema-validate="form"\
             input-id="{{form.key.join(\'.\')}}"\
             min-date="form.minDate"\
-            required="form.required"\
+            cn-date-required="form.required"\
+            placeholder="{{form.placeholder}}"\
             model-type="{{form.schema.type}}">\
           </cn-datetimepicker>\
           <span class="help-block" sf-message="form.description"></span>\
