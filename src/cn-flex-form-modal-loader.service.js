@@ -20,6 +20,7 @@
   function getPromise(state, id, $q) {
     var promises = getPromises(state);
     var promise = promises[id];
+    console.log('getPromise:', promises, state, id);
     if(!promise) {
       promise = $q.defer();
       promises[id] = promise;
