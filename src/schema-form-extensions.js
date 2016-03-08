@@ -44,8 +44,8 @@
               class="pull-left"\
               ng-show="form.key"\
               enabled="$$value$$"\
-              on-value="angular.isDefined(form.onValue) ? form.onValue : true"\
-              off-value="angular.isDefined(form.offValue) ? form.offValue : false">\
+              on-value="form.onValue"\
+              off-value="form.offValue">\
             </cn-toggle-switch>\
             <span ng-show="form.onText && form.offText">\
               {{$$value$$ === form.onValue ? form.onText : form.offText}}\
