@@ -1823,7 +1823,7 @@
 
         if (schema.diff.data) {
           _.each(schema.diff.data, function (data, key) {
-            if (data.data && !_.isEmpty(service.schema.data[key].data)) {
+            if (data.data && !_.isEmpty(service.schema.data[key].data) && !data.reset) {
               data.data = service.schema.data[key].data.concat(data.data);
             }
             service.schema.data[key] = data;
