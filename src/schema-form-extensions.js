@@ -44,8 +44,8 @@
               class="pull-left"\
               ng-show="form.key"\
               enabled="$$value$$"\
-              on-value="angular.isDefined(form.onValue) ? form.onValue : true"\
-              off-value="angular.isDefined(form.offValue) ? form.offValue : false">\
+              on-value="form.onValue"\
+              off-value="form.offValue">\
             </cn-toggle-switch>\
             <span ng-show="form.onText && form.offText">\
               {{$$value$$ === form.onValue ? form.onText : form.offText}}\
@@ -73,7 +73,8 @@
             schema-validate="form"\
             input-id="{{form.key.join(\'.\')}}"\
             min-date="form.minDate"\
-            required="form.required"\
+            cn-date-required="form.required"\
+            placeholder="{{form.placeholder}}"\
             model-type="{{form.schema.type}}">\
           </cn-datetimepicker>\
           <span class="help-block" sf-message="form.description"></span>\

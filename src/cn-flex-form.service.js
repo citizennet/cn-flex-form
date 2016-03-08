@@ -67,47 +67,7 @@
                              $interpolate, $rootScope, $timeout, cnUtil) {
 
     var services = [];
-
-    function CNFlexFormConstructor(schema, model, config) {
-      var service;
-      if(services.length) {
-        for(var i = 0, l = services.length; i < l; i++) {
-          if(services[i].model === model) {
-            service = services[i];
-            //console.log('service.compile:', service.compile);
-            service.compile(schema, model, config);
-            break;
-          }
-        }
-        //console.log('services1:', services, service);
-      }
-      if(!service) {
-        service = new CNFlexForm(schema, model, config);
-        services.push(service);
-        //console.log('services2:', services, service);
-      }
-      return service || new CNFlexForm(schema, model, config);
-    }
-
-    function CNFlexForm(schema, model, config) {
-      this.arrayCopies = {};
-      this.arrayListeners = {};
-      this.dataCache = {};
-      this.defaults = {};
-      this.errors = [];
-      this.events = [];
-      this.formCache = {};
-      this.listeners = {};
-      this.resolveRegister = {};
-      this.model = model;
-      this.updates = 0;
-
-      this.params = cnFlexFormConfig.getStateParams();
-
-      this.compile(schema, model, config);
-    }
-
-    _.extend(CNFlexForm.prototype, {
+    var prototype = {
       compile,
       addArrayCopy,
       addToDataCache,
@@ -158,7 +118,49 @@
       setArrayIndex,
       setupConfig,
       setupSchemaRefresh
-    });
+    };
+
+    function CNFlexFormConstructor(schema, model, config) {
+      var service;
+      if(services.length) {
+        for(var i = 0, l = services.length; i < l; i++) {
+          if(services[i].model === model) {
+            service = services[i];
+            //console.log('service.compile:', service.compile);
+            service.compile(schema, model, config);
+            break;
+          }
+        }
+        //console.log('services1:', services, service);
+      }
+      if(!service) {
+        service = new CNFlexForm(schema, model, config);
+        services.push(service);
+        //console.log('services2:', services, service);
+      }
+      return service || new CNFlexForm(schema, model, config);
+    }
+
+    function CNFlexForm(schema, model, config) {
+      this.arrayCopies = {};
+      this.arrayListeners = {};
+      this.dataCache = {};
+      this.defaults = {};
+      this.errors = [];
+      this.events = [];
+      this.formCache = {};
+      this.listeners = {};
+      this.resolveRegister = {};
+      this.model = model;
+      this.updates = 0;
+
+      this.params = cnFlexFormConfig.getStateParams();
+
+      this.compile(schema, model, config);
+    }
+
+    _.extend(CNFlexForm.prototype, prototype);
+    _.extend(CNFlexFormConstructor, prototype);
 
     return CNFlexFormConstructor;
 
@@ -333,8 +335,9 @@
     }
 
     function getSchema(key, depth) {
-      if(!key) return;
       var service = this;
+      if(!key) return;
+
       key = service.getKey(key);
 
       //console.log('getSchema:', key, depth, service);
@@ -432,11 +435,12 @@
           var resolution = watch.resolution;
           var handler;
 
+          //console.log('resolution:', resolution);
           if(_.isFunction(resolution)) {
-            handler = function() {
+            handler = function(cur, prev) {
               var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
               if(!parsedCondition || $parse(parsedCondition)(service)) {
-                resolution();
+                resolution(cur, prev);
               }
             };
           }
@@ -729,6 +733,7 @@
     }
 
     function initArrayCopyWatch() {
+      console.log('initArrayCopyWatch: how many times does this event get registered?');
       var service = this;
 
       service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
@@ -1345,7 +1350,7 @@
 
         if(schema.diff.data) {
           _.each(schema.diff.data, function(data, key) {
-            if(data.data && !_.isEmpty(service.schema.data[key].data)) {
+            if(data.data && !_.isEmpty(service.schema.data[key].data) && !data.reset) {
               data.data = service.schema.data[key].data.concat(data.data);
             }
             service.schema.data[key] = data;

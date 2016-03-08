@@ -48,7 +48,7 @@
       type: 'cn-percentage'
     }, {
       condition: function(field) {
-        return field.type === 'boolean';
+        return field.type === 'toggle' || field.type === 'boolean';
       },
       type: 'cn-toggle'
     }, {

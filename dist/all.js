@@ -63,33 +63,37 @@
       controller: FlexFormHeader,
       bindToController: true,
       controllerAs: 'vm',
-      template: '<div class="col-md-6">\
-                  <h5 ng-if="vm.config.title.lead">{{::vm.config.title.lead}}</h5>\
-                  <h1>{{vm.config.title.main}}</h1>\
-                  <h5 ng-if="vm.config.title.sub">{{::vm.config.title.sub}}</h5>\
-                </div>\
-                <div class="{{vm.config.buttonContainerClass}}">\
-                  <div class="btn-options"\
-                       ng-mouseover="vm.loadOffscreen()">\
-                    <a class="btn" ui-sref="{{vm.config.actionConfig.returnState}}">\
-                      {{vm.config.actionConfig.returnText || \'Cancel\'}}\
-                    </a>\
-                    <span ng-repeat="button in vm.config.actionConfig.actions">\
-                      <a class="btn {{button.style && \'btn-\'+button.style}}"\
-                         ng-disabled="vm.isDisabled(button)"\
-                         ng-class="{\'btn-primary\': $index === vm.config.actionConfig.actions.length - 1}"\
-                         ng-click="vm.submit({ handler: button.handler})"\
-                         tooltip="{{button.helptext}}"\
-                         tooltip-placement="bottom">\
-                        {{button.text || \'Save\'}}\
-                      </a>\
-                    </span>\
-                  </div>\
-                  <p class="data-updated-at text-right" id="data-updated-at">\
-                    <a ng-click="vm.updateData()">Update Data</a>\
-                  </p>\
-                </div>\
-                '
+      template: '\
+          <div class="col-md-6">\
+            <h5 ng-if="vm.config.title.lead">{{::vm.config.title.lead}}</h5>\
+            <h1>{{vm.config.title.main}}</h1>\
+            <h5 ng-if="vm.config.title.sub">{{::vm.config.title.sub}}</h5>\
+          </div>\
+          <div class="{{vm.config.buttonContainerClass || \'page-action-btns\'}}">\
+            <div class="btn-options"\
+                 ng-mouseover="vm.loadOffscreen()">\
+              <a class="btn"\
+                 ng-if="vm.config.actionConfig.returnState"\
+                 ui-sref="{{vm.config.actionConfig.returnState}}">\
+                {{vm.config.actionConfig.returnText || \'Cancel\'}}\
+              </a>\
+              <span ng-repeat="button in vm.config.actionConfig.actions">\
+                <a class="btn {{button.style && \'btn-\'+button.style}}"\
+                   ng-disabled="vm.isDisabled(button)"\
+                   ng-class="{\'btn-primary\': $index === vm.config.actionConfig.actions.length - 1}"\
+                   ng-click="vm.submit({ handler: button.handler})"\
+                   tooltip="{{button.helptext}}"\
+                   tooltip-placement="bottom">\
+                  {{button.text || \'Save\'}}\
+                </a>\
+              </span>\
+            </div>\
+            <p class="data-updated-at text-right"\
+               id="data-updated-at"\
+               ng-hide="vm.config.noData">\
+              <a ng-click="vm.updateData()">Update Data</a>\
+            </p>\
+          </div>'
     };
   }
 
@@ -187,6 +191,7 @@
   function getPromise(state, id, $q) {
     var promises = getPromises(state);
     var promise = promises[id];
+    console.log('getPromise:', promises, state, id);
     if (!promise) {
       promise = $q.defer();
       promises[id] = promise;
@@ -232,7 +237,9 @@
     /////////////
 
     function resolveMapping(state, id, parent) {
-      getPromise(state, id, $q).resolve(parent);
+      var promise = getPromise(state, id, $q);
+      promise.resolve(parent);
+      return promise;
     }
 
     function getMapping(state) {
@@ -291,7 +298,7 @@
       type: 'cn-percentage'
     }, {
       condition: function condition(field) {
-        return field.type === 'boolean';
+        return field.type === 'toggle' || field.type === 'boolean';
       },
       type: 'cn-toggle'
     }, {
@@ -570,47 +577,7 @@
   function CNFlexFormService(Api, $parse, cnFlexFormConfig, cnFlexFormTypes, $interpolate, $rootScope, $timeout, cnUtil) {
 
     var services = [];
-
-    function CNFlexFormConstructor(schema, model, config) {
-      var service;
-      if (services.length) {
-        for (var i = 0, l = services.length; i < l; i++) {
-          if (services[i].model === model) {
-            service = services[i];
-            //console.log('service.compile:', service.compile);
-            service.compile(schema, model, config);
-            break;
-          }
-        }
-        //console.log('services1:', services, service);
-      }
-      if (!service) {
-        service = new CNFlexForm(schema, model, config);
-        services.push(service);
-        //console.log('services2:', services, service);
-      }
-      return service || new CNFlexForm(schema, model, config);
-    }
-
-    function CNFlexForm(schema, model, config) {
-      this.arrayCopies = {};
-      this.arrayListeners = {};
-      this.dataCache = {};
-      this.defaults = {};
-      this.errors = [];
-      this.events = [];
-      this.formCache = {};
-      this.listeners = {};
-      this.resolveRegister = {};
-      this.model = model;
-      this.updates = 0;
-
-      this.params = cnFlexFormConfig.getStateParams();
-
-      this.compile(schema, model, config);
-    }
-
-    _.extend(CNFlexForm.prototype, {
+    var prototype = {
       compile: compile,
       addArrayCopy: addArrayCopy,
       addToDataCache: addToDataCache,
@@ -661,7 +628,49 @@
       setArrayIndex: setArrayIndex,
       setupConfig: setupConfig,
       setupSchemaRefresh: setupSchemaRefresh
-    });
+    };
+
+    function CNFlexFormConstructor(schema, model, config) {
+      var service;
+      if (services.length) {
+        for (var i = 0, l = services.length; i < l; i++) {
+          if (services[i].model === model) {
+            service = services[i];
+            //console.log('service.compile:', service.compile);
+            service.compile(schema, model, config);
+            break;
+          }
+        }
+        //console.log('services1:', services, service);
+      }
+      if (!service) {
+        service = new CNFlexForm(schema, model, config);
+        services.push(service);
+        //console.log('services2:', services, service);
+      }
+      return service || new CNFlexForm(schema, model, config);
+    }
+
+    function CNFlexForm(schema, model, config) {
+      this.arrayCopies = {};
+      this.arrayListeners = {};
+      this.dataCache = {};
+      this.defaults = {};
+      this.errors = [];
+      this.events = [];
+      this.formCache = {};
+      this.listeners = {};
+      this.resolveRegister = {};
+      this.model = model;
+      this.updates = 0;
+
+      this.params = cnFlexFormConfig.getStateParams();
+
+      this.compile(schema, model, config);
+    }
+
+    _.extend(CNFlexForm.prototype, prototype);
+    _.extend(CNFlexFormConstructor, prototype);
 
     return CNFlexFormConstructor;
 
@@ -830,8 +839,9 @@
     }
 
     function getSchema(key, depth) {
-      if (!key) return;
       var service = this;
+      if (!key) return;
+
       key = service.getKey(key);
 
       //console.log('getSchema:', key, depth, service);
@@ -922,11 +932,12 @@
           var resolution = watch.resolution;
           var handler;
 
+          //console.log('resolution:', resolution);
           if (_.isFunction(resolution)) {
-            handler = function handler() {
+            handler = function handler(cur, prev) {
               var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
               if (!parsedCondition || $parse(parsedCondition)(service)) {
-                resolution();
+                resolution(cur, prev);
               }
             };
           } else {
@@ -1213,6 +1224,7 @@
     }
 
     function initArrayCopyWatch() {
+      console.log('initArrayCopyWatch: how many times does this event get registered?');
       var service = this;
 
       service.events.push($rootScope.$on('schemaFormPropagateScope', function (event, scope) {
@@ -1823,7 +1835,7 @@
 
         if (schema.diff.data) {
           _.each(schema.diff.data, function (data, key) {
-            if (data.data && !_.isEmpty(service.schema.data[key].data)) {
+            if (data.data && !_.isEmpty(service.schema.data[key].data) && !data.reset) {
               data.data = service.schema.data[key].data.concat(data.data);
             }
             service.schema.data[key] = data;
@@ -2051,8 +2063,8 @@
               class="pull-left"\
               ng-show="form.key"\
               enabled="$$value$$"\
-              on-value="angular.isDefined(form.onValue) ? form.onValue : true"\
-              off-value="angular.isDefined(form.offValue) ? form.offValue : false">\
+              on-value="form.onValue"\
+              off-value="form.offValue">\
             </cn-toggle-switch>\
             <span ng-show="form.onText && form.offText">\
               {{$$value$$ === form.onValue ? form.onText : form.offText}}\
@@ -2077,7 +2089,8 @@
             schema-validate="form"\
             input-id="{{form.key.join(\'.\')}}"\
             min-date="form.minDate"\
-            required="form.required"\
+            cn-date-required="form.required"\
+            placeholder="{{form.placeholder}}"\
             model-type="{{form.schema.type}}">\
           </cn-datetimepicker>\
           <span class="help-block" sf-message="form.description"></span>\
