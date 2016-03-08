@@ -237,7 +237,9 @@
     /////////////
 
     function resolveMapping(state, id, parent) {
-      getPromise(state, id, $q).resolve(parent);
+      var promise = getPromise(state, id, $q);
+      promise.resolve(parent);
+      return promise;
     }
 
     function getMapping(state) {
