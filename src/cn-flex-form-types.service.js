@@ -13,6 +13,11 @@
       type: 'hidden'
     }, {
       condition: function(field) {
+        return field.type.includes('radios');
+      },
+      type: 'cn-radios'
+    }, {
+      condition: function(field) {
         return field.type.includes('radiobuttons');
       },
       type: 'cn-radiobuttons'

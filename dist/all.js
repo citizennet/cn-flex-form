@@ -191,7 +191,6 @@
   function getPromise(state, id, $q) {
     var promises = getPromises(state);
     var promise = promises[id];
-    console.log('getPromise:', promises, state, id);
     if (!promise) {
       promise = $q.defer();
       promises[id] = promise;
@@ -237,9 +236,9 @@
     /////////////
 
     function resolveMapping(state, id, parent) {
-      var promise = getPromise(state, id, $q);
-      promise.resolve(parent);
-      return promise;
+      var d = getPromise(state, id, $q);
+      d.resolve(parent);
+      return d.promise;
     }
 
     function getMapping(state) {
@@ -261,6 +260,11 @@
         return field.type === 'hidden';
       },
       type: 'hidden'
+    }, {
+      condition: function condition(field) {
+        return field.type.includes('radios');
+      },
+      type: 'cn-radios'
     }, {
       condition: function condition(field) {
         return field.type.includes('radiobuttons');
@@ -530,6 +534,7 @@
   angular.module('cn.flex-form').provider('cnFlexFormService', cnFlexFormServiceProvider);
 
   var fieldTypeHandlers = {
+    //'cn-radios': 'processRadios',
     'cn-radiobuttons': 'processRadiobuttons',
     'cn-autocomplete': 'processSelect',
     'cn-datetimepicker': 'processDate',
@@ -611,6 +616,7 @@
       processPercentage: processPercentage,
       processDate: processDate,
       processHelp: processHelp,
+      //processRadios,
       processRadiobuttons: processRadiobuttons,
       processReusable: processReusable,
       processSchema: processSchema,
@@ -1086,9 +1092,11 @@
         return;
       }
 
+      var cur = service.parseExpression(key, service.model).get();
+
       if (!service.listeners[key]) {
-        var prev = angular.copy(service.parseExpression(key, service.model).get());
-        //console.log('key, prev:', key, prev, prev === service.parseExpression(key, service.model).get());
+        var prev = angular.copy(cur);
+        //console.log('prev:', key, prev, angular.equals(prev, service.parseExpression(key, service.model).get()));
         service.listeners[key] = {
           handlers: [],
           updateSchema: updateSchema,
@@ -1098,7 +1106,7 @@
 
       if (handler) {
         service.listeners[key].handlers.push(handler);
-        if (runHandler) handler(null, null, key);
+        if (runHandler) handler(cur, null, key);
       }
     }
 
@@ -1119,15 +1127,16 @@
           for (i = 0, l = cur; i < l; i++) {
             key = arrKey + '[' + i + ']' + '.' + fieldKey;
             service.registerHandler(key, handler, updateSchema);
-            if (runHandler) handler(null, null, key);
+            //no need to call if just reregisering handlers
+            //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
-          for (i = prev, l = cur; i < l; i++) {
-            key = arrKey + '[' + i + ']' + '.' + fieldKey;
-            service.registerHandler(key, handler, updateSchema);
-            if (runHandler) handler(null, null, key);
+            for (i = prev, l = cur; i < l; i++) {
+              key = arrKey + '[' + i + ']' + '.' + fieldKey;
+              service.registerHandler(key, handler, updateSchema, true);
+              //if(runHandler) handler(null, null, key);
+            }
           }
-        }
       };
 
       var arrVal = service.parseExpression(arrKey, service.model).get();
@@ -1185,9 +1194,9 @@
         });
 
         _.each(service.listeners, function (listener, key) {
-          //console.log('listener:', key, listener);
           if (listener) {
             var val = service.parseExpression(key, service.model).get();
+            //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
             if (!angular.equals(val, listener.prev)) {
               _.each(listener.handlers, function (handler) {
                 handler(val, listener.prev, key);

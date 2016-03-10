@@ -20,7 +20,6 @@
   function getPromise(state, id, $q) {
     var promises = getPromises(state);
     var promise = promises[id];
-    console.log('getPromise:', promises, state, id);
     if(!promise) {
       promise = $q.defer();
       promises[id] = promise;
@@ -66,9 +65,9 @@
     /////////////
 
     function resolveMapping(state, id, parent) {
-      var promise = getPromise(state, id, $q);
-      promise.resolve(parent);
-      return promise;
+      var d = getPromise(state, id, $q);
+      d.resolve(parent);
+      return d.promise;
     }
 
     function getMapping(state) {
