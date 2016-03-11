@@ -319,7 +319,21 @@
           }
 
           if(field.updateSchema) service.registerHandler(field, null, field.updateSchema);
-          if(field.error) service.errors.push(service.buildError(field));
+          if(field.error) {
+            service.errors.push(service.buildError(field));
+            if (_.isEmpty(field.ngModelOptions)) {
+              field.ngModelOptions = {
+                allowInvalid: true
+              }
+            } else {
+              field.ngModelOptions.allowInvalid = true;
+            }
+          }
+          else {
+            service.errors = _.reject(service.errors, { key: key });
+            $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
+            $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+          }
         }
       }
     }
