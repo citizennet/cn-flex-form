@@ -379,18 +379,18 @@
     function processResolve(field) {
       var service = this;
 
-      _.each(field.resolve, function(dataKey, fieldKey) {
-        service.handleResolve(field, fieldKey, dataKey);
+      _.each(field.resolve, function(dataProp, fieldProp) {
+        service.handleResolve(field, fieldProp, dataProp);
 
-        var resolveType = dataKey.match(/^(schema\.data\.|model\.)(\w+)/);
+        var resolveType = dataProp.match(/^(schema\.data\.|model\.)(\w+)/);
 
         if(resolveType) {
           if(resolveType[1] === 'schema.data.') {
-            service.registerResolve(field, fieldKey, resolveType[2]);
+            service.registerResolve(field, fieldProp, resolveType[2]);
           }
           else if(resolveType[1] === 'model.') {
             service.registerHandler(resolveType[2], function() {
-              service.handleResolve(field, fieldKey, dataKey);
+              service.handleResolve(field, fieldProp, dataProp);
             });
           }
         }
@@ -399,28 +399,32 @@
       return field;
     }
 
-    function handleResolve(field, fieldKey, exp) {
+    function handleResolve(field, fieldProp, exp) {
       var service = this;
       var data = service.parseExpression(exp).get();
       if (data && data.cursor) {
         field.loadMore = function() {
-          var dataKey = exp.match(/schema\.data\.(.+)/)[1];
-          service.refreshSchema(`data:${dataKey}:${data.cursor}`);
+          var dataProp = exp.match(/schema\.data\.(.+)/)[1];
+          service.refreshSchema(`data:${dataProp}:${data.cursor}`);
         };
       } else {
         delete field.loadMore;
       }
-      field[fieldKey] = (data && data.data) ? data.data : data;
+      field[fieldProp] = (data && data.data) ? data.data : data;
     }
 
-    function registerResolve(field, fieldKey, dataKey) {
+    function registerResolve(field, fieldProp, dataProp) {
       var service = this;
 
-      service.resolveRegister[dataKey] = service.resolveRegister[dataKey] || {};
-      service.resolveRegister[dataKey][service.getKey(field.key)] = {
+      let fieldKey = service.getKey(field.key);
+      service.resolveRegister[dataProp] = service.resolveRegister[dataProp] || {};
+
+      let register = service.resolveRegister[dataProp];
+      register[fieldKey] = register[fieldKey] || [];
+      register[fieldKey].push({
         field: field,
-        key: fieldKey
-      };
+        prop: fieldProp
+      });
     }
 
     function processFieldWatch(field) {
@@ -958,8 +962,8 @@
     function processMediaUpload(field) {
       var service = this;
       field.type = 'cn-mediaupload';
-      _.each(field.data, function(dataKey, key) {
-        field.data[key] = service.parseExpression(dataKey).get();
+      _.each(field.data, function(dataProp, key) {
+        field.data[key] = service.parseExpression(dataProp).get();
       });
     }
 
@@ -1354,14 +1358,16 @@
         service.schema.params = schema.params;
 
         if(schema.diff.data) {
-          _.each(schema.diff.data, function(data, key) {
-            if(data.data && !_.isEmpty(service.schema.data[key].data) && !data.reset) {
-              data.data = service.schema.data[key].data.concat(data.data);
+          _.each(schema.diff.data, (data, prop) => {
+            if(data.data && !_.isEmpty(service.schema.data[prop].data) && !data.reset) {
+              data.data = service.schema.data[prop].data.concat(data.data);
             }
-            service.schema.data[key] = data;
-            if(service.resolveRegister[key]) {
-              _.each(service.resolveRegister[key], function(register) {
-                service.handleResolve(register.field, register.key, `schema.data.${key}`);
+            service.schema.data[prop] = data;
+            if(service.resolveRegister[prop]) {
+              _.each(service.resolveRegister[prop], (registers) => {
+                registers.forEach(register => {
+                  service.handleResolve(register.field, register.prop, `schema.data.${prop}`);
+                });
               });
             }
           });
