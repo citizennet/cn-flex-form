@@ -695,11 +695,15 @@
 
       service.initSchemaParams();
       service.watching = true;
+      service.firstUpdate = true;
     }
 
     function onModelWatch(cur, prev) {
       var service = this;
-      if(!angular.equals(cur, prev)) {
+      // we always run through the listeners on the first update because angular seems to mess up
+      // when the defaults are applied and uses the same object for both cur and prev
+      if(service.firstUpdate || !angular.equals(cur, prev)) {
+        service.firstUpdate = false;
         cnUtil.cleanModel(service.model);
 
         service.prevParams = angular.copy(service.params);
