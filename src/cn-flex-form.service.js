@@ -319,7 +319,21 @@
           }
 
           if(field.updateSchema) service.registerHandler(field, null, field.updateSchema);
-          if(field.error) service.errors.push(service.buildError(field));
+          if(field.error) {
+            service.errors.push(service.buildError(field));
+            if (_.isEmpty(field.ngModelOptions)) {
+              field.ngModelOptions = {
+                allowInvalid: true
+              };
+            } else {
+              field.ngModelOptions.allowInvalid = true;
+            }
+          }
+          else {
+            service.errors = _.reject(service.errors, { key: key });
+            $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
+            $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+          }
         }
       }
     }
@@ -681,11 +695,15 @@
 
       service.initSchemaParams();
       service.watching = true;
+      service.firstUpdate = true;
     }
 
     function onModelWatch(cur, prev) {
       var service = this;
-      if(!angular.equals(cur, prev)) {
+      // we always run through the listeners on the first update because angular seems to mess up
+      // when the defaults are applied and uses the same object for both cur and prev
+      if(service.firstUpdate || !angular.equals(cur, prev)) {
+        service.firstUpdate = false;
         cnUtil.cleanModel(service.model);
 
         service.prevParams = angular.copy(service.params);
