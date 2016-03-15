@@ -5,6 +5,7 @@
       .provider('cnFlexFormService', cnFlexFormServiceProvider);
 
   var fieldTypeHandlers = {
+    //'cn-radios': 'processRadios',
     'cn-radiobuttons': 'processRadiobuttons',
     'cn-autocomplete': 'processSelect',
     'cn-datetimepicker': 'processDate',
@@ -101,6 +102,7 @@
       processPercentage,
       processDate,
       processHelp,
+      //processRadios,
       processRadiobuttons,
       processReusable,
       processSchema,
@@ -317,7 +319,21 @@
           }
 
           if(field.updateSchema) service.registerHandler(field, null, field.updateSchema);
-          if(field.error) service.errors.push(service.buildError(field));
+          if(field.error) {
+            service.errors.push(service.buildError(field));
+            if (_.isEmpty(field.ngModelOptions)) {
+              field.ngModelOptions = {
+                allowInvalid: true
+              };
+            } else {
+              field.ngModelOptions.allowInvalid = true;
+            }
+          }
+          else {
+            service.errors = _.reject(service.errors, { key: key });
+            $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
+            $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+          }
         }
       }
     }
@@ -377,18 +393,18 @@
     function processResolve(field) {
       var service = this;
 
-      _.each(field.resolve, function(dataKey, fieldKey) {
-        service.handleResolve(field, fieldKey, dataKey);
+      _.each(field.resolve, function(dataProp, fieldProp) {
+        service.handleResolve(field, fieldProp, dataProp);
 
-        var resolveType = dataKey.match(/^(schema\.data\.|model\.)(\w+)/);
+        var resolveType = dataProp.match(/^(schema\.data\.|model\.)(\w+)/);
 
         if(resolveType) {
           if(resolveType[1] === 'schema.data.') {
-            service.registerResolve(field, fieldKey, resolveType[2]);
+            service.registerResolve(field, fieldProp, resolveType[2]);
           }
           else if(resolveType[1] === 'model.') {
             service.registerHandler(resolveType[2], function() {
-              service.handleResolve(field, fieldKey, dataKey);
+              service.handleResolve(field, fieldProp, dataProp);
             });
           }
         }
@@ -397,28 +413,32 @@
       return field;
     }
 
-    function handleResolve(field, fieldKey, exp) {
+    function handleResolve(field, fieldProp, exp) {
       var service = this;
       var data = service.parseExpression(exp).get();
       if (data && data.cursor) {
         field.loadMore = function() {
-          var dataKey = exp.match(/schema\.data\.(.+)/)[1];
-          service.refreshSchema(`data:${dataKey}:${data.cursor}`);
+          var dataProp = exp.match(/schema\.data\.(.+)/)[1];
+          service.refreshSchema(`data:${dataProp}:${data.cursor}`);
         };
       } else {
         delete field.loadMore;
       }
-      field[fieldKey] = (data && data.data) ? data.data : data;
+      field[fieldProp] = (data && data.data) ? data.data : data;
     }
 
-    function registerResolve(field, fieldKey, dataKey) {
+    function registerResolve(field, fieldProp, dataProp) {
       var service = this;
 
-      service.resolveRegister[dataKey] = service.resolveRegister[dataKey] || {};
-      service.resolveRegister[dataKey][service.getKey(field.key)] = {
+      let fieldKey = service.getKey(field.key);
+      service.resolveRegister[dataProp] = service.resolveRegister[dataProp] || {};
+
+      let register = service.resolveRegister[dataProp];
+      register[fieldKey] = register[fieldKey] || [];
+      register[fieldKey].push({
         field: field,
-        key: fieldKey
-      };
+        prop: fieldProp
+      });
     }
 
     function processFieldWatch(field) {
@@ -591,9 +611,11 @@
         return;
       }
 
+      var cur = service.parseExpression(key, service.model).get();
+
       if(!service.listeners[key]) {
-        var prev = angular.copy(service.parseExpression(key, service.model).get());
-        //console.log('key, prev:', key, prev, prev === service.parseExpression(key, service.model).get());
+        var prev = angular.copy(cur);
+        //console.log('prev:', key, prev, angular.equals(prev, service.parseExpression(key, service.model).get()));
         service.listeners[key] = {
           handlers: [],
           updateSchema: updateSchema,
@@ -603,7 +625,7 @@
 
       if(handler) {
         service.listeners[key].handlers.push(handler);
-        if(runHandler) handler(null, null, key);
+        if(runHandler) handler(cur, null, key);
       }
     }
 
@@ -624,14 +646,15 @@
           for(i = 0, l = cur; i < l; i++) {
             key = arrKey + '[' + i + ']' + '.' + fieldKey;
             service.registerHandler(key, handler, updateSchema);
-            if(runHandler) handler(null, null, key);
+            //no need to call if just reregisering handlers
+            //if(runHandler) handler(null, null, key);
           }
         }
         else if(cur > (prev || 0)) {
           for(i = prev, l = cur; i < l; i++) {
             key = arrKey + '[' + i + ']' + '.' + fieldKey;
-            service.registerHandler(key, handler, updateSchema);
-            if(runHandler) handler(null, null, key);
+            service.registerHandler(key, handler, updateSchema, true);
+            //if(runHandler) handler(null, null, key);
           }
         }
       };
@@ -672,11 +695,15 @@
 
       service.initSchemaParams();
       service.watching = true;
+      service.firstUpdate = true;
     }
 
     function onModelWatch(cur, prev) {
       var service = this;
-      if(!angular.equals(cur, prev)) {
+      // we always run through the listeners on the first update because angular seems to mess up
+      // when the defaults are applied and uses the same object for both cur and prev
+      if(service.firstUpdate || !angular.equals(cur, prev)) {
+        service.firstUpdate = false;
         cnUtil.cleanModel(service.model);
 
         service.prevParams = angular.copy(service.params);
@@ -693,9 +720,9 @@
         });
 
         _.each(service.listeners, function(listener, key) {
-          //console.log('listener:', key, listener);
           if(listener) {
             var val = service.parseExpression(key, service.model).get();
+            //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
             if(!angular.equals(val, listener.prev)) {
               _.each(listener.handlers, function(handler) {
                 handler(val, listener.prev, key);
@@ -736,6 +763,7 @@
       console.log('initArrayCopyWatch: how many times does this event get registered?');
       var service = this;
 
+      //TODO: refactor this, only register event once
       service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
         var key = service.getKey(scope.form.key);
         var index = key.match(/^.*\[(\d+)].*$/);
@@ -953,8 +981,8 @@
     function processMediaUpload(field) {
       var service = this;
       field.type = 'cn-mediaupload';
-      _.each(field.data, function(dataKey, key) {
-        field.data[key] = service.parseExpression(dataKey).get();
+      _.each(field.data, function(dataProp, key) {
+        field.data[key] = service.parseExpression(dataProp).get();
       });
     }
 
@@ -1349,14 +1377,16 @@
         service.schema.params = schema.params;
 
         if(schema.diff.data) {
-          _.each(schema.diff.data, function(data, key) {
-            if(data.data && !_.isEmpty(service.schema.data[key].data) && !data.reset) {
-              data.data = service.schema.data[key].data.concat(data.data);
+          _.each(schema.diff.data, (data, prop) => {
+            if(data.data && !_.isEmpty(service.schema.data[prop].data) && !data.reset) {
+              data.data = service.schema.data[prop].data.concat(data.data);
             }
-            service.schema.data[key] = data;
-            if(service.resolveRegister[key]) {
-              _.each(service.resolveRegister[key], function(register) {
-                service.handleResolve(register.field, register.key, `schema.data.${key}`);
+            service.schema.data[prop] = data;
+            if(service.resolveRegister[prop]) {
+              _.each(service.resolveRegister[prop], (registers) => {
+                registers.forEach(register => {
+                  service.handleResolve(register.field, register.prop, `schema.data.${prop}`);
+                });
               });
             }
           });
