@@ -745,6 +745,7 @@
       console.log('initArrayCopyWatch: how many times does this event get registered?');
       var service = this;
 
+      //TODO: refactor this, only register event once
       service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
         var key = service.getKey(scope.form.key);
         var index = key.match(/^.*\[(\d+)].*$/);
