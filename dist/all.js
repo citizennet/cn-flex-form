@@ -1866,7 +1866,7 @@
 
         if (schema.diff.data) {
           _.each(schema.diff.data, function (data, prop) {
-            if (data.data && !_.isEmpty(service.schema.data[prop].data) && !data.reset) {
+            if (data && data.data && !_.isEmpty(service.schema.data[prop].data) && !data.reset) {
               data.data = service.schema.data[prop].data.concat(data.data);
             }
             service.schema.data[prop] = data;
