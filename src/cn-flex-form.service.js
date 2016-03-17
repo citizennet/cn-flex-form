@@ -318,7 +318,9 @@
             handler.call(service, field);
           }
 
-          if(field.updateSchema) service.registerHandler(field, null, field.updateSchema);
+          if(field.updateSchema) {
+            service.registerHandler(field, null, field.updateSchema);
+          }
           if(field.error) {
             service.errors.push(service.buildError(field));
             if (_.isEmpty(field.ngModelOptions)) {
@@ -329,8 +331,8 @@
               field.ngModelOptions.allowInvalid = true;
             }
           }
-          else {
-            service.errors = _.reject(service.errors, { key: key });
+          else if(_.find(service.errors, {key: key})) {
+            service.errors = _.reject(service.errors, {key: key});
             $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
             $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
           }
@@ -1378,7 +1380,7 @@
 
         if(schema.diff.data) {
           _.each(schema.diff.data, (data, prop) => {
-            if(data.data && !_.isEmpty(service.schema.data[prop].data) && !data.reset) {
+            if(data && data.data && !_.isEmpty(service.schema.data[prop].data) && !data.reset) {
               data.data = service.schema.data[prop].data.concat(data.data);
             }
             service.schema.data[prop] = data;
