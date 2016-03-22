@@ -591,6 +591,7 @@
       buildError: buildError,
       cleanup: cleanup,
       deregisterHandlers: deregisterHandlers,
+      deregisterArrayHandlers: deregisterArrayHandlers,
       getArrayCopies: getArrayCopies,
       getArrayCopiesFor: getArrayCopiesFor,
       getFromDataCache: getFromDataCache,
@@ -631,6 +632,7 @@
       registerArrayHandlers: registerArrayHandlers,
       registerHandler: registerHandler,
       registerResolve: registerResolve,
+      reprocessField: reprocessField,
       setArrayIndex: setArrayIndex,
       setupConfig: setupConfig,
       setupSchemaRefresh: setupSchemaRefresh
@@ -1012,9 +1014,9 @@
 
               //console.log('handler:resolution:', field.key, condition, condition && $parse(condition)(service));
               var parsedCondition = functionCondition ? service.parseCondition(functionCondition, condition) : condition;
-              if (functionCondition) {
-                console.log('parsedCondition:', parsedCondition, $parse(parsedCondition)(service));
-              }
+              //if(functionCondition) {
+              //  console.log('parsedCondition:', parsedCondition, $parse(parsedCondition)(service));
+              //}
               if (!parsedCondition || $parse(parsedCondition)(service)) {
                 //console.log('update:', update.get(), from.get());
                 if (adjustment.date) {
@@ -1082,7 +1084,7 @@
         return invert ? (!evaluation).toString() : evaluation.toString();
       } else {
         condition = original.replace(/model\./g, 'service.model.');
-        console.log('eval:', condition, eval(condition));
+        //console.log('eval:', condition, eval(condition));
         // stupid hack so we can evaluate the evaluated results
         return !!eval(condition) + '';
       }
@@ -1145,6 +1147,7 @@
     }
 
     function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
+      //console.log('registerArrayHandlers:', arrKey, fieldKey);
       var service = this;
       var onArray = function onArray(cur, prev) {
         var i, l, key;
@@ -1192,7 +1195,27 @@
 
     function deregisterHandlers(key) {
       var service = this;
-      service.listeners[key] = undefined;
+
+      key = service.getKey(key);
+      var arrMatch = key.match(/([^[\]]*)\[]\.?(.+)/);
+
+      if (arrMatch) {
+        service.deregisterArrayHandlers(arrMatch[1], arrMatch[2]);
+        return;
+      }
+
+      //console.log('deregisterHandlers:', key);
+      if (service.listeners[key]) service.listeners[key].handlers = [];
+    }
+
+    function deregisterArrayHandlers(arrKey, fieldKey) {
+      var service = this;
+
+      //console.log('deregisterArrayHandlers:', arrKey, fieldKey);
+
+      service.parseExpression(arrKey, service.model).get().forEach(function (item, i) {
+        service.deregisterHandlers(arrKey + '[' + i + '].' + fieldKey);
+      });
     }
 
     function initModelWatch() {
@@ -1915,17 +1938,17 @@
             }
 
             // don't want to override key when extending cached objects
-            var key = form.key;
-            delete form.key;
+            //var key = form.key;
+            //delete form.key;
 
-            var cached = service.getFromFormCache(key);
+            var cached = service.getFromFormCache(form.key);
             if (cached) {
-              reprocessField(cached, form);
+              service.reprocessField(cached, form);
             }
-            var copies = service.getArrayCopies(key);
+            var copies = service.getArrayCopies(form.key);
             if (copies) {
               _.each(copies, function (copy) {
-                reprocessField(copy, form);
+                service.reprocessField(copy, form);
               });
             }
           });
@@ -1951,19 +1974,17 @@
     }
 
     function reprocessField(current, update, isChild) {
+      var service = this;
+
       _.extend(current, _.omit(update, 'items', 'key'));
 
-      _.each(current._ogKeys, function (key) {
+      current._ogKeys.forEach(function (key) {
         if (!update[key]) delete current[key];
       });
       current._ogKeys = _.keys(update);
 
-      // we shouldn't reprocess all child items if they haven't changed, let
-      // the diff tell us which specific fields to update
-      //_.each(update.items, function(child, i) {
-      //  //console.log('child:', child, current.items[i]);
-      //  if(child.key) reprocessField(current.items[i], child, true);
-      //});
+      //console.log('update.key:', update.key);
+      service.deregisterHandlers(update.key);
 
       if (!isChild && current.redraw) current.redraw();
     }
