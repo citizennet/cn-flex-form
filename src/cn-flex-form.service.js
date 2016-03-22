@@ -61,11 +61,11 @@
 
   CNFlexFormService.$inject = [
     'Api', '$parse', 'cnFlexFormConfig', 'cnFlexFormTypes',
-    '$interpolate', '$rootScope', '$timeout', 'cnUtil'
+    '$interpolate', '$rootScope', '$timeout', 'cnUtil', '$stateParams'
   ];
 
   function CNFlexFormService(Api, $parse, cnFlexFormConfig, cnFlexFormTypes,
-                             $interpolate, $rootScope, $timeout, cnUtil) {
+                             $interpolate, $rootScope, $timeout, cnUtil, $stateParams) {
 
     var services = [];
     var prototype = {
@@ -77,6 +77,7 @@
       buildError,
       cleanup,
       deregisterHandlers,
+      deregisterArrayHandlers,
       getArrayCopies,
       getArrayCopiesFor,
       getFromDataCache,
@@ -117,6 +118,7 @@
       registerArrayHandlers,
       registerHandler,
       registerResolve,
+      reprocessField,
       setArrayIndex,
       setupConfig,
       setupSchemaRefresh
@@ -144,6 +146,11 @@
     }
 
     function CNFlexForm(schema, model, config) {
+
+      if($stateParams.debug) {
+        window.service = this;
+      }
+
       this.arrayCopies = {};
       this.arrayListeners = {};
       this.dataCache = {};
@@ -157,6 +164,8 @@
       this.updates = 0;
 
       this.params = cnFlexFormConfig.getStateParams();
+
+      this._ = _;
 
       this.compile(schema, model, config);
     }
@@ -506,7 +515,10 @@
               var from = service.parseExpression(fromPath || resolution[2]);
 
               //console.log('handler:resolution:', field.key, condition, condition && $parse(condition)(service));
-              var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
+              var parsedCondition = functionCondition ? service.parseCondition(functionCondition, condition) : condition;
+              //if(functionCondition) {
+              //  console.log('parsedCondition:', parsedCondition, $parse(parsedCondition)(service));
+              //}
               if(!parsedCondition || $parse(parsedCondition)(service)) {
                 //console.log('update:', update.get(), from.get());
                 if(adjustment.date) {
@@ -554,7 +566,7 @@
       return condition && condition.match(/(\!?)(.+)\((.+)\)/);
     }
 
-    function parseCondition(condition) {
+    function parseCondition(condition, original) {
       var service = this,
           invert = condition[1],
           functionName = condition[2],
@@ -576,6 +588,12 @@
         });
 
         return invert ? (!evaluation).toString() : evaluation.toString();
+      }
+      else {
+        condition = original.replace(/model\./g, 'service.model.');
+        //console.log('eval:', condition, eval(condition));
+        // stupid hack so we can evaluate the evaluated results
+        return !!eval(condition) + '';
       }
     }
 
@@ -632,6 +650,7 @@
     }
 
     function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
+      //console.log('registerArrayHandlers:', arrKey, fieldKey);
       var service = this;
       var onArray = function(cur, prev) {
         var i, l, key;
@@ -680,7 +699,27 @@
 
     function deregisterHandlers(key) {
       var service = this;
-      service.listeners[key] = undefined;
+
+      key = service.getKey(key);
+      var arrMatch = key.match(/([^[\]]*)\[]\.?(.+)/);
+
+      if(arrMatch) {
+        service.deregisterArrayHandlers(arrMatch[1], arrMatch[2]);
+        return;
+      }
+
+      //console.log('deregisterHandlers:', key);
+      if(service.listeners[key]) service.listeners[key].handlers = [];
+    }
+
+    function deregisterArrayHandlers(arrKey, fieldKey) {
+      var service = this;
+
+      //console.log('deregisterArrayHandlers:', arrKey, fieldKey);
+
+      service.parseExpression(arrKey, service.model).get().forEach((item, i) => {
+        service.deregisterHandlers(`${arrKey}[${i}].${fieldKey}`);
+      });
     }
 
     function initModelWatch() {
@@ -1327,6 +1366,7 @@
       var service = this;
       service.refreshSchema = _.debounce(function(updateSchema) {
         var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
+        console.log('service.schema.params, params:', service.schema.params, params);
         var diff = cnUtil.diff(service.schema.params, params, true);
         var keys;
 
@@ -1411,17 +1451,17 @@
             }
 
             // don't want to override key when extending cached objects
-            var key = form.key;
-            delete form.key;
+            //var key = form.key;
+            //delete form.key;
 
-            var cached = service.getFromFormCache(key);
+            var cached = service.getFromFormCache(form.key);
             if(cached) {
-              reprocessField(cached, form);
+              service.reprocessField(cached, form);
             }
-            var copies = service.getArrayCopies(key);
+            var copies = service.getArrayCopies(form.key);
             if(copies) {
               _.each(copies, function(copy) {
-                reprocessField(copy, form);
+                service.reprocessField(copy, form);
               });
             }
           });
@@ -1448,19 +1488,17 @@
     }
 
     function reprocessField(current, update, isChild) {
+      var service = this;
+
       _.extend(current, _.omit(update, 'items', 'key'));
 
-      _.each(current._ogKeys, function(key) {
+      current._ogKeys.forEach(key => {
         if(!update[key]) delete current[key];
       });
       current._ogKeys = _.keys(update);
 
-      // we shouldn't reprocess all child items if they haven't changed, let
-      // the diff tell us which specific fields to update
-      //_.each(update.items, function(child, i) {
-      //  //console.log('child:', child, current.items[i]);
-      //  if(child.key) reprocessField(current.items[i], child, true);
-      //});
+      //console.log('update.key:', update.key);
+      service.deregisterHandlers(update.key);
 
       if(!isChild && current.redraw) current.redraw();
     }
