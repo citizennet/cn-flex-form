@@ -577,9 +577,9 @@
     }
   }
 
-  CNFlexFormService.$inject = ['Api', '$parse', 'cnFlexFormConfig', 'cnFlexFormTypes', '$interpolate', '$rootScope', '$timeout', 'cnUtil'];
+  CNFlexFormService.$inject = ['Api', '$parse', 'cnFlexFormConfig', 'cnFlexFormTypes', '$interpolate', '$rootScope', '$timeout', 'cnUtil', '$stateParams'];
 
-  function CNFlexFormService(Api, $parse, cnFlexFormConfig, cnFlexFormTypes, $interpolate, $rootScope, $timeout, cnUtil) {
+  function CNFlexFormService(Api, $parse, cnFlexFormConfig, cnFlexFormTypes, $interpolate, $rootScope, $timeout, cnUtil, $stateParams) {
 
     var services = [];
     var prototype = {
@@ -658,6 +658,11 @@
     }
 
     function CNFlexForm(schema, model, config) {
+
+      if ($stateParams.debug) {
+        window.service = this;
+      }
+
       this.arrayCopies = {};
       this.arrayListeners = {};
       this.dataCache = {};
@@ -671,6 +676,8 @@
       this.updates = 0;
 
       this.params = cnFlexFormConfig.getStateParams();
+
+      this._ = _;
 
       this.compile(schema, model, config);
     }
@@ -1004,7 +1011,10 @@
               var from = service.parseExpression(fromPath || resolution[2]);
 
               //console.log('handler:resolution:', field.key, condition, condition && $parse(condition)(service));
-              var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
+              var parsedCondition = functionCondition ? service.parseCondition(functionCondition, condition) : condition;
+              if (functionCondition) {
+                console.log('parsedCondition:', parsedCondition, $parse(parsedCondition)(service));
+              }
               if (!parsedCondition || $parse(parsedCondition)(service)) {
                 //console.log('update:', update.get(), from.get());
                 if (adjustment.date) {
@@ -1048,7 +1058,7 @@
       return condition && condition.match(/(\!?)(.+)\((.+)\)/);
     }
 
-    function parseCondition(condition) {
+    function parseCondition(condition, original) {
       var service = this,
           invert = condition[1],
           functionName = condition[2],
@@ -1070,6 +1080,11 @@
         });
 
         return invert ? (!evaluation).toString() : evaluation.toString();
+      } else {
+        condition = original.replace(/model\./g, 'service.model.');
+        console.log('eval:', condition, eval(condition));
+        // stupid hack so we can evaluate the evaluated results
+        return !!eval(condition) + '';
       }
     }
 
@@ -1816,6 +1831,7 @@
       var service = this;
       service.refreshSchema = _.debounce(function (updateSchema) {
         var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
+        console.log('service.schema.params, params:', service.schema.params, params);
         var diff = cnUtil.diff(service.schema.params, params, true);
         var keys;
 
