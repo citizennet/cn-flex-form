@@ -19,6 +19,7 @@
       'cn-percentage',
       'cn-display',
       'cn-mediaupload',
+      'cn-csvupload',
       'cn-reusable'
     ];
 
@@ -312,6 +313,27 @@
                         ff-form="form"\
                         class="clearfix">\
           </media-upload>\
+          <span class="help-block" sf-message="form.description"></span>\
+       </div>\
+        '
+    );
+
+    $templateCache.put(
+        'app/components/cn-flex-form/forms/cn-csvupload.html',
+        '\
+        <div class="form-group {{form.htmlClass}}"\
+             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
+          <label class="control-label"\
+                 ng-show="showTitle()"\
+                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\
+          <csv-upload ng-model="$$value$$"\
+                        cn-upload-path="form.uploadPath"\
+                        ng-model-options="form.ngModelOptions"\
+                        sf-changed="form"\
+                        schema-validate="form"\
+                        ff-form="form"\
+                        class="clearfix">\
+          </csv-upload>\
           <span class="help-block" sf-message="form.description"></span>\
        </div>\
         '

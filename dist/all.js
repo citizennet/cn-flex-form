@@ -312,6 +312,11 @@
       type: 'cn-mediaupload'
     }, {
       condition: function condition(field) {
+        return field.type === 'csvupload';
+      },
+      type: 'cn-csvupload'
+    }, {
+      condition: function condition(field) {
         return field.type === 'reusable';
       },
       type: 'cn-reusable'
@@ -543,6 +548,7 @@
     'cn-currency': 'processCurrency',
     'cn-percentage': 'processPercentage',
     'cn-mediaupload': 'processMediaUpload',
+    'cn-csvupload': 'processCsvUpload',
     'cn-reusable': 'processReusable',
     'cn-toggle': 'processToggle',
     'section': 'processSection'
@@ -629,6 +635,7 @@
       processToggle: processToggle,
       processUpdatedSchema: processUpdatedSchema,
       processMediaUpload: processMediaUpload,
+      processCsvUpload: processCsvUpload,
       registerArrayHandlers: registerArrayHandlers,
       registerHandler: registerHandler,
       registerResolve: registerResolve,
@@ -1519,6 +1526,14 @@
       });
     }
 
+    function processCsvUpload(field) {
+      var service = this;
+      field.type = 'cn-csvupload';
+      // _.each(field.data, function(dataProp, key) {
+      //   field.data[key] = service.parseExpression(dataProp).get();
+      // });
+    }
+
     function processRadiobuttons(radios) {
       var service = this;
       radios.type = 'cn-radiobuttons';
@@ -2113,7 +2128,7 @@
   schemaFormConfig.$inject = ['cnFlexFormServiceProvider'];
 
   function schemaFormConfig(cnFlexFormServiceProvider) {
-    var extensions = ['cn-fieldset', 'cn-toggle', 'cn-datetimepicker', 'cn-autocomplete', 'cn-autocomplete-detailed', 'cn-currency', 'cn-radiobuttons', 'cn-percentage', 'cn-display', 'cn-mediaupload', 'cn-reusable'];
+    var extensions = ['cn-fieldset', 'cn-toggle', 'cn-datetimepicker', 'cn-autocomplete', 'cn-autocomplete-detailed', 'cn-currency', 'cn-radiobuttons', 'cn-percentage', 'cn-display', 'cn-mediaupload', 'cn-csvupload', 'cn-reusable'];
 
     _.each(extensions, function (extension) {
       cnFlexFormServiceProvider.registerField({
@@ -2376,6 +2391,24 @@
                         ff-form="form"\
                         class="clearfix">\
           </media-upload>\
+          <span class="help-block" sf-message="form.description"></span>\
+       </div>\
+        ');
+
+    $templateCache.put('app/components/cn-flex-form/forms/cn-csvupload.html', '\
+        <div class="form-group {{form.htmlClass}}"\
+             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
+          <label class="control-label"\
+                 ng-show="showTitle()"\
+                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\
+          <csv-upload ng-model="$$value$$"\
+                        cn-upload-path="form.uploadPath"\
+                        ng-model-options="form.ngModelOptions"\
+                        sf-changed="form"\
+                        schema-validate="form"\
+                        ff-form="form"\
+                        class="clearfix">\
+          </csv-upload>\
           <span class="help-block" sf-message="form.description"></span>\
        </div>\
         ');

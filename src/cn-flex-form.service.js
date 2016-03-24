@@ -14,6 +14,7 @@
     'cn-currency': 'processCurrency',
     'cn-percentage': 'processPercentage',
     'cn-mediaupload': 'processMediaUpload',
+    'cn-csvupload': 'processCsvUpload',
     'cn-reusable': 'processReusable',
     'cn-toggle': 'processToggle',
     'section': 'processSection'
@@ -115,6 +116,7 @@
       processToggle,
       processUpdatedSchema,
       processMediaUpload,
+      processCsvUpload,
       registerArrayHandlers,
       registerHandler,
       registerResolve,
@@ -1025,6 +1027,14 @@
       _.each(field.data, function(dataProp, key) {
         field.data[key] = service.parseExpression(dataProp).get();
       });
+    }
+
+    function processCsvUpload(field) {
+      var service = this;
+      field.type = 'cn-csvupload';
+      // _.each(field.data, function(dataProp, key) {
+      //   field.data[key] = service.parseExpression(dataProp).get();
+      // });
     }
 
     function processRadiobuttons(radios) {
