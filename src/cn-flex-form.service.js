@@ -148,7 +148,7 @@
     function CNFlexForm(schema, model, config) {
 
       if($stateParams.debug) {
-        window.service = this;
+        window.servicess = services;
       }
 
       this.arrayCopies = {};
@@ -557,7 +557,7 @@
             };
           }
 
-          service.registerHandler(field, handler, field.updateSchema);
+          service.registerHandler(field, handler, field.updateSchema, watch.initialize);
         }
       });
     }
@@ -674,7 +674,7 @@
         else if(cur > (prev || 0)) {
           for(i = prev, l = cur; i < l; i++) {
             key = arrKey + '[' + i + ']' + '.' + fieldKey;
-            service.registerHandler(key, handler, updateSchema, true);
+            service.registerHandler(key, handler, updateSchema, runHandler);
             //if(runHandler) handler(null, null, key);
           }
         }
