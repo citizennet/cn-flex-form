@@ -63,6 +63,11 @@
       type: 'cn-mediaupload'
     }, {
       condition: function(field) {
+        return field.type === 'csvupload';
+      },
+      type: 'cn-csvupload'
+    }, {
+      condition: function(field) {
         return field.type === 'reusable';
       },
       type: 'cn-reusable'
