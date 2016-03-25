@@ -671,7 +671,7 @@
     function CNFlexForm(schema, model, config) {
 
       if ($stateParams.debug) {
-        window.servicess = services;
+        window.services = services;
       }
 
       this.arrayCopies = {};
