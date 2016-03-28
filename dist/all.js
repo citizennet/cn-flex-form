@@ -142,7 +142,6 @@
     }
 
     function goBack() {
-      console.log('goBack:');
       $state.go('^');
     }
 
