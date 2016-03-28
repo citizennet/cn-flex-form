@@ -26,10 +26,12 @@
     }
 
     function goBack() {
+      console.log('goBack:');
       $state.go('^');
     }
 
     function dismissModal() {
+      console.log('dismissModal:', arguments);
       vm.dismiss();
       vm.modal.dismiss();
     }

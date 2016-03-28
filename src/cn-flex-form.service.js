@@ -14,6 +14,7 @@
     'cn-currency': 'processCurrency',
     'cn-percentage': 'processPercentage',
     'cn-mediaupload': 'processMediaUpload',
+    'cn-csvupload': 'processCsvUpload',
     'cn-reusable': 'processReusable',
     'cn-toggle': 'processToggle',
     'section': 'processSection'
@@ -115,6 +116,7 @@
       processToggle,
       processUpdatedSchema,
       processMediaUpload,
+      processCsvUpload,
       registerArrayHandlers,
       registerHandler,
       registerResolve,
@@ -148,7 +150,7 @@
     function CNFlexForm(schema, model, config) {
 
       if($stateParams.debug) {
-        window.service = this;
+        window.services = services;
       }
 
       this.arrayCopies = {};
@@ -557,7 +559,7 @@
             };
           }
 
-          service.registerHandler(field, handler, field.updateSchema);
+          service.registerHandler(field, handler, field.updateSchema, watch.initialize);
         }
       });
     }
@@ -674,7 +676,7 @@
         else if(cur > (prev || 0)) {
           for(i = prev, l = cur; i < l; i++) {
             key = arrKey + '[' + i + ']' + '.' + fieldKey;
-            service.registerHandler(key, handler, updateSchema, true);
+            service.registerHandler(key, handler, updateSchema, runHandler);
             //if(runHandler) handler(null, null, key);
           }
         }
@@ -1025,6 +1027,14 @@
       _.each(field.data, function(dataProp, key) {
         field.data[key] = service.parseExpression(dataProp).get();
       });
+    }
+
+    function processCsvUpload(field) {
+      var service = this;
+      field.type = 'cn-csvupload';
+      // _.each(field.data, function(dataProp, key) {
+      //   field.data[key] = service.parseExpression(dataProp).get();
+      // });
     }
 
     function processRadiobuttons(radios) {
