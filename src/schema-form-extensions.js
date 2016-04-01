@@ -44,10 +44,14 @@
             <cn-toggle-switch\
               class="pull-left"\
               ng-show="form.key"\
+              ng-model-options="form.ngModelOptions"\
+              ng-model="$$value$$"\
               enabled="$$value$$"\
+              sf-changed="form"\
+              schema-validate="form"\
               on-value="form.onValue"\
-              off-value="form.offValue">\
-            </cn-toggle-switch>\
+              off-value="form.offValue"\
+              undefined-class="form.undefinedClass"/>\
             <span ng-show="form.onText && form.offText">\
               {{$$value$$ === form.onValue ? form.onText : form.offText}}\
             </span>\

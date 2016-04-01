@@ -584,9 +584,9 @@
     }
   }
 
-  CNFlexFormService.$inject = ['Api', '$parse', 'cnFlexFormConfig', 'cnFlexFormTypes', '$interpolate', '$rootScope', '$timeout', 'cnUtil', '$stateParams'];
+  CNFlexFormService.$inject = ['Api', '$parse', 'cnFlexFormConfig', 'cnFlexFormTypes', 'sfPath', '$interpolate', '$rootScope', '$timeout', 'cnUtil', '$stateParams'];
 
-  function CNFlexFormService(Api, $parse, cnFlexFormConfig, cnFlexFormTypes, $interpolate, $rootScope, $timeout, cnUtil, $stateParams) {
+  function CNFlexFormService(Api, $parse, cnFlexFormConfig, cnFlexFormTypes, sfPath, $interpolate, $rootScope, $timeout, cnUtil, $stateParams) {
 
     var services = [];
     var prototype = {
@@ -807,7 +807,9 @@
       if (field.type === 'fieldset') {
         service.processFieldset(field);
       } else {
-        if (!field._ogKeys) field._ogKeys = _.without(_.keys(field), 'key');
+        if (!field._ogKeys) {
+          field._ogKeys = _.without(_.keys(field), 'key', 'htmlClass');
+        }
 
         var key = service.getKey(field.key);
 
@@ -815,7 +817,7 @@
           service.addToFormCache(field, key);
           field.schema = service.getSchema(key);
 
-          if (field.schema) {
+          if ( /*!field.immutable && */field.schema) {
             if (field.schema.description) field.description = field.schema.description;
             if (field.readonly && !field.schema.readonly) field.readonly = false;
           }
@@ -884,8 +886,16 @@
 
       //console.log('getSchema:', key, depth, service);
       //key = key.split('.');
-      key = key.replace(/arrayIndex/g, '').replace(/(\[')([^.]+)\.([^.]+)('])/g, '.$2%ff_dt%$3').replace(/\./g, '%ff_sp%').replace(/%ff_dt%/g, '.').split('%ff_sp%');
+      //key = key
+      //    .replace(/arrayIndex/g, '')
+      //    .replace(/(\[')([^.]+)\.([^.]+)('])/g, '.$2%ff_dt%$3')
+      //    .replace(/\./g, '%ff_sp%')
+      //    .replace(/%ff_dt%/g, '.')
+      //    .split('%ff_sp%');
+      key = sfPath.parse(key);
       depth = depth || service.schema.schema.properties;
+
+      //console.log('key:', key);
 
       var first, matchArray;
 
@@ -1420,7 +1430,8 @@
 
       var modelValue = {
         "get": function get() {
-          var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
+          //var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
+          var path = sfPath.parse(exp);
           var start = depth || service;
 
           while (start && path.length > 1) {
@@ -1433,7 +1444,8 @@
           return start && start[path[0]];
         },
         "set": function set(val) {
-          var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
+          //var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
+          var path = sfPath.parse(exp);
           var start = depth || service;
 
           while (start && path.length > 1) {
@@ -2150,10 +2162,14 @@
             <cn-toggle-switch\
               class="pull-left"\
               ng-show="form.key"\
+              ng-model-options="form.ngModelOptions"\
+              ng-model="$$value$$"\
               enabled="$$value$$"\
+              sf-changed="form"\
+              schema-validate="form"\
               on-value="form.onValue"\
-              off-value="form.offValue">\
-            </cn-toggle-switch>\
+              off-value="form.offValue"\
+              undefined-class="form.undefinedClass"/>\
             <span ng-show="form.onText && form.offText">\
               {{$$value$$ === form.onValue ? form.onText : form.offText}}\
             </span>\
