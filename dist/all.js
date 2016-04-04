@@ -895,6 +895,8 @@
       key = sfPath.parse(key);
       depth = depth || service.schema.schema.properties;
 
+      if (_.last(key) === '') key.pop();
+
       //console.log('key:', key);
 
       var first, next, matchArray;
@@ -913,11 +915,6 @@
       }
 
       first = key[0];
-      matchArray = first.match(/^\d*$/);
-
-      if (matchArray) {
-        return depth.items;
-      }
 
       return depth[first];
     }
