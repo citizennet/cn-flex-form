@@ -2289,6 +2289,7 @@
                    for="{{form.key.join(\'.\')}}">$</label>\
             <input class="form-control"\
                    cn-currency-format="{{form.currencyFormat}}"\
+                   cn-currency-placeholder="{{form.placeholder}}"\
                    ng-show="form.key"\
                    ng-model-options="form.ngModelOptions"\
                    ng-disabled="form.readonly"\
