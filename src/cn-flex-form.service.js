@@ -61,11 +61,11 @@
   }
 
   CNFlexFormService.$inject = [
-    'Api', '$parse', 'cnFlexFormConfig', 'cnFlexFormTypes',
+    'Api', '$parse', 'cnFlexFormConfig', 'cnFlexFormTypes', 'sfPath',
     '$interpolate', '$rootScope', '$timeout', 'cnUtil', '$stateParams'
   ];
 
-  function CNFlexFormService(Api, $parse, cnFlexFormConfig, cnFlexFormTypes,
+  function CNFlexFormService(Api, $parse, cnFlexFormConfig, cnFlexFormTypes, sfPath,
                              $interpolate, $rootScope, $timeout, cnUtil, $stateParams) {
 
     var services = [];
@@ -290,7 +290,9 @@
         service.processFieldset(field);
       }
       else {
-        if(!field._ogKeys) field._ogKeys = _.without(_.keys(field), 'key');
+        if(!field._ogKeys) {
+          field._ogKeys = _.without(_.keys(field), 'key', 'htmlClass');
+        }
 
         var key = service.getKey(field.key);
 
@@ -298,7 +300,7 @@
           service.addToFormCache(field, key);
           field.schema = service.getSchema(key);
 
-          if(field.schema) {
+          if(/*!field.immutable && */field.schema) {
             if(field.schema.description) field.description = field.schema.description;
             if(field.readonly && !field.schema.readonly) field.readonly = false;
           }
@@ -371,22 +373,29 @@
 
       //console.log('getSchema:', key, depth, service);
       //key = key.split('.');
-      key = key
-          .replace(/arrayIndex/g, '')
-          .replace(/(\[')([^.]+)\.([^.]+)('])/g, '.$2%ff_dt%$3')
-          .replace(/\./g, '%ff_sp%')
-          .replace(/%ff_dt%/g, '.')
-          .split('%ff_sp%');
+      //key = key
+      //    .replace(/arrayIndex/g, '')
+      //    .replace(/(\[')([^.]+)\.([^.]+)('])/g, '.$2%ff_dt%$3')
+      //    .replace(/\./g, '%ff_sp%')
+      //    .replace(/%ff_dt%/g, '.')
+      //    .split('%ff_sp%');
+      key = sfPath.parse(key);
       depth = depth || service.schema.schema.properties;
 
-      var first, matchArray;
+      if (_.last(key) === '') key.pop();
+
+      //console.log('key:', key);
+
+      var first, next, matchArray;
 
       while(key.length > 1) {
         first = key[0];
-        matchArray = first.match(/\[\d*]$/);
+        next = key[1];
+        matchArray = next.match(/^\d*$/);
         //if(first.slice(first.length - 2) === '[]') {
         if(matchArray) {
-          depth = depth[key.shift().slice(0, first.length - matchArray[0].length)].items.properties;
+          depth = depth[key.shift()].items.properties;
+          key.shift();
         }
         else {
           depth = depth[key.shift()].properties;
@@ -394,11 +403,6 @@
       }
 
       first = key[0];
-      matchArray = first.match(/\[\d*]$/);
-
-      if(matchArray) {
-        return depth[first.slice(0, first.length - matchArray[0].length)].items;
-      }
 
       return depth[first];
     }
@@ -921,7 +925,8 @@
 
       var modelValue = {
         "get": function() {
-          var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
+          //var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
+          var path = sfPath.parse(exp);
           var start = depth || service;
 
           while(start && path.length > 1) {
@@ -934,7 +939,8 @@
           return start && start[path[0]];
         },
         "set": function(val) {
-          var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
+          //var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
+          var path = sfPath.parse(exp);
           var start = depth || service;
 
           while(start && path.length > 1) {

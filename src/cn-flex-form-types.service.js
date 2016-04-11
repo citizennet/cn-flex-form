@@ -7,74 +7,46 @@
   function cnFlexFormTypesProvider() {
 
     var fieldTypeRegister = [{
-      condition: function(field) {
-        return field.type === 'hidden';
-      },
+      condition: field => field.type === 'hidden',
       type: 'hidden'
     }, {
-      condition: function(field) {
-        return field.type.includes('radios');
-      },
+      condition: field => field.type.includes('radios'),
       type: 'cn-radios'
     }, {
-      condition: function(field) {
-        return field.type.includes('radiobuttons');
-      },
+      condition: field => field.type.includes('radiobuttons'),
       type: 'cn-radiobuttons'
     }, {
-      condition: function(field) {
-        return field.type.includes('autocomplete') || field.titleMap || field.titleMapResolve || field.titleMapQuery;
-      },
+      condition: field => field.type.includes('autocomplete') || field.titleMap || field.titleMapResolve || field.titleMapQuery,
       type: 'cn-autocomplete'
     }, {
-      condition: function(field) {
-        return field.type === 'cn-datetimepicker' || field.type === 'datetime-local';
-      },
+      condition: field => field.type === 'cn-datetimepicker' || field.type === 'datetime-local',
       type: 'cn-datetimepicker'
     }, {
-      condition: function(field) {
-        return field.type === 'help';
-      },
+      condition: field => field.type === 'help',
       type: 'help'
     }, {
-      condition: function(field) {
-        return field.type.includes('display');
-      },
+      condition: field => field.type.includes('display'),
       type: 'cn-display'
     }, {
-      condition: function(field) {
-        return field.schema && field.schema.format && field.schema.format.includes('currency');
-      },
+      condition: field => field.schema && field.schema.format && field.schema.format.includes('currency'),
       type: 'cn-currency'
     }, {
-      condition: function(field) {
-        return field.schema && field.schema.format === 'percentage';
-      },
+      condition: field => field.schema && field.schema.format === 'percentage',
       type: 'cn-percentage'
     }, {
-      condition: function(field) {
-        return field.type === 'toggle' || field.type === 'boolean';
-      },
+      condition: field => field.type === 'toggle' || field.type === 'boolean',
       type: 'cn-toggle'
     }, {
-      condition: function(field) {
-        return field.type === 'mediaupload';
-      },
+      condition: field => field.type === 'mediaupload',
       type: 'cn-mediaupload'
     }, {
-      condition: function(field) {
-        return field.type === 'csvupload';
-      },
+      condition: field => field.type === 'csvupload',
       type: 'cn-csvupload'
     }, {
-      condition: function(field) {
-        return field.type === 'reusable';
-      },
+      condition: field => field.type === 'reusable',
       type: 'cn-reusable'
     }, {
-      condition: function(field) {
-        return field.type === 'array';
-      },
+      condition: field => field.type === 'array',
       type: 'section'
     }];
 
