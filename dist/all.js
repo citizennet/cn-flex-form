@@ -2163,7 +2163,6 @@
               ng-show="form.key"\
               ng-model-options="form.ngModelOptions"\
               ng-model="$$value$$"\
-              enabled="$$value$$"\
               sf-changed="form"\
               schema-validate="form"\
               on-value="form.onValue"\
