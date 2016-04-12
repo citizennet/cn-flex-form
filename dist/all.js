@@ -1018,15 +1018,20 @@
             resolution = resolution.match(/(\S+) ?= ?(\S+)/);
             //console.log('resolution:', resolution);
 
-            handler = function handler() {
+            handler = function handler(val, prev, key, trigger) {
               var updatePath, fromPath;
+
               if (resolution[1].includes('arrayIndex')) {
                 updatePath = replaceArrayIndex(resolution[1], arguments[2]);
               }
+              var update = service.parseExpression(updatePath || resolution[1]);
+
+              // avoid loop where two watches keep triggering each other
+              if (trigger === update.path().key) return;
+
               if (resolution[2].includes('arrayIndex')) {
                 fromPath = replaceArrayIndex(resolution[2], arguments[2]);
               }
-              var update = service.parseExpression(updatePath || resolution[1]);
               var from = service.parseExpression(fromPath || resolution[2]);
 
               //console.log('handler:resolution:', field.key, condition, condition && $parse(condition)(service));
@@ -1059,7 +1064,9 @@
                       result = _.round(result, p);
                     }
                   }
-                  service.listeners[update.path().key].prev = result;
+                  //service.listeners[update.path().key].prev = result;
+                  //console.log('key, field.key, trigger, update.path().key:', key, field.key, trigger, update.path().key);
+                  service.listeners[update.path().key].trigger = key;
                   update.set(result || 0);
                 } else {
                   update.set(from.get());
@@ -1277,8 +1284,10 @@
             //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
             if (!angular.equals(val, listener.prev)) {
               _.each(listener.handlers, function (handler) {
-                handler(val, listener.prev, key);
+                console.log('key, listener.trigger:', key, listener.trigger);
+                handler(val, listener.prev, key, listener.trigger);
               });
+              listener.trigger = null;
               listener.prev = angular.copy(val);
             }
             if (listener.updateSchema && !angular.isUndefined(val) && val !== null) {
