@@ -17,7 +17,7 @@
     'cn-csvupload': 'processCsvUpload',
     'cn-reusable': 'processReusable',
     'cn-toggle': 'processToggle',
-    'section': 'processSection'
+    'array': 'processArray'
   };
 
   cnFlexFormServiceProvider.$inject = [
@@ -94,6 +94,7 @@
       onModelWatch,
       parseCondition,
       parseExpression,
+      processArray,
       processDefault,
       processDisplay,
       processField,
@@ -510,6 +511,7 @@
             //console.log('resolution:', resolution);
 
             handler = function(val, prev, key, trigger) {
+              //console.log('watch.resolution:', watch.resolution);
               var updatePath, fromPath;
 
               if(resolution[1].includes('arrayIndex')) {
@@ -663,12 +665,14 @@
     }
 
     function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
-      //console.log('registerArrayHandlers:', arrKey, fieldKey);
       var service = this;
-      var onArray = function(cur, prev) {
+      var onArray = function(cur, prev, reorder) {
+        console.log('onArray:', cur, prev);
+
+        if(!prev) return;
         var i, l, key;
 
-        if(prev && prev > cur) {
+        if(prev > cur || reorder) {
           var lastKey = arrKey + '[' + (prev - 1) + ']' + '.' + fieldKey;
           // only deregister handlers once each time an element is removed
           if (service.listeners[lastKey]) {
@@ -779,7 +783,7 @@
             //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
             if(!angular.equals(val, listener.prev)) {
               _.each(listener.handlers, function(handler) {
-                console.log('key, listener.trigger:', key, listener.trigger);
+                //console.log('key, listener.trigger:', key, listener.trigger);
                 handler(val, listener.prev, key, listener.trigger);
               });
               listener.trigger = null;
@@ -826,7 +830,6 @@
 
         key = key.replace(/\[\d+]/g, '[]');
         index = index && parseInt(index[1]);
-        //console.log('key, index, scope.form.key, scope.form:', key, index, scope.form.key, scope.form);
 
         if(!scope.form.condition) scope.form.condition = 'true';
 
@@ -985,9 +988,26 @@
       return modelValue;
     }
 
+    function processArray(array) {
+      var service = this;
+      var key = service.getKey(array.key);
+      console.log('processArray:', key);
+
+      array.sortOptions = {
+        update: function(e, ui) {
+          let listener = service.arrayListeners[`${key}.length`];
+          listener.handlers.forEach(handler => {
+            handler(listener.prev, listener.prev, true);
+          });
+          return console.error('array update:', key, e, ui);
+        }
+      };
+
+      service.processSection(array);
+    }
+
     function processSection(section) {
       var service = this;
-
       _.each(section.items, service.processField.bind(service));
     }
 
