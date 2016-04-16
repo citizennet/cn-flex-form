@@ -26,7 +26,9 @@
     }
 
     function goBack() {
-      $state.go('^');
+      if (!$state.transition) {
+        $state.go('^');
+      }
     }
 
     function dismissModal() {

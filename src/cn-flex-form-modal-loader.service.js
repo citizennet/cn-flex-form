@@ -27,6 +27,13 @@
     return promise;
   }
 
+  function getPromiseForResolve(state, id, $q) {
+    var promises = getPromises(state);
+    var promise = $q.defer();
+    promises[id] = promise;
+    return promise;
+  }
+
   function cnFlexFormModalLoaderServiceProvider() {
 
     var provider = {
@@ -65,7 +72,7 @@
     /////////////
 
     function resolveMapping(state, id, parent) {
-      var d = getPromise(state, id, $q);
+      var d = getPromiseForResolve(state, id, $q);
       d.resolve(parent);
       return d.promise;
     }
