@@ -142,7 +142,9 @@
     }
 
     function goBack() {
-      $state.go('^');
+      if (!$state.transition) {
+        $state.go('^');
+      }
     }
 
     function dismissModal() {
@@ -199,6 +201,13 @@
     return promise;
   }
 
+  function getPromiseForResolve(state, id, $q) {
+    var promises = getPromises(state);
+    var promise = $q.defer();
+    promises[id] = promise;
+    return promise;
+  }
+
   function cnFlexFormModalLoaderServiceProvider() {
 
     var provider = {
@@ -237,7 +246,7 @@
     /////////////
 
     function resolveMapping(state, id, parent) {
-      var d = getPromise(state, id, $q);
+      var d = getPromiseForResolve(state, id, $q);
       d.resolve(parent);
       return d.promise;
     }
@@ -325,7 +334,7 @@
       condition: function condition(field) {
         return field.type === 'array';
       },
-      type: 'section'
+      type: 'array'
     }];
 
     return {
@@ -552,7 +561,7 @@
     'cn-csvupload': 'processCsvUpload',
     'cn-reusable': 'processReusable',
     'cn-toggle': 'processToggle',
-    'section': 'processSection'
+    'array': 'processArray'
   };
 
   cnFlexFormServiceProvider.$inject = ['schemaFormDecoratorsProvider', 'cnFlexFormTypesProvider'];
@@ -614,6 +623,7 @@
       onModelWatch: onModelWatch,
       parseCondition: parseCondition,
       parseExpression: parseExpression,
+      processArray: processArray,
       processDefault: processDefault,
       processDisplay: processDisplay,
       processField: processField,
@@ -1019,6 +1029,7 @@
             //console.log('resolution:', resolution);
 
             handler = function handler(val, prev, key, trigger) {
+              //console.log('watch.resolution:', watch.resolution);
               var updatePath, fromPath;
 
               if (resolution[1].includes('arrayIndex')) {
@@ -1171,12 +1182,14 @@
     }
 
     function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
-      //console.log('registerArrayHandlers:', arrKey, fieldKey);
       var service = this;
-      var onArray = function onArray(cur, prev) {
+      var onArray = function onArray(cur, prev, reorder) {
+        console.log('onArray:', cur, prev);
+
+        if (!prev) return;
         var i, l, key;
 
-        if (prev && prev > cur) {
+        if (prev > cur || reorder) {
           var lastKey = arrKey + '[' + (prev - 1) + ']' + '.' + fieldKey;
           // only deregister handlers once each time an element is removed
           if (service.listeners[lastKey]) {
@@ -1284,7 +1297,7 @@
             //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
             if (!angular.equals(val, listener.prev)) {
               _.each(listener.handlers, function (handler) {
-                console.log('key, listener.trigger:', key, listener.trigger);
+                //console.log('key, listener.trigger:', key, listener.trigger);
                 handler(val, listener.prev, key, listener.trigger);
               });
               listener.trigger = null;
@@ -1330,7 +1343,6 @@
 
         key = key.replace(/\[\d+]/g, '[]');
         index = index && parseInt(index[1]);
-        //console.log('key, index, scope.form.key, scope.form:', key, index, scope.form.key, scope.form);
 
         if (!scope.form.condition) scope.form.condition = 'true';
 
@@ -1488,9 +1500,26 @@
       return modelValue;
     }
 
+    function processArray(array) {
+      var service = this;
+      var key = service.getKey(array.key);
+      console.log('processArray:', key);
+
+      array.sortOptions = {
+        update: function update(e, ui) {
+          var listener = service.arrayListeners[key + '.length'];
+          listener.handlers.forEach(function (handler) {
+            handler(listener.prev, listener.prev, true);
+          });
+          return console.error('array update:', key, e, ui);
+        }
+      };
+
+      service.processSection(array);
+    }
+
     function processSection(section) {
       var service = this;
-
       _.each(section.items, service.processField.bind(service));
     }
 
