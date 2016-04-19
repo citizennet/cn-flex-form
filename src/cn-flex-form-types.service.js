@@ -47,7 +47,7 @@
       type: 'cn-reusable'
     }, {
       condition: field => field.type === 'array',
-      type: 'section'
+      type: 'array'
     }];
 
     return {
