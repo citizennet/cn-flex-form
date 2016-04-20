@@ -124,6 +124,8 @@
       reprocessField,
       setArrayIndex,
       setupConfig,
+      setupArraySelectDisplay,
+      setupSelectDisplay,
       setupSchemaRefresh
     };
 
@@ -667,9 +669,9 @@
     function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
       var service = this;
       var onArray = function(cur, prev, reorder) {
-        console.log('onArray:', cur, prev);
+        //console.log('onArray:', cur, prev, reorder, arrKey, fieldKey);
 
-        if(!prev) return;
+        if(!prev && prev !== 0) return;
         var i, l, key;
 
         if(prev > cur || reorder) {
@@ -991,7 +993,6 @@
     function processArray(array) {
       var service = this;
       var key = service.getKey(array.key);
-      console.log('processArray:', key);
 
       array.sortOptions = {
         update: function(e, ui) {
@@ -999,7 +1000,6 @@
           listener.handlers.forEach(handler => {
             handler(listener.prev, listener.prev, true);
           });
-          return console.error('array update:', key, e, ui);
         }
       };
 
@@ -1250,10 +1250,12 @@
           selectField = _.find(selectDisplay.items, 'selectField'),
           handler;
 
+      console.log('selectField:', selectField.key, selectField);
+
       if (schema && schema.type === 'array') {
-        handler = setupArraySelectDisplay(selectDisplay, selectField, service);
+        handler = service.setupArraySelectDisplay(selectDisplay, selectField);
       } else {
-        handler = setupSelectDisplay(selectDisplay, selectField, service);
+        handler = service.setupSelectDisplay(selectDisplay, selectField);
       }
 
       selectDisplay.selectDisplay = false;
@@ -1261,7 +1263,8 @@
       service.processField(selectDisplay);
     }
 
-    function setupArraySelectDisplay(selectDisplay, selectField, service) {
+    function setupArraySelectDisplay(selectDisplay, selectField) {
+      var service = this;
       _.each(selectDisplay.items, function(item) {
         if(item.condition !== 'false') {
           item.condition = 'true';
@@ -1356,7 +1359,8 @@
       return handler;
     }
 
-    function setupSelectDisplay(selectDisplay, selectField, service) {
+    function setupSelectDisplay(selectDisplay, selectField) {
+      var service = this;
       var handler = function() {
         var selectKey = service.getKey(selectField.key);
         _.each(selectDisplay.items, function(item) {
