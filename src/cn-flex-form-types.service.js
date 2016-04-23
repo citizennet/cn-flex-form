@@ -19,7 +19,7 @@
       condition: field => field.type.includes('autocomplete') || field.titleMap || field.titleMapResolve || field.titleMapQuery,
       type: 'cn-autocomplete'
     }, {
-      condition: field => field.type === 'cn-datetimepicker' || field.type === 'datetime-local',
+      condition: field => field.type === 'cn-datetimepicker' || field.type === 'datetime-local' || field.type === 'time-minutes',
       type: 'cn-datetimepicker'
     }, {
       condition: field => field.type === 'help',

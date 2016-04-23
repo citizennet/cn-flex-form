@@ -1081,7 +1081,36 @@
     }
 
     function processDate(date) {
+      var service = this;
       date.type = 'cn-datetimepicker';
+
+      if(date.schema.format === 'time-minutes') {
+        date.maxView = 'hour';
+        date.iconClass = 'fa fa-clock-o'
+
+        date.modelFormatter = val => {
+          console.log('val:', val);
+
+          if(!val) return;
+
+          let m = moment(val);
+
+          return _.add(_.multiply(m.hours(), 60), m.minutes());
+        };
+
+        date.modelParser = val => {
+          if(!val) return;
+
+          let d = parseInt(val);
+          return moment().startOf('day').add('hours', _.floor(d / 60)).add('minutes', d % 60);
+        };
+
+        date.viewFormatter = val => {
+          if(!val) return;
+
+          return date.modelParser(val).format(date.dateFormat);
+        };
+      }
     }
 
     function processSelect(select) {
