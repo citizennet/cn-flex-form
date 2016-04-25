@@ -14,7 +14,7 @@
                 sf-form="vm.form"\
                 sf-model="vm.model"></ng-form>\
           <!-- debug panel to display model -->\
-          <pre ng-if="vm.debug">{{vm.model|json}}</pre>\
+          <section ng-if="vm.debug"><pre pretty-json="vm.model"></pre></section>\
         </div>\
       ',
       scope: {

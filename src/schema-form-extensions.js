@@ -77,9 +77,15 @@
             schema-validate="form"\
             input-id="{{form.key.join(\'.\')}}"\
             min-date="form.minDate"\
+            max-view="{{form.maxView}}"\
             cn-date-required="form.required"\
             placeholder="{{form.placeholder}}"\
-            model-type="{{form.schema.type}}">\
+            model-type="{{form.schema.type}}"\
+            model-formatter="form.modelFormatter"\
+            model-parser="form.modelParser"\
+            view-formatter="form.viewFormatter"\
+            format-string={{form.dateFormat}}\
+            icon-class={{form.iconClass}}>\
           </cn-datetimepicker>\
           <span class="help-block" sf-message="form.description"></span>\
         </div>\
