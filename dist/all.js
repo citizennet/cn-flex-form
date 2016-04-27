@@ -1614,13 +1614,28 @@
           if (!val) return;
 
           var d = parseInt(val);
-          return moment().startOf('day').add('hours', _.floor(d / 60)).add('minutes', d % 60);
+          var hours = _.floor(d / 60);
+          var minutes = d % 60;
+
+          return moment().startOf('day').add('hours', hours).add('minutes', minutes);
         };
 
         date.viewFormatter = function (val) {
           if (!val) return;
 
           return date.modelParser(val).format(date.dateFormat);
+        };
+
+        date.viewParser = function (val) {
+          if (!val) return;
+
+          var match = val.match(/(\d{1,2}):(\d{2}) (a|p)/);
+          if (!match) return;
+
+          var hours = _.add(match[1], match[3] === 'a' ? 0 : 12);
+          var minutes = match[2];
+
+          return _.add(_.multiply(hours, 60), minutes);
         };
       }
     }
@@ -2269,6 +2284,7 @@
             model-formatter="form.modelFormatter"\
             model-parser="form.modelParser"\
             view-formatter="form.viewFormatter"\
+            view-parser="form.viewParser"\
             format-string={{form.dateFormat}}\
             icon-class={{form.iconClass}}>\
           </cn-datetimepicker>\

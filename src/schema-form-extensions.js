@@ -84,6 +84,7 @@
             model-formatter="form.modelFormatter"\
             model-parser="form.modelParser"\
             view-formatter="form.viewFormatter"\
+            view-parser="form.viewParser"\
             format-string={{form.dateFormat}}\
             icon-class={{form.iconClass}}>\
           </cn-datetimepicker>\
