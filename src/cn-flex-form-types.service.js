@@ -46,6 +46,9 @@
       condition: field => field.type === 'reusable',
       type: 'cn-reusable'
     }, {
+      condition: field => field.type === 'table',
+      type: 'cn-table'
+    }, {
       condition: field => field.type === 'array',
       type: 'array'
     }];
