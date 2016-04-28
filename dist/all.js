@@ -1601,7 +1601,6 @@
         date.iconClass = 'fa fa-clock-o';
 
         date.modelFormatter = function (val) {
-          console.log('modelFormatter:', val);
           if (!val) return;
 
           var m = moment(val);
@@ -1610,7 +1609,6 @@
         };
 
         date.modelParser = function (val) {
-          console.log('modelParser:', val);
           if (!val) return;
 
           var d = parseInt(val);
@@ -1621,14 +1619,12 @@
         };
 
         date.viewFormatter = function (val) {
-          console.log('viewForamtter:', val);
           if (!val) return;
 
           return date.modelParser(val).format(date.dateFormat);
         };
 
         date.viewParser = function (val) {
-          console.log('viewParser:', val);
           if (!val) return;
 
           var match = val.match(/^(\d{1,2}):?(\d{1,2})? (a|p)/);
