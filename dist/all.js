@@ -1601,8 +1601,7 @@
         date.iconClass = 'fa fa-clock-o';
 
         date.modelFormatter = function (val) {
-          console.log('val:', val);
-
+          console.log('modelFormatter:', val);
           if (!val) return;
 
           var m = moment(val);
@@ -1611,6 +1610,7 @@
         };
 
         date.modelParser = function (val) {
+          console.log('modelParser:', val);
           if (!val) return;
 
           var d = parseInt(val);
@@ -1621,19 +1621,23 @@
         };
 
         date.viewFormatter = function (val) {
+          console.log('viewForamtter:', val);
           if (!val) return;
 
           return date.modelParser(val).format(date.dateFormat);
         };
 
         date.viewParser = function (val) {
+          console.log('viewParser:', val);
           if (!val) return;
 
-          var match = val.match(/(\d{1,2}):(\d{2}) (a|p)/);
+          var match = val.match(/^(\d{1,2}):?(\d{1,2})? (a|p)/);
           if (!match) return;
 
-          var hours = _.add(match[1], match[3] === 'a' ? 0 : 12);
-          var minutes = match[2];
+          var hours = _.add(match[1] === '12' ? 0 : match[1], match[3] === 'a' ? 0 : 12);
+          var minutes = match[2] || '00';
+
+          if (minutes.length === 1) minutes += '0';
 
           return _.add(_.multiply(hours, 60), minutes);
         };
@@ -2239,316 +2243,30 @@
   addTemplates.$inject = ['$templateCache'];
 
   function addTemplates($templateCache) {
-    $templateCache.put('app/components/cn-flex-form/forms/cn-toggle.html', '\
-        <div class="form-group {{form.htmlClass}}" \
-             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
-          <label class="control-label" ng-show="showTitle()">{{form.title}}</label>\
-          <div class="clearfix">\
-            <cn-toggle-switch\
-              class="pull-left"\
-              ng-show="form.key"\
-              ng-model-options="form.ngModelOptions"\
-              ng-model="$$value$$"\
-              sf-changed="form"\
-              schema-validate="form"\
-              on-value="form.onValue"\
-              off-value="form.offValue"\
-              undefined-class="form.undefinedClass"/>\
-            <span ng-show="form.onText && form.offText">\
-              {{$$value$$ === form.onValue ? form.onText : form.offText}}\
-            </span>\
-          </div>\
-          <span class="help-block" sf-message="form.description"></span>\
-        </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-toggle.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label" ng-show="showTitle()">{{form.title}}</label>\n          <div class="clearfix">\n            <cn-toggle-switch\n              class="pull-left"\n              ng-show="form.key"\n              ng-model-options="form.ngModelOptions"\n              ng-model="$$value$$"\n              sf-changed="form"\n              schema-validate="form"\n              on-value="form.onValue"\n              off-value="form.offValue"\n              undefined-class="form.undefinedClass"/>\n            <span ng-show="form.onText && form.offText">\n              {{$$value$$ === form.onValue ? form.onText : form.offText}}\n            </span>\n          </div>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-datetimepicker.html', '\
-        <div class="form-group {{form.htmlClass}}"\
-             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
-          <label class="control-label"\
-                 for="{{form.key.join(\'.\')}}"\
-                 ng-show="showTitle()">{{form.title}}</label>\
-          <cn-datetimepicker\
-            ng-show="form.key"\
-            ng-model="$$value$$"\
-            ng-model-options="form.ngModelOptions"\
-            is-disabled="form.readonly"\
-            sf-changed="form"\
-            schema-validate="form"\
-            input-id="{{form.key.join(\'.\')}}"\
-            min-date="form.minDate"\
-            max-view="{{form.maxView}}"\
-            cn-date-required="form.required"\
-            placeholder="{{form.placeholder}}"\
-            model-type="{{form.schema.type}}"\
-            model-formatter="form.modelFormatter"\
-            model-parser="form.modelParser"\
-            view-formatter="form.viewFormatter"\
-            view-parser="form.viewParser"\
-            format-string={{form.dateFormat}}\
-            icon-class={{form.iconClass}}>\
-          </cn-datetimepicker>\
-          <span class="help-block" sf-message="form.description"></span>\
-        </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-datetimepicker.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}"\n                 ng-show="showTitle()">{{form.title}}</label>\n          <cn-datetimepicker\n            ng-show="form.key"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            is-disabled="form.readonly"\n            sf-changed="form"\n            schema-validate="form"\n            input-id="{{form.key.join(\'.\')}}"\n            min-date="form.minDate"\n            max-view="{{form.maxView}}"\n            cn-date-required="form.required"\n            placeholder="{{form.placeholder}}"\n            model-type="{{form.schema.type}}"\n            model-formatter="form.modelFormatter"\n            model-parser="form.modelParser"\n            view-formatter="form.viewFormatter"\n            view-parser="form.viewParser"\n            format-string={{form.dateFormat}}\n            icon-class={{form.iconClass}}>\n          </cn-datetimepicker>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
-    var sharedAutocompleteTpl = '\
-          <tags-input\
-            ng-show="form.key"\
-            ng-model="$$value$$"\
-            ng-model-options="form.ngModelOptions"\
-            ng-disabled="form.readonly"\
-            sf-changed="form"\
-            schema-validate="form"\
-            input-id="{{form.key.join(\'.\')}}"\
-            display-property="{{form.displayProperty || \'name\'}}"\
-            value-property="{{form.valueProperty || \'value\'}}"\
-            placeholder="{{form.placeholder || \' \'}}"\
-            add-on-blur="true"\
-            add-on-comma="false"\
-            add-from-autocomplete-only="{{!form.allowNew}}"\
-            on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\
-            on-init="form.onInit($tag, form, $event, $setter)"\
-            model-type="{{form.getSchemaType()}}"\
-            array-value-type="{{form.schema.items.type}}"\
-            hide-tags="{{form.detailedList}}"\
-            tags-style="{{form.selectionStyle}}"\
-            required="{{form.required}}"\
-            min-length="{{form.minLength}}"\
-            allowed-tags-pattern=".*"\
-            dropdown="true"\
-            item-formatter="form.itemFormatter"\
-            min-tags="{{form.schema.minItems}}"\
-            max-tags="{{form.schema.maxItems || form.getSchemaType() !== \'array\' ? 1 : 0}}"\
-            allow-bulk="{{form.bulkAdd}}"\
-            bulk-delimiter="{{form.bulkDelimiter}}"\
-            bulk-placeholder="{{form.bulkPlaceholder}}"\
-            show-button="true">\
-            <auto-complete\
-              source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query)"\
-              skip-filtering="{{form.titleQuery ? true : false}}"\
-              min-length="{{form.minLookup || (form.titleQuery && 3 || 0)}}">\
-            </auto-complete>\
-          </tags-input>\
-          ';
+    var sharedAutocompleteTpl = '\n          <tags-input\n            ng-show="form.key"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            ng-disabled="form.readonly"\n            sf-changed="form"\n            schema-validate="form"\n            input-id="{{form.key.join(\'.\')}}"\n            display-property="{{form.displayProperty || \'name\'}}"\n            value-property="{{form.valueProperty || \'value\'}}"\n            placeholder="{{form.placeholder || \' \'}}"\n            add-on-blur="true"\n            add-on-comma="false"\n            add-from-autocomplete-only="{{!form.allowNew}}"\n            on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\n            on-init="form.onInit($tag, form, $event, $setter)"\n            model-type="{{form.getSchemaType()}}"\n            array-value-type="{{form.schema.items.type}}"\n            hide-tags="{{form.detailedList}}"\n            tags-style="{{form.selectionStyle}}"\n            required="{{form.required}}"\n            min-length="{{form.minLength}}"\n            allowed-tags-pattern=".*"\n            dropdown="true"\n            item-formatter="form.itemFormatter"\n            min-tags="{{form.schema.minItems}}"\n            max-tags="{{form.schema.maxItems || form.getSchemaType() !== \'array\' ? 1 : 0}}"\n            allow-bulk="{{form.bulkAdd}}"\n            bulk-delimiter="{{form.bulkDelimiter}}"\n            bulk-placeholder="{{form.bulkPlaceholder}}"\n            show-button="true">\n            <auto-complete\n              source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query)"\n              skip-filtering="{{form.titleQuery ? true : false}}"\n              min-length="{{form.minLookup || (form.titleQuery && 3 || 0)}}">\n            </auto-complete>\n          </tags-input>';
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete.html', '\
-        <div class="form-group {{form.htmlClass}}"\
-             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
-          <label class="control-label"\
-                 for="{{form.key.join(\'.\')}}-input"\
-                 ng-show="showTitle()">{{form.title}}</label>\
-          ' + sharedAutocompleteTpl + '\
-          <span class="help-block" sf-message="form.description"></span>\
-        </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}-input"\n                 ng-show="showTitle()">{{form.title}}</label>\n          ' + sharedAutocompleteTpl + '\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete-detailed.html', '\
-        <div sf-array="form"\
-             class="form-group {{form.htmlClass}}"\
-             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
-          <label class="control-label"\
-                 for="{{form.key.join(\'.\')}}-input"\
-                 ng-show="showTitle()">{{form.title}}</label>\
-          <ol class="list-group cn-autocomplete-list"\
-              ng-show="modelArray.length"\
-              ng-model="modelArray">\
-            <li class="list-group-item {{form.fieldHtmlClass}}"\
-                ng-repeat="item in modelArray track by $index">\
-              <button ng-hide="form.readonly || form.remove === null"\
-                      ng-click="deleteFromArray($index)"\
-                      type="button" class="close pull-right">\
-                <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>\
-              </button>\
-              <sf-decorator ng-init="arrayIndex = $index" form="copyWithIndex($index)"></sf-decorator>\
-            </li>\
-          </ol>\
-          ' + sharedAutocompleteTpl + '\
-          <span class="help-block" sf-message="form.description"></span>\
-        </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete-detailed.html', '\n        <div sf-array="form"\n             class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}-input"\n                 ng-show="showTitle()">{{form.title}}</label>\n          <ol class="list-group cn-autocomplete-list"\n              ng-show="modelArray.length"\n              ng-model="modelArray">\n            <li class="list-group-item {{form.fieldHtmlClass}}"\n                ng-repeat="item in modelArray track by $index">\n              <button ng-hide="form.readonly || form.remove === null"\n                      ng-click="deleteFromArray($index)"\n                      type="button" class="close pull-right">\n                <span aria-hidden="true">&times;</span>\n              </button>\n              <sf-decorator ng-init="arrayIndex = $index" form="copyWithIndex($index)"/>\n            </li>\n          </ol>\n          ' + sharedAutocompleteTpl + '\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-currency.html', '\
-        <div class="form-group {{form.htmlClass}}"\
-             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
-          <label class="control-label"\
-                 ng-show="showTitle()"\
-                 for="{{form.key.join(\'.\')}}">{{form.title}}</label>\
-          <div class="{{form.fieldClass}} input-group">\
-            <label class="input-group-addon"\
-                   ng-disabled="form.readonly"\
-                   for="{{form.key.join(\'.\')}}">$</label>\
-            <input class="form-control"\
-                   cn-currency-format="{{form.currencyFormat}}"\
-                   cn-currency-placeholder="{{form.placeholder}}"\
-                   ng-show="form.key"\
-                   ng-model-options="form.ngModelOptions"\
-                   ng-disabled="form.readonly"\
-                   sf-changed="form"\
-                   schema-validate="form"\
-                   ff-validate="form"\
-                   type="text"\
-                   step="any"\
-                   min="{{form.min}}"\
-                   max="{{form.max}}"\
-                   id="{{form.key.join(\'.\')}}"\
-                   name="{{form.key.join(\'.\')}}"\
-                   ng-model="$$value$$">\
-          </div>\
-          <span class="help-block" sf-message="form.description"></span>\
-        </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-currency.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key.join(\'.\')}}">{{form.title}}</label>\n          <div class="{{form.fieldClass}} input-group">\n            <label class="input-group-addon"\n                   ng-disabled="form.readonly"\n                   for="{{form.key.join(\'.\')}}">$</label>\n            <input class="form-control"\n                   cn-currency-format="{{form.currencyFormat}}"\n                   cn-currency-placeholder="{{form.placeholder}}"\n                   ng-show="form.key"\n                   ng-model-options="form.ngModelOptions"\n                   ng-disabled="form.readonly"\n                   sf-changed="form"\n                   schema-validate="form"\n                   ff-validate="form"\n                   type="text"\n                   step="any"\n                   min="{{form.min}}"\n                   max="{{form.max}}"\n                   id="{{form.key.join(\'.\')}}"\n                   name="{{form.key.join(\'.\')}}"\n                   ng-model="$$value$$">\n          </div>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-radiobuttons.html', '\
-        <div class="form-group schema-form-radiobuttons cn-radiobuttons {{form.htmlClass}}"\
-             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
-          <label class="control-label" ng-show="showTitle()">{{form.title}}</label>\
-          <div class="btn-group clearfix">\
-            <label class="btn btn-{{item.value}} {{form.btnClass}} {{item.value === $$value$$ ? \'active\' : \'\'}}"\
-                   ng-repeat="item in form.titleMap">\
-              <input type="radio"\
-                     class="{{form.fieldHtmlClass}} hide"\
-                     sf-changed="form"\
-                     ng-disabled="form.readonly"\
-                     ng-model="$$value$$"\
-                     ng-model-options="form.ngModelOptions"\
-                     schema-validate="form"\
-                     ff-validate="form"\
-                     ng-value="item.value"\
-                     name="{{form.key.join(\'.\')}}">\
-              <i class="fa fa-{{item.value}} fa-lg"></i>\
-              <span ng-bind-html="item.name"></span>\
-            </label>\
-          </div>\
-          <span class="help-block" sf-message="form.description"></span>\
-        </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-radiobuttons.html', '\n        <div class="form-group schema-form-radiobuttons cn-radiobuttons {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label" ng-show="showTitle()">{{form.title}}</label>\n          <div class="btn-group clearfix">\n            <label class="btn btn-{{item.value}} {{form.btnClass}} {{item.value === $$value$$ ? \'active\' : \'\'}}"\n                   ng-repeat="item in form.titleMap">\n              <input type="radio"\n                     class="{{form.fieldHtmlClass}} hide"\n                     sf-changed="form"\n                     ng-disabled="form.readonly"\n                     ng-model="$$value$$"\n                     ng-model-options="form.ngModelOptions"\n                     schema-validate="form"\n                     ff-validate="form"\n                     ng-value="item.value"\n                     name="{{form.key.join(\'.\')}}">\n              <i class="fa fa-{{item.value}} fa-lg"></i>\n              <span ng-bind-html="item.name"></span>\n            </label>\n          </div>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-percentage.html', '\
-        <div class="form-group {{form.htmlClass}}"\
-             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
-          <label class="control-label"\
-                 ng-show="showTitle()"\
-                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\
-          <div class="{{form.fieldClass}} input-group">\
-            <input class="form-control"\
-                   cn-percentage-format\
-                   ng-show="form.key"\
-                   ng-model-options="form.ngModelOptions"\
-                   ng-disabled="form.readonly"\
-                   sf-changed="form"\
-                   schema-validate="form"\
-                   type="number"\
-                   step="any"\
-                   min="{{form.min}}"\
-                   max="{{form.max}}"\
-                   id="{{form.key && form.key[0]}}"\
-                   name="{{form.key && form.key[0]}}"\
-                   ng-model="$$value$$">\
-             <div class="input-group-addon"\
-                    ng-disabled="form.readonly"\
-                    for="{{form.key && form.key[0]}}">%</div>\
-          </div>\
-          <span class="help-block" sf-message="form.description"></span>\
-        </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-percentage.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\n          <div class="{{form.fieldClass}} input-group">\n            <input class="form-control"\n                   cn-percentage-format\n                   ng-show="form.key"\n                   ng-model-options="form.ngModelOptions"\n                   ng-disabled="form.readonly"\n                   sf-changed="form"\n                   schema-validate="form"\n                   type="number"\n                   step="any"\n                   min="{{form.min}}"\n                   max="{{form.max}}"\n                   id="{{form.key && form.key[0]}}"\n                   name="{{form.key && form.key[0]}}"\n                   ng-model="$$value$$">\n             <div class="input-group-addon"\n                    ng-disabled="form.readonly"\n                    for="{{form.key && form.key[0]}}">%</div>\n          </div>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-display.html', '\
-        <div class="form-group cn-display{{form.htmlClass}}">\
-          <input ng-show="form.key"\
-                 class="form-control"\
-                 id="{{form.key.join(\'.\')}}"\
-                 name="{{form.key.join(\'.\')}}"\
-                 ng-disabled="true"\
-                 value="{{form.getDisplay(form.key, form.arrayIndex)}}">\
-        </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-display.html', '\n        <div class="form-group cn-display{{form.htmlClass}}">\n          <input ng-show="form.key"\n                 class="form-control"\n                 id="{{form.key.join(\'.\')}}"\n                 name="{{form.key.join(\'.\')}}"\n                 ng-disabled="true"\n                 value="{{form.getDisplay(form.key, form.arrayIndex)}}">\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-fieldset.html', '\
-        <fieldset ng-disabled="form.readonly" class="schema-form-fieldset {{form.htmlClass}}">\
-          <legend ng-click="form.toggleCollapse()"\
-                  ng-class="{\'sr-only\': !showTitle(), collapsible: form.collapsible}"\
-                  ng-mouseenter="form.render = true">\
-            <i ng-show="form.collapsible"\
-               class="fa fa-caret-{{form.collapsed ? \'right\' : \'down\'}}"></i>\
-            {{ form.title }}\
-          </legend>\
-          <div class="help-block" ng-show="form.description" ng-bind-html="form.description"></div>\
-          <div collapse="form.collapsed">\
-            <div ng-if="form.render">\
-              <sf-decorator ng-repeat="item in form.items" form="item"></sf-decorator>\
-            </div>\
-          </div>\
-        </fieldset>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-fieldset.html', '\n        <fieldset ng-disabled="form.readonly" class="schema-form-fieldset {{form.htmlClass}}">\n          <legend ng-click="form.toggleCollapse()"\n                  ng-class="{\'sr-only\': !showTitle(), collapsible: form.collapsible}"\n                  ng-mouseenter="form.render = true">\n            <i ng-show="form.collapsible"\n               class="fa fa-caret-{{form.collapsed ? \'right\' : \'down\'}}"></i>\n            {{ form.title }}\n          </legend>\n          <div class="help-block" ng-show="form.description" ng-bind-html="form.description"></div>\n          <div collapse="form.collapsed">\n            <div ng-if="form.render">\n              <sf-decorator ng-repeat="item in form.items" form="item"/>\n            </div>\n          </div>\n        </fieldset>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-mediaupload.html', '\
-        <div class="form-group {{form.htmlClass}}"\
-             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
-          <label class="control-label"\
-                 ng-show="showTitle()"\
-                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\
-          <media-upload ng-model="$$value$$"\
-                        cn-file-type="form.fileType"\
-                        cn-upload-path="form.uploadPath"\
-                        cn-data="form.data"\
-                        cn-preview-path="form.previewPath"\
-                        cn-model-value-key="form.modelValueKey"\
-                        ng-model-options="form.ngModelOptions"\
-                        sf-changed="form"\
-                        schema-validate="form"\
-                        ff-form="form"\
-                        class="clearfix">\
-          </media-upload>\
-          <span class="help-block" sf-message="form.description"></span>\
-       </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-mediaupload.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\n          <media-upload ng-model="$$value$$"\n                        cn-file-type="form.fileType"\n                        cn-upload-path="form.uploadPath"\n                        cn-data="form.data"\n                        cn-preview-path="form.previewPath"\n                        cn-model-value-key="form.modelValueKey"\n                        ng-model-options="form.ngModelOptions"\n                        sf-changed="form"\n                        schema-validate="form"\n                        ff-form="form"\n                        class="clearfix">\n          </media-upload>\n          <span class="help-block" sf-message="form.description"></span>\n       </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-csvupload.html', '\
-        <div class="form-group {{form.htmlClass}}"\
-             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
-          <label class="control-label"\
-                 ng-show="showTitle()"\
-                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\
-          <csv-upload ng-model="$$value$$"\
-                        cn-upload-path="form.uploadPath"\
-                        ng-model-options="form.ngModelOptions"\
-                        sf-changed="form"\
-                        schema-validate="form"\
-                        ff-form="form"\
-                        class="clearfix">\
-          </csv-upload>\
-          <span class="help-block" sf-message="form.description"></span>\
-       </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-csvupload.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\n          <csv-upload ng-model="$$value$$"\n                        cn-upload-path="form.uploadPath"\n                        ng-model-options="form.ngModelOptions"\n                        sf-changed="form"\n                        schema-validate="form"\n                        ff-form="form"\n                        class="clearfix">\n          </csv-upload>\n          <span class="help-block" sf-message="form.description"></span>\n       </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-reusable.html', '\
-        <div class="form-group cn-reusable {{form.htmlClass}}"\
-             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
-          <label class="control-label"\
-                 ng-show="showTitle()"\
-                 for="{{form.key.join(\'.\')}}">{{form.title}}</label>\
-          <cn-select-or\
-            ng-show="form.key"\
-            select-from="form.library"\
-            ng-model="$$value$$"\
-            ng-model-options="form.ngModelOptions"\
-            sf-changed="form"\
-            schema-validate="form"\
-            ff-form="form"\
-            directiveId="form.directiveId"\
-            item-template="form.itemTemplate"\
-            toggle-text="form.toggleText"\
-            disabled="form.readonly"\
-            view="form.view">\
-            <sf-decorator ng-repeat="item in form.items" form="item"/>\
-          </cn-select-or>\
-          <p ng-if="form.loadMore && form.view === \'list\'">\
-            <a ng-click="form.loadMore()"\
-               class="btn btn-default btn-block">Load More</a>\
-          </p>\
-          <span class="help-block" sf-message="form.description"></span>\
-        </div>\
-        ');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-reusable.html', '\n        <div class="form-group cn-reusable {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key.join(\'.\')}}">{{form.title}}</label>\n          <cn-select-or\n            ng-show="form.key"\n            select-from="form.library"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            sf-changed="form"\n            schema-validate="form"\n            ff-form="form"\n            directiveId="form.directiveId"\n            item-template="form.itemTemplate"\n            toggle-text="form.toggleText"\n            disabled="form.readonly"\n            view="form.view">\n            <sf-decorator ng-repeat="item in form.items" form="item"/>\n          </cn-select-or>\n          <p ng-if="form.loadMore && form.view === \'list\'">\n            <a ng-click="form.loadMore()"\n               class="btn btn-default btn-block">Load More</a>\n          </p>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
   }
 })();

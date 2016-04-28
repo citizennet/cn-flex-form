@@ -1089,8 +1089,7 @@
         date.iconClass = 'fa fa-clock-o'
 
         date.modelFormatter = val => {
-          console.log('val:', val);
-
+          console.log('modelFormatter:', val);
           if(!val) return;
 
           let m = moment(val);
@@ -1099,6 +1098,7 @@
         };
 
         date.modelParser = val => {
+          console.log('modelParser:', val);
           if(!val) return;
 
           let d = parseInt(val);
@@ -1109,19 +1109,23 @@
         };
 
         date.viewFormatter = val => {
+          console.log('viewForamtter:', val);
           if(!val) return;
 
           return date.modelParser(val).format(date.dateFormat);
         };
 
         date.viewParser = val => {
+          console.log('viewParser:', val);
           if(!val) return;
 
-          let match = val.match(/(\d{1,2}):(\d{2}) (a|p)/);
+          let match = val.match(/^(\d{1,2}):?(\d{1,2})? (a|p)/);
           if(!match) return;
 
-          let hours = _.add(match[1], match[3] === 'a' ? 0 : 12);
-          let minutes = match[2];
+          let hours = _.add(match[1] === '12' ? 0 : match[1], match[3] === 'a' ? 0 : 12);
+          let minutes = match[2] || '00';
+
+          if(minutes.length === 1) minutes += '0';
 
           return _.add(_.multiply(hours, 60), minutes);
         };
