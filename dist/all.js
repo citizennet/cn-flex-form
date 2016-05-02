@@ -287,7 +287,7 @@
       type: 'cn-autocomplete'
     }, {
       condition: function condition(field) {
-        return field.type === 'cn-datetimepicker' || field.type === 'datetime-local' || field.type === 'time-minutes';
+        return field.type === 'cn-datetimepicker' || field.type === 'datetime-local';
       },
       type: 'cn-datetimepicker'
     }, {
@@ -413,7 +413,7 @@
                 sf-form="vm.form"\
                 sf-model="vm.model"></ng-form>\
           <!-- debug panel to display model -->\
-          <section ng-if="vm.debug"><pre pretty-json="vm.model"></pre></section>\
+          <pre ng-if="vm.debug">{{vm.model|json}}</pre>\
         </div>\
       ',
       scope: {
@@ -1593,36 +1593,7 @@
     }
 
     function processDate(date) {
-      var service = this;
       date.type = 'cn-datetimepicker';
-
-      if (date.schema.format === 'time-minutes') {
-        date.maxView = 'hour';
-        date.iconClass = 'fa fa-clock-o';
-
-        date.modelFormatter = function (val) {
-          console.log('val:', val);
-
-          if (!val) return;
-
-          var m = moment(val);
-
-          return _.add(_.multiply(m.hours(), 60), m.minutes());
-        };
-
-        date.modelParser = function (val) {
-          if (!val) return;
-
-          var d = parseInt(val);
-          return moment().startOf('day').add('hours', _.floor(d / 60)).add('minutes', d % 60);
-        };
-
-        date.viewFormatter = function (val) {
-          if (!val) return;
-
-          return date.modelParser(val).format(date.dateFormat);
-        };
-      }
     }
 
     function processSelect(select) {
