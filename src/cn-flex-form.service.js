@@ -17,6 +17,7 @@
     'cn-csvupload': 'processCsvUpload',
     'cn-reusable': 'processReusable',
     'cn-toggle': 'processToggle',
+    'cn-table': 'processTable',
     'array': 'processArray'
   };
 
@@ -113,6 +114,7 @@
       processResolve,
       processSection,
       processSelect,
+      processTable,
       processTemplate,
       processToggle,
       processUpdatedSchema,
@@ -1089,8 +1091,6 @@
         date.iconClass = 'fa fa-clock-o';
 
         date.modelFormatter = val => {
-          console.log('val:', val);
-
           if(!val) return;
 
           let m = moment(val);
@@ -1102,13 +1102,30 @@
           if(!val) return;
 
           let d = parseInt(val);
-          return moment().startOf('day').add('hours', _.floor(d / 60)).add('minutes', d % 60);
+          let hours = _.floor(d / 60);
+          let minutes = d % 60;
+
+          return moment().startOf('day').add('hours', hours).add('minutes', minutes);
         };
 
         date.viewFormatter = val => {
           if(!val) return;
 
           return date.modelParser(val).format(date.dateFormat);
+        };
+
+        date.viewParser = val => {
+          if(!val) return;
+
+          let match = val.match(/^(\d{1,2}):?(\d{1,2})? (a|p)/);
+          if(!match) return;
+
+          let hours = _.add(match[1] === '12' ? 0 : match[1], match[3] === 'a' ? 0 : 12);
+          let minutes = match[2] || '00';
+
+          if(minutes.length === 1) minutes += '0';
+
+          return _.add(_.multiply(hours, 60), minutes);
         };
       }
     }
@@ -1272,6 +1289,18 @@
         }
         return processor(tpl)(scope);
       };
+    }
+
+    function processTable(table) {
+      var service = this;
+      table.type = 'cn-table';
+      table.items.forEach(function(row) {
+        for (var i = 0; i < table.columns.length; i++) {
+          _.extend(row.items[i], table.columns[i]);
+          //if (row.columns[i].key) row.columns[i].key = ObjectPath.parse(row.columns[i].key);
+          service.processField(row.items[i]);
+        }
+      });
     }
 
     function processSelectDisplay(selectDisplay, schema) {
