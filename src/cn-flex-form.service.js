@@ -1086,7 +1086,7 @@
 
       if(date.schema.format === 'time-minutes') {
         date.maxView = 'hour';
-        date.iconClass = 'fa fa-clock-o'
+        date.iconClass = 'fa fa-clock-o';
 
         date.modelFormatter = val => {
           if(!val) return;
