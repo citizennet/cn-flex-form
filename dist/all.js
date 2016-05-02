@@ -332,6 +332,11 @@
       type: 'cn-reusable'
     }, {
       condition: function condition(field) {
+        return field.type === 'table';
+      },
+      type: 'cn-table'
+    }, {
+      condition: function condition(field) {
         return field.type === 'array';
       },
       type: 'array'
@@ -561,6 +566,7 @@
     'cn-csvupload': 'processCsvUpload',
     'cn-reusable': 'processReusable',
     'cn-toggle': 'processToggle',
+    'cn-table': 'processTable',
     'array': 'processArray'
   };
 
@@ -642,6 +648,7 @@
       processResolve: processResolve,
       processSection: processSection,
       processSelect: processSelect,
+      processTable: processTable,
       processTemplate: processTemplate,
       processToggle: processToggle,
       processUpdatedSchema: processUpdatedSchema,
@@ -1797,6 +1804,18 @@
       };
     }
 
+    function processTable(table) {
+      var service = this;
+      table.type = 'cn-table';
+      table.items.forEach(function (row) {
+        for (var i = 0; i < table.columns.length; i++) {
+          _.extend(row.items[i], table.columns[i]);
+          //if (row.columns[i].key) row.columns[i].key = ObjectPath.parse(row.columns[i].key);
+          service.processField(row.items[i]);
+        }
+      });
+    }
+
     function processSelectDisplay(selectDisplay, schema) {
       var service = this,
           selectField = _.find(selectDisplay.items, 'selectField'),
@@ -2226,7 +2245,7 @@
   schemaFormConfig.$inject = ['cnFlexFormServiceProvider'];
 
   function schemaFormConfig(cnFlexFormServiceProvider) {
-    var extensions = ['cn-fieldset', 'cn-toggle', 'cn-datetimepicker', 'cn-autocomplete', 'cn-autocomplete-detailed', 'cn-currency', 'cn-radiobuttons', 'cn-percentage', 'cn-display', 'cn-mediaupload', 'cn-csvupload', 'cn-reusable'];
+    var extensions = ['cn-fieldset', 'cn-toggle', 'cn-datetimepicker', 'cn-autocomplete', 'cn-autocomplete-detailed', 'cn-currency', 'cn-radiobuttons', 'cn-percentage', 'cn-display', 'cn-mediaupload', 'cn-csvupload', 'cn-reusable', 'cn-table'];
 
     _.each(extensions, function (extension) {
       cnFlexFormServiceProvider.registerField({
@@ -2264,5 +2283,22 @@
     $templateCache.put('app/components/cn-flex-form/forms/cn-csvupload.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\n          <csv-upload ng-model="$$value$$"\n                        cn-upload-path="form.uploadPath"\n                        ng-model-options="form.ngModelOptions"\n                        sf-changed="form"\n                        schema-validate="form"\n                        ff-form="form"\n                        class="clearfix">\n          </csv-upload>\n          <span class="help-block" sf-message="form.description"></span>\n       </div>');
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-reusable.html', '\n        <div class="form-group cn-reusable {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key.join(\'.\')}}">{{form.title}}</label>\n          <cn-select-or\n            ng-show="form.key"\n            select-from="form.library"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            sf-changed="form"\n            schema-validate="form"\n            ff-form="form"\n            directiveId="form.directiveId"\n            item-template="form.itemTemplate"\n            toggle-text="form.toggleText"\n            disabled="form.readonly"\n            view="form.view">\n            <sf-decorator ng-repeat="item in form.items" form="item"/>\n          </cn-select-or>\n          <p ng-if="form.loadMore && form.view === \'list\'">\n            <a ng-click="form.loadMore()"\n               class="btn btn-default btn-block">Load More</a>\n          </p>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
+
+    $templateCache.put('app/components/cn-flex-form/forms/cn-table.html', '\
+        <div class="form-group cn-ff-table {{form.htmlClass}}"\
+             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
+          <div class="row">\
+            <div ng-repeat="col in form.columns" class="{{col.columnWidth}}">\
+              <p class="column-header">{{col.columnHeader}}</p>\
+            </div>\
+          </div>\
+          <div class="row" ng-repeat="row in form.items">\
+            <div ng-repeat="col in row.items" class="{{col.columnWidth}}">\
+              <sf-decorator form="col"></sf-decorator>\
+            </div>\
+          </div>\
+          <span class="help-block" sf-message="form.description"></span>\
+        </div>\
+        ');
   }
 })();

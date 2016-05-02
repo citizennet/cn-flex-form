@@ -20,7 +20,8 @@
       'cn-display',
       'cn-mediaupload',
       'cn-csvupload',
-      'cn-reusable'
+      'cn-reusable',
+      'cn-table'
     ];
 
     _.each(extensions, function(extension) {
@@ -367,6 +368,26 @@
           </p>
           <span class="help-block" sf-message="form.description"></span>
         </div>`
+    );
+
+    $templateCache.put(
+        'app/components/cn-flex-form/forms/cn-table.html',
+        '\
+        <div class="form-group cn-ff-table {{form.htmlClass}}"\
+             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
+          <div class="row">\
+            <div ng-repeat="col in form.columns" class="{{col.columnWidth}}">\
+              <p class="column-header">{{col.columnHeader}}</p>\
+            </div>\
+          </div>\
+          <div class="row" ng-repeat="row in form.items">\
+            <div ng-repeat="col in row.items" class="{{col.columnWidth}}">\
+              <sf-decorator form="col"></sf-decorator>\
+            </div>\
+          </div>\
+          <span class="help-block" sf-message="form.description"></span>\
+        </div>\
+        '
     );
   }
 

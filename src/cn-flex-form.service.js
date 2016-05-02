@@ -17,6 +17,7 @@
     'cn-csvupload': 'processCsvUpload',
     'cn-reusable': 'processReusable',
     'cn-toggle': 'processToggle',
+    'cn-table': 'processTable',
     'array': 'processArray'
   };
 
@@ -113,6 +114,7 @@
       processResolve,
       processSection,
       processSelect,
+      processTable,
       processTemplate,
       processToggle,
       processUpdatedSchema,
@@ -1287,6 +1289,18 @@
         }
         return processor(tpl)(scope);
       };
+    }
+
+    function processTable(table) {
+      var service = this;
+      table.type = 'cn-table';
+      table.items.forEach(function(row) {
+        for (var i = 0; i < table.columns.length; i++) {
+          _.extend(row.items[i], table.columns[i]);
+          //if (row.columns[i].key) row.columns[i].key = ObjectPath.parse(row.columns[i].key);
+          service.processField(row.items[i]);
+        }
+      });
     }
 
     function processSelectDisplay(selectDisplay, schema) {
