@@ -102,7 +102,7 @@
             schema-validate="form"
             input-id="{{form.key.join('.')}}"
             display-property="{{form.displayProperty || 'name'}}"
-            value-property="{{form.valueProperty || 'value'}}"
+            value-property="{{form.valueProperty}}"
             placeholder="{{form.placeholder || ' '}}"
             add-on-blur="true"
             add-on-comma="false"

@@ -137,17 +137,14 @@
         for(var i = 0, l = services.length; i < l; i++) {
           if(services[i].model === model) {
             service = services[i];
-            //console.log('service.compile:', service.compile);
             service.compile(schema, model, config);
             break;
           }
         }
-        //console.log('services1:', services, service);
       }
       if(!service) {
         service = new CNFlexForm(schema, model, config);
         services.push(service);
-        //console.log('services2:', services, service);
       }
       return service || new CNFlexForm(schema, model, config);
     }
@@ -190,7 +187,6 @@
       service.schema = schema;
       service.model = model;
 
-      //console.log('compile:schema, model:', schema.compiled, service.isCompiled(), schema, model);
       if(!service.isCompiled()) {
         service.setupConfig(config);
 
@@ -245,7 +241,7 @@
     function processDefault(field) {
       var service = this,
           schema = field.schema;
-      //console.log('processDefault:', field.key, schema, service.updates);
+
       if(schema.default) {
         var key = service.getKey(field.key);
         // if schemaUpdate hasn't been triggered, let schemaForm directive handle defaults
@@ -255,7 +251,6 @@
           var modelValue = model.get();
           // if there's an existing default and it's the same as the current value
           // update the current value to the new default
-          //console.error('default:', key, modelValue, service.defaults[key], angular.equals(modelValue, service.defaults[key]));
           if(!service.defaults[key] || _.isUndefined(modelValue) || angular.equals(modelValue, service.defaults[key])) {
             model.set(schema.default);
           }
@@ -376,7 +371,6 @@
 
       key = service.getKey(key);
 
-      //console.log('getSchema:', key, depth, service);
       //key = key.split('.');
       //key = key
       //    .replace(/arrayIndex/g, '')
@@ -388,8 +382,6 @@
       depth = depth || service.schema.schema.properties;
 
       if (_.last(key) === '') key.pop();
-
-      //console.log('key:', key);
 
       var first, next, matchArray;
 
@@ -477,7 +469,6 @@
           var resolution = watch.resolution;
           var handler;
 
-          //console.log('resolution:', resolution);
           if(_.isFunction(resolution)) {
             handler = function(cur, prev) {
               var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
@@ -506,53 +497,45 @@
                   '/': 'divide'
                 }[adjustment.math[1]];
 
-                //console.log('adjustment:', adjustment);
                 adjustment.adjuster = service.parseExpression(adjustment.math[2]);
               }
             }
 
             resolution = resolution.match(/(\S+) ?= ?(\S+)/);
-            //console.log('resolution:', resolution);
 
-            handler = function(val, prev, key, trigger) {
-              //console.log('watch.resolution:', watch.resolution);
-              var updatePath, fromPath;
+            handler = (val, prev, key, trigger) => {
+              let updatePath, fromPath;
 
               if(resolution[1].includes('arrayIndex')) {
                 updatePath = replaceArrayIndex(resolution[1], arguments[2]);
               }
-              var update = service.parseExpression(updatePath || resolution[1]);
+              let update = service.parseExpression(updatePath || resolution[1]);
 
               // avoid loop where two watches keep triggering each other
               if(trigger === update.path().key) return;
+              trigger = update.path().key;
 
               if (resolution[2].includes('arrayIndex')) {
                 fromPath = replaceArrayIndex(resolution[2], arguments[2]);
               }
-              var from = service.parseExpression(fromPath || resolution[2]);
+              let from = service.parseExpression(fromPath || resolution[2]);
 
-              //console.log('handler:resolution:', field.key, condition, condition && $parse(condition)(service));
               var parsedCondition = functionCondition ? service.parseCondition(functionCondition, condition) : condition;
-              //if(functionCondition) {
-              //  console.log('parsedCondition:', parsedCondition, $parse(parsedCondition)(service));
-              //}
               if(!parsedCondition || $parse(parsedCondition)(service)) {
-                //console.log('update:', update.get(), from.get());
                 if(adjustment.date) {
                   update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
                 }
                 else if(adjustment.math) {
                   //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
                   //console.log('_.%s(%s, %s):', adjustment.operator, from.get(), adjustment.adjuster.get(), result);
-                  var result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
+                  let result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
                   //console.log('eval(%s %s %s):', from.get(), adjustment.math[1], adjustment.adjuster.get(), result);
                   //console.log('result:', result);
                   //console.log('adjustment.math:', adjustment, from.get(), adjustment.adjuster.get(), result);
                   //console.log('schema.format:', schema.format);
                   schema = schema || field.items && (field.items[0].schema || (field.items[0].items && field.items[0].items[0].schema));
                   if(field.type === 'cn-currency') {
-                    //console.log('schema.format:', schema.format, result);
-                    var p = schema && schema.format === 'currency-dollars' ? 2 : 0;
+                    let p = schema && schema.format === 'currency-dollars' ? 2 : 0;
 
                     if(adjustment.math[1] === '*') {
                       result = _.floor(result, p);
@@ -565,8 +548,9 @@
                     }
                   }
                   //service.listeners[update.path().key].prev = result;
-                  //console.log('key, field.key, trigger, update.path().key:', key, field.key, trigger, update.path().key);
-                  service.listeners[update.path().key].trigger = key;
+                  if(trigger) {
+                    service.listeners[trigger].trigger = key;
+                  }
                   update.set(result || 0);
                 }
                 else {
@@ -654,7 +638,6 @@
 
       if(!service.listeners[key]) {
         var prev = angular.copy(cur);
-        //console.log('prev:', key, prev, angular.equals(prev, service.parseExpression(key, service.model).get()));
         service.listeners[key] = {
           handlers: [],
           updateSchema: updateSchema,
@@ -671,7 +654,6 @@
     function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
       var service = this;
       var onArray = function(cur, prev, reorder) {
-        //console.log('onArray:', cur, prev, reorder, arrKey, fieldKey);
 
         if(!prev && prev !== 0) return;
         var i, l, key;
@@ -799,7 +781,6 @@
           }
         });
 
-        //console.log('service.params, service.prevParams:', service.params, service.prevParams, !angular.equals(service.params, service.prevParams), service.updates);
         if(!angular.equals(service.params, service.prevParams)) {
           if(service.model.id && !service.updates && _.isEmpty(service.prevParams)) {
             ++service.updates;
@@ -1032,7 +1013,6 @@
     }
 
     function processCurrency(field) {
-      //console.log('processCurrency:', field);
       field.currencyFormat = {
         'currency-dollars': 'dollars',
         'currency-microcents': 'microcents',
@@ -1142,23 +1122,18 @@
         select.onInit = function(val, form, event, setter) {
           var modelValue = service.parseExpression(form.key, service.model);
           // make sure we have correct value
-          // console.log('init:', form.key, val, event);
           val = modelValue.get();
           if(event === 'tag-init') {
             var newVal;
             if(form.schema.type === 'array') {
-              if(form.schema.items.type !== 'object') {
-                newVal = [];
-                _.each(val, function(val) {
-                  var match = {};
-                  match[select.valueProperty || 'value'] = val;
-                  newVal.push(_.find(select.getTitleMap(), match));
-                });
-              }
+              newVal = [];
+              _.each(val, val => {
+                let match = select.valueProperty ? {[select.valueProperty]: val} : val;
+                newVal.push(_.find(select.getTitleMap(), match));
+              });
             }
             else {
-              var match = {};
-              match[select.valueProperty || 'value'] = val;
+              let match = select.valueProperty ? {[select.valueProperty]: val} : val;
               newVal = _.find(select.getTitleMap(), match);
             }
             //console.log('newVal:', newVal);
@@ -1273,12 +1248,9 @@
 
     function processTemplate(tpl, parseScope) {
       var service = this;
-      //console.log('tpl:', tpl);
       //var processor = /<(\S+)[^>]*>.*<\/\1>/.test(tpl) ? $compile : $interpolate;
       var processor = $interpolate;
       return function(scope, arrayIndex) {
-        //console.log('tpl, scope, processor:', tpl, scope, processor);
-        //console.log('processor(tpl)(scope):', processor(tpl)(scope));
         if(parseScope) {
           if(angular.isDefined(arrayIndex)) {
             scope = _.map(scope, function(key) {
@@ -1307,8 +1279,6 @@
       var service = this,
           selectField = _.find(selectDisplay.items, 'selectField'),
           handler;
-
-      console.log('selectField:', selectField.key, selectField);
 
       if (schema && schema.type === 'array') {
         handler = service.setupArraySelectDisplay(selectDisplay, selectField);
@@ -1498,7 +1468,6 @@
             diff = cnUtil.diff(params, _.omit(service.schema.params, 'updateSchema'));
             keys = _.keys(diff);
 
-            //console.log('keys, diff:', keys, diff);
             params.updateSchema = _.first(keys);
           }
 
@@ -1604,7 +1573,6 @@
       });
       current._ogKeys = _.keys(update);
 
-      //console.log('update.key:', update.key);
       service.deregisterHandlers(update.key);
 
       if(!isChild && current.redraw) current.redraw();
