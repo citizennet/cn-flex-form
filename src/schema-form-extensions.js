@@ -375,6 +375,7 @@
         '\
         <div class="form-group cn-ff-table {{form.htmlClass}}"\
              ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
+          <h6>{{form.title}}</h6>\
           <div class="row">\
             <div ng-repeat="col in form.columns" class="{{col.columnWidth}}">\
               <p class="column-header">{{col.columnHeader}}</p>\
