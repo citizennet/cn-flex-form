@@ -1041,7 +1041,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
                     }
                   }
                   //service.listeners[update.path().key].prev = result;
-                  if (trigger) {
+                  if (service.listeners[trigger]) {
                     service.listeners[trigger].trigger = key;
                   }
                   update.set(result || 0);
@@ -1613,7 +1613,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           var modelValue = service.parseExpression(form.key, service.model);
           // make sure we have correct value
           val = modelValue.get();
-          console.log('service.getKey(form.key), val:', service.getKey(form.key), val);
+          //console.log('service.getKey(form.key), val:', service.getKey(form.key), val);
           if (event === 'tag-init') {
             var newVal;
             if (form.schema.type === 'array') {
