@@ -507,7 +507,7 @@
               let updatePath, fromPath;
 
               if(resolution[1].includes('arrayIndex')) {
-                updatePath = replaceArrayIndex(resolution[1], arguments[2]);
+                updatePath = replaceArrayIndex(resolution[1], key);
               }
               let update = service.parseExpression(updatePath || resolution[1]);
 
@@ -516,7 +516,7 @@
               trigger = update.path().key;
 
               if (resolution[2].includes('arrayIndex')) {
-                fromPath = replaceArrayIndex(resolution[2], arguments[2]);
+                fromPath = replaceArrayIndex(resolution[2], key);
               }
               let from = service.parseExpression(fromPath || resolution[2]);
 
@@ -1301,8 +1301,8 @@
           item.condition = 'true';
         }
       });
-      var handler = function() {
-        var index = getArrayIndex(arguments[2]);
+      var handler = function(val, prev, key) {
+        var index = getArrayIndex(key);
         _.each(selectDisplay.items, function(item) {
           var selectKey = service.getKey(selectField.key);
           var key = service.getKey(item.key);

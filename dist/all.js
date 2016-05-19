@@ -959,8 +959,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       field.watch = _.isArray(field.watch) ? field.watch : [field.watch];
 
       _.each(field.watch, function (watch) {
-        var _arguments = arguments;
-
         if (watch.resolution) {
           var condition = watch.condition;
           var functionCondition = service.isConditionFunction(condition);
@@ -1005,7 +1003,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
                   fromPath = undefined;
 
               if (resolution[1].includes('arrayIndex')) {
-                updatePath = replaceArrayIndex(resolution[1], _arguments[2]);
+                updatePath = replaceArrayIndex(resolution[1], key);
               }
               var update = service.parseExpression(updatePath || resolution[1]);
 
@@ -1014,7 +1012,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
               trigger = update.path().key;
 
               if (resolution[2].includes('arrayIndex')) {
-                fromPath = replaceArrayIndex(resolution[2], _arguments[2]);
+                fromPath = replaceArrayIndex(resolution[2], key);
               }
               var from = service.parseExpression(fromPath || resolution[2]);
 
@@ -1789,8 +1787,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           item.condition = 'true';
         }
       });
-      var handler = function handler() {
-        var index = getArrayIndex(arguments[2]);
+      var handler = function handler(val, prev, key) {
+        var index = getArrayIndex(key);
         _.each(selectDisplay.items, function (item) {
           var selectKey = service.getKey(selectField.key);
           var key = service.getKey(item.key);
