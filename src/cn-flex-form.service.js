@@ -1123,17 +1123,20 @@
           var modelValue = service.parseExpression(form.key, service.model);
           // make sure we have correct value
           val = modelValue.get();
+          console.log('service.getKey(form.key), val:', service.getKey(form.key), val);
           if(event === 'tag-init') {
             var newVal;
             if(form.schema.type === 'array') {
               newVal = [];
               _.each(val, val => {
-                let match = select.valueProperty ? {[select.valueProperty]: val} : val;
+                let valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
+                let match = valProp ? {[valProp]: val} : val;
                 newVal.push(_.find(select.getTitleMap(), match));
               });
             }
             else {
-              let match = select.valueProperty ? {[select.valueProperty]: val} : val;
+              let valProp = select.valueProperty || form.schema.type !== 'object' && 'value';
+              let match = valProp ? {[valProp]: val} : val;
               newVal = _.find(select.getTitleMap(), match);
             }
             //console.log('newVal:', newVal);
