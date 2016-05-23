@@ -102,7 +102,7 @@
             schema-validate="form"
             input-id="{{form.key.join('.')}}"
             display-property="{{form.displayProperty || 'name'}}"
-            value-property="{{form.valueProperty || 'value'}}"
+            value-property="{{form.valueProperty}}"
             placeholder="{{form.placeholder || ' '}}"
             add-on-blur="true"
             add-on-comma="false"
@@ -375,6 +375,7 @@
         '\
         <div class="form-group cn-ff-table {{form.htmlClass}}"\
              ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
+          <h6>{{form.title}}</h6>\
           <div class="row">\
             <div ng-repeat="col in form.columns" class="{{col.columnWidth}}">\
               <p class="column-header">{{col.columnHeader}}</p>\

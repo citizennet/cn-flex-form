@@ -63,37 +63,7 @@
       controller: FlexFormHeader,
       bindToController: true,
       controllerAs: 'vm',
-      template: '\
-          <div class="col-md-6">\
-            <h5 ng-if="vm.config.title.lead">{{::vm.config.title.lead}}</h5>\
-            <h1>{{vm.config.title.main}}</h1>\
-            <h5 ng-if="vm.config.title.sub">{{::vm.config.title.sub}}</h5>\
-          </div>\
-          <div class="{{vm.config.buttonContainerClass || \'page-action-btns\'}}">\
-            <div class="btn-options"\
-                 ng-mouseover="vm.loadOffscreen()">\
-              <a class="btn"\
-                 ng-if="vm.config.actionConfig.returnState"\
-                 ui-sref="{{vm.config.actionConfig.returnState}}">\
-                {{vm.config.actionConfig.returnText || \'Cancel\'}}\
-              </a>\
-              <span ng-repeat="button in vm.config.actionConfig.actions">\
-                <a class="btn {{button.style && \'btn-\'+button.style}}"\
-                   ng-disabled="vm.isDisabled(button)"\
-                   ng-class="{\'btn-primary\': $index === vm.config.actionConfig.actions.length - 1}"\
-                   ng-click="vm.submit({ handler: button.handler})"\
-                   tooltip="{{button.helptext}}"\
-                   tooltip-placement="bottom">\
-                  {{button.text || \'Save\'}}\
-                </a>\
-              </span>\
-            </div>\
-            <p class="data-updated-at text-right"\
-               id="data-updated-at"\
-               ng-hide="vm.config.noData">\
-              <a ng-click="vm.updateData()">Update Data</a>\
-            </p>\
-          </div>'
+      template: '\n          <div class="col-md-6">\n            <h5 ng-if="vm.config.title.lead">{{::vm.config.title.lead}}</h5>\n            <h1>{{vm.config.title.main}}</h1>\n            <h5 ng-if="vm.config.title.sub">{{::vm.config.title.sub}}</h5>\n          </div>\n          <div class="{{vm.config.buttonContainerClass || \'page-action-btns\'}}">\n            <div class="btn-options"\n                 ng-mouseover="vm.loadOffscreen()">\n              <a class="btn"\n                 ng-if="vm.config.actionConfig.returnState"\n                 ui-sref="{{vm.config.actionConfig.returnState}}">\n                {{vm.config.actionConfig.returnText || \'Cancel\'}}\n              </a>\n              <span ng-repeat="button in vm.config.actionConfig.actions">\n                <a class="btn {{button.style && \'btn-\'+button.style}}"\n                   ng-disabled="vm.isDisabled(button)"\n                   ng-class="{\'btn-primary\': $index === vm.config.actionConfig.actions.length - 1}"\n                   ng-click="vm.submit({ handler: button.handler})"\n                   tooltip="{{button.helptext}}"\n                   tooltip-placement="bottom">\n                  {{button.text || \'Save\'}}\n                </a>\n              </span>\n            </div>\n            <p class="data-updated-at text-right"\n               id="data-updated-at"\n               ng-hide="vm.config.noData">\n              <a ng-click="vm.updateData()">Update Data</a>\n            </p>\n          </div>'
     };
   }
 
@@ -548,6 +518,8 @@
 })();
 'use strict';
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 (function () {
   'use strict';
 
@@ -671,17 +643,14 @@
         for (var i = 0, l = services.length; i < l; i++) {
           if (services[i].model === model) {
             service = services[i];
-            //console.log('service.compile:', service.compile);
             service.compile(schema, model, config);
             break;
           }
         }
-        //console.log('services1:', services, service);
       }
       if (!service) {
         service = new CNFlexForm(schema, model, config);
         services.push(service);
-        //console.log('services2:', services, service);
       }
       return service || new CNFlexForm(schema, model, config);
     }
@@ -724,7 +693,6 @@
       service.schema = schema;
       service.model = model;
 
-      //console.log('compile:schema, model:', schema.compiled, service.isCompiled(), schema, model);
       if (!service.isCompiled()) {
         service.setupConfig(config);
 
@@ -778,7 +746,7 @@
     function processDefault(field) {
       var service = this,
           schema = field.schema;
-      //console.log('processDefault:', field.key, schema, service.updates);
+
       if (schema.default) {
         var key = service.getKey(field.key);
         // if schemaUpdate hasn't been triggered, let schemaForm directive handle defaults
@@ -788,7 +756,6 @@
           var modelValue = model.get();
           // if there's an existing default and it's the same as the current value
           // update the current value to the new default
-          //console.error('default:', key, modelValue, service.defaults[key], angular.equals(modelValue, service.defaults[key]));
           if (!service.defaults[key] || _.isUndefined(modelValue) || angular.equals(modelValue, service.defaults[key])) {
             model.set(schema.default);
           }
@@ -903,7 +870,6 @@
 
       key = service.getKey(key);
 
-      //console.log('getSchema:', key, depth, service);
       //key = key.split('.');
       //key = key
       //    .replace(/arrayIndex/g, '')
@@ -915,8 +881,6 @@
       depth = depth || service.schema.schema.properties;
 
       if (_.last(key) === '') key.pop();
-
-      //console.log('key:', key);
 
       var first, next, matchArray;
 
@@ -1002,7 +966,6 @@
           var resolution = watch.resolution;
           var handler;
 
-          //console.log('resolution:', resolution);
           if (_.isFunction(resolution)) {
             handler = function handler(cur, prev) {
               var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
@@ -1029,38 +992,32 @@
                   '/': 'divide'
                 }[adjustment.math[1]];
 
-                //console.log('adjustment:', adjustment);
                 adjustment.adjuster = service.parseExpression(adjustment.math[2]);
               }
             }
 
             resolution = resolution.match(/(\S+) ?= ?(\S+)/);
-            //console.log('resolution:', resolution);
 
             handler = function handler(val, prev, key, trigger) {
-              //console.log('watch.resolution:', watch.resolution);
-              var updatePath, fromPath;
+              var updatePath = undefined,
+                  fromPath = undefined;
 
               if (resolution[1].includes('arrayIndex')) {
-                updatePath = replaceArrayIndex(resolution[1], arguments[2]);
+                updatePath = replaceArrayIndex(resolution[1], key);
               }
               var update = service.parseExpression(updatePath || resolution[1]);
 
               // avoid loop where two watches keep triggering each other
               if (trigger === update.path().key) return;
+              trigger = update.path().key;
 
               if (resolution[2].includes('arrayIndex')) {
-                fromPath = replaceArrayIndex(resolution[2], arguments[2]);
+                fromPath = replaceArrayIndex(resolution[2], key);
               }
               var from = service.parseExpression(fromPath || resolution[2]);
 
-              //console.log('handler:resolution:', field.key, condition, condition && $parse(condition)(service));
               var parsedCondition = functionCondition ? service.parseCondition(functionCondition, condition) : condition;
-              //if(functionCondition) {
-              //  console.log('parsedCondition:', parsedCondition, $parse(parsedCondition)(service));
-              //}
               if (!parsedCondition || $parse(parsedCondition)(service)) {
-                //console.log('update:', update.get(), from.get());
                 if (adjustment.date) {
                   update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
                 } else if (adjustment.math) {
@@ -1073,7 +1030,6 @@
                   //console.log('schema.format:', schema.format);
                   schema = schema || field.items && (field.items[0].schema || field.items[0].items && field.items[0].items[0].schema);
                   if (field.type === 'cn-currency') {
-                    //console.log('schema.format:', schema.format, result);
                     var p = schema && schema.format === 'currency-dollars' ? 2 : 0;
 
                     if (adjustment.math[1] === '*') {
@@ -1085,8 +1041,9 @@
                     }
                   }
                   //service.listeners[update.path().key].prev = result;
-                  //console.log('key, field.key, trigger, update.path().key:', key, field.key, trigger, update.path().key);
-                  service.listeners[update.path().key].trigger = key;
+                  if (service.listeners[trigger]) {
+                    service.listeners[trigger].trigger = key;
+                  }
                   update.set(result || 0);
                 } else {
                   update.set(from.get());
@@ -1176,7 +1133,6 @@
 
       if (!service.listeners[key]) {
         var prev = angular.copy(cur);
-        //console.log('prev:', key, prev, angular.equals(prev, service.parseExpression(key, service.model).get()));
         service.listeners[key] = {
           handlers: [],
           updateSchema: updateSchema,
@@ -1193,7 +1149,6 @@
     function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
       var service = this;
       var onArray = function onArray(cur, prev, reorder) {
-        //console.log('onArray:', cur, prev, reorder, arrKey, fieldKey);
 
         if (!prev && prev !== 0) return;
         var i, l, key;
@@ -1318,7 +1273,6 @@
           }
         });
 
-        //console.log('service.params, service.prevParams:', service.params, service.prevParams, !angular.equals(service.params, service.prevParams), service.updates);
         if (!angular.equals(service.params, service.prevParams)) {
           if (service.model.id && !service.updates && _.isEmpty(service.prevParams)) {
             ++service.updates;
@@ -1549,7 +1503,6 @@
     }
 
     function processCurrency(field) {
-      //console.log('processCurrency:', field);
       field.currencyFormat = {
         'currency-dollars': 'dollars',
         'currency-microcents': 'microcents',
@@ -1659,22 +1612,20 @@
         select.onInit = function (val, form, event, setter) {
           var modelValue = service.parseExpression(form.key, service.model);
           // make sure we have correct value
-          // console.log('init:', form.key, val, event);
           val = modelValue.get();
+          //console.log('service.getKey(form.key), val:', service.getKey(form.key), val);
           if (event === 'tag-init') {
             var newVal;
             if (form.schema.type === 'array') {
-              if (form.schema.items.type !== 'object') {
-                newVal = [];
-                _.each(val, function (val) {
-                  var match = {};
-                  match[select.valueProperty || 'value'] = val;
-                  newVal.push(_.find(select.getTitleMap(), match));
-                });
-              }
+              newVal = [];
+              _.each(val, function (val) {
+                var valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
+                var match = valProp ? _defineProperty({}, valProp, val) : val;
+                newVal.push(_.find(select.getTitleMap(), match));
+              });
             } else {
-              var match = {};
-              match[select.valueProperty || 'value'] = val;
+              var valProp = select.valueProperty || form.schema.type !== 'object' && 'value';
+              var match = valProp ? _defineProperty({}, valProp, val) : val;
               newVal = _.find(select.getTitleMap(), match);
             }
             //console.log('newVal:', newVal);
@@ -1786,12 +1737,9 @@
 
     function processTemplate(tpl, parseScope) {
       var service = this;
-      //console.log('tpl:', tpl);
       //var processor = /<(\S+)[^>]*>.*<\/\1>/.test(tpl) ? $compile : $interpolate;
       var processor = $interpolate;
       return function (scope, arrayIndex) {
-        //console.log('tpl, scope, processor:', tpl, scope, processor);
-        //console.log('processor(tpl)(scope):', processor(tpl)(scope));
         if (parseScope) {
           if (angular.isDefined(arrayIndex)) {
             scope = _.map(scope, function (key) {
@@ -1821,8 +1769,6 @@
           selectField = _.find(selectDisplay.items, 'selectField'),
           handler;
 
-      console.log('selectField:', selectField.key, selectField);
-
       if (schema && schema.type === 'array') {
         handler = service.setupArraySelectDisplay(selectDisplay, selectField);
       } else {
@@ -1841,8 +1787,8 @@
           item.condition = 'true';
         }
       });
-      var handler = function handler() {
-        var index = getArrayIndex(arguments[2]);
+      var handler = function handler(val, prev, key) {
+        var index = getArrayIndex(key);
         _.each(selectDisplay.items, function (item) {
           var selectKey = service.getKey(selectField.key);
           var key = service.getKey(item.key);
@@ -2010,7 +1956,6 @@
             diff = cnUtil.diff(params, _.omit(service.schema.params, 'updateSchema'));
             keys = _.keys(diff);
 
-            //console.log('keys, diff:', keys, diff);
             params.updateSchema = _.first(keys);
           }
 
@@ -2115,7 +2060,6 @@
       });
       current._ogKeys = _.keys(update);
 
-      //console.log('update.key:', update.key);
       service.deregisterHandlers(update.key);
 
       if (!isChild && current.redraw) current.redraw();
@@ -2262,7 +2206,7 @@
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-datetimepicker.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}"\n                 ng-show="showTitle()">{{form.title}}</label>\n          <cn-datetimepicker\n            ng-show="form.key"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            is-disabled="form.readonly"\n            sf-changed="form"\n            schema-validate="form"\n            input-id="{{form.key.join(\'.\')}}"\n            min-date="form.minDate"\n            max-view="{{form.maxView}}"\n            cn-date-required="form.required"\n            placeholder="{{form.placeholder}}"\n            model-type="{{form.schema.type}}"\n            model-formatter="form.modelFormatter"\n            model-parser="form.modelParser"\n            view-formatter="form.viewFormatter"\n            view-parser="form.viewParser"\n            format-string={{form.dateFormat}}\n            icon-class={{form.iconClass}}>\n          </cn-datetimepicker>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
-    var sharedAutocompleteTpl = '\n          <tags-input\n            ng-show="form.key"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            ng-disabled="form.readonly"\n            sf-changed="form"\n            schema-validate="form"\n            input-id="{{form.key.join(\'.\')}}"\n            display-property="{{form.displayProperty || \'name\'}}"\n            value-property="{{form.valueProperty || \'value\'}}"\n            placeholder="{{form.placeholder || \' \'}}"\n            add-on-blur="true"\n            add-on-comma="false"\n            add-from-autocomplete-only="{{!form.allowNew}}"\n            on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\n            on-init="form.onInit($tag, form, $event, $setter)"\n            model-type="{{form.getSchemaType()}}"\n            array-value-type="{{form.schema.items.type}}"\n            hide-tags="{{form.detailedList}}"\n            tags-style="{{form.selectionStyle}}"\n            required="{{form.required}}"\n            min-length="{{form.minLength}}"\n            allowed-tags-pattern=".*"\n            dropdown="true"\n            item-formatter="form.itemFormatter"\n            min-tags="{{form.schema.minItems}}"\n            max-tags="{{form.schema.maxItems || form.getSchemaType() !== \'array\' ? 1 : 0}}"\n            allow-bulk="{{form.bulkAdd}}"\n            bulk-delimiter="{{form.bulkDelimiter}}"\n            bulk-placeholder="{{form.bulkPlaceholder}}"\n            show-button="true">\n            <auto-complete\n              source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query)"\n              skip-filtering="{{form.titleQuery ? true : false}}"\n              min-length="{{form.minLookup || (form.titleQuery && 3 || 0)}}">\n            </auto-complete>\n          </tags-input>';
+    var sharedAutocompleteTpl = '\n          <tags-input\n            ng-show="form.key"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            ng-disabled="form.readonly"\n            sf-changed="form"\n            schema-validate="form"\n            input-id="{{form.key.join(\'.\')}}"\n            display-property="{{form.displayProperty || \'name\'}}"\n            value-property="{{form.valueProperty}}"\n            placeholder="{{form.placeholder || \' \'}}"\n            add-on-blur="true"\n            add-on-comma="false"\n            add-from-autocomplete-only="{{!form.allowNew}}"\n            on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\n            on-init="form.onInit($tag, form, $event, $setter)"\n            model-type="{{form.getSchemaType()}}"\n            array-value-type="{{form.schema.items.type}}"\n            hide-tags="{{form.detailedList}}"\n            tags-style="{{form.selectionStyle}}"\n            required="{{form.required}}"\n            min-length="{{form.minLength}}"\n            allowed-tags-pattern=".*"\n            dropdown="true"\n            item-formatter="form.itemFormatter"\n            min-tags="{{form.schema.minItems}}"\n            max-tags="{{form.schema.maxItems || form.getSchemaType() !== \'array\' ? 1 : 0}}"\n            allow-bulk="{{form.bulkAdd}}"\n            bulk-delimiter="{{form.bulkDelimiter}}"\n            bulk-placeholder="{{form.bulkPlaceholder}}"\n            show-button="true">\n            <auto-complete\n              source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query)"\n              skip-filtering="{{form.titleQuery ? true : false}}"\n              min-length="{{form.minLookup || (form.titleQuery && 3 || 0)}}">\n            </auto-complete>\n          </tags-input>';
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}-input"\n                 ng-show="showTitle()">{{form.title}}</label>\n          ' + sharedAutocompleteTpl + '\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
@@ -2287,6 +2231,7 @@
     $templateCache.put('app/components/cn-flex-form/forms/cn-table.html', '\
         <div class="form-group cn-ff-table {{form.htmlClass}}"\
              ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\
+          <h6>{{form.title}}</h6>\
           <div class="row">\
             <div ng-repeat="col in form.columns" class="{{col.columnWidth}}">\
               <p class="column-header">{{col.columnHeader}}</p>\
