@@ -36,8 +36,8 @@
                    ng-class="{'btn-primary': $index === vm.config.actionConfig.actions.length - 1}"
                    ng-click="vm.submit({ handler: button.handler})"
                    tooltip="{{button.helptext}}"
-                   tooltip-placement="bottom">
-                  {{button.text || 'Save'}}
+                   tooltip-placement="bottom"
+                   ng-bind-html="button.text || 'Save'">
                 </a>
               </span>
             </div>
