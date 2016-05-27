@@ -753,23 +753,20 @@
         service.prevParams = angular.copy(service.params);
         service.params = {};
 
-        _.each(service.arrayListeners, function(listener, key) {
-          var val = service.parseExpression(key, service.model).get();
+        service.arrayListeners.forEach((listener, key) => {
+          let val = service.parseExpression(key, service.model).get();
           if(!angular.equals(val, listener.prev)) {
-            _.each(listener.handlers, function(handler) {
-              handler(val, listener.prev);
-            });
+            listener.handlers.forEach(handler => handler(val, listener.prev));
             listener.prev = angular.copy(val);
           }
         });
 
-        _.each(service.listeners, function(listener, key) {
+        service.listeners.forEach((listener, key) => {
           if(listener) {
-            var val = service.parseExpression(key, service.model).get();
+            let val = service.parseExpression(key, service.model).get();
             //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
             if(!angular.equals(val, listener.prev)) {
-              _.each(listener.handlers, function(handler) {
-                //console.log('key, listener.trigger:', key, listener.trigger);
+              listener.handlers.forEach(handler => {
                 handler(val, listener.prev, key, listener.trigger);
               });
               listener.trigger = null;

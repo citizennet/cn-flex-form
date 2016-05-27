@@ -1245,31 +1245,32 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         service.prevParams = angular.copy(service.params);
         service.params = {};
 
-        _.each(service.arrayListeners, function (listener, key) {
+        service.arrayListeners.forEach(function (listener, key) {
           var val = service.parseExpression(key, service.model).get();
           if (!angular.equals(val, listener.prev)) {
-            _.each(listener.handlers, function (handler) {
-              handler(val, listener.prev);
+            listener.handlers.forEach(function (handler) {
+              return handler(val, listener.prev);
             });
             listener.prev = angular.copy(val);
           }
         });
 
-        _.each(service.listeners, function (listener, key) {
+        service.listeners.forEach(function (listener, key) {
           if (listener) {
-            var val = service.parseExpression(key, service.model).get();
-            //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
-            if (!angular.equals(val, listener.prev)) {
-              _.each(listener.handlers, function (handler) {
-                //console.log('key, listener.trigger:', key, listener.trigger);
-                handler(val, listener.prev, key, listener.trigger);
-              });
-              listener.trigger = null;
-              listener.prev = angular.copy(val);
-            }
-            if (listener.updateSchema && !angular.isUndefined(val) && val !== null) {
-              service.params[key] = val;
-            }
+            (function () {
+              var val = service.parseExpression(key, service.model).get();
+              //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
+              if (!angular.equals(val, listener.prev)) {
+                listener.handlers.forEach(function (handler) {
+                  handler(val, listener.prev, key, listener.trigger);
+                });
+                listener.trigger = null;
+                listener.prev = angular.copy(val);
+              }
+              if (listener.updateSchema && !angular.isUndefined(val) && val !== null) {
+                service.params[key] = val;
+              }
+            })();
           }
         });
 
