@@ -1245,7 +1245,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         service.prevParams = angular.copy(service.params);
         service.params = {};
 
-        service.arrayListeners.forEach(function (listener, key) {
+        _.each(service.arrayListeners, function (listener, key) {
           var val = service.parseExpression(key, service.model).get();
           if (!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(function (handler) {
@@ -1255,7 +1255,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           }
         });
 
-        service.listeners.forEach(function (listener, key) {
+        _.each(service.listeners, function (listener, key) {
           if (listener) {
             (function () {
               var val = service.parseExpression(key, service.model).get();
