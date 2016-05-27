@@ -753,7 +753,7 @@
         service.prevParams = angular.copy(service.params);
         service.params = {};
 
-        service.arrayListeners.forEach((listener, key) => {
+        _.each(service.arrayListeners, (listener, key) => {
           let val = service.parseExpression(key, service.model).get();
           if(!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(handler => handler(val, listener.prev));
@@ -761,7 +761,7 @@
           }
         });
 
-        service.listeners.forEach((listener, key) => {
+        _.each(service.listeners, (listener, key) => {
           if(listener) {
             let val = service.parseExpression(key, service.model).get();
             //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
