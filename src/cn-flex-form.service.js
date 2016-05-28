@@ -1125,7 +1125,7 @@
             var newVal;
             if(form.schema.type === 'array') {
               let valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-              if(!valProp) return;
+              if(!valProp || !val) return;
 
               newVal = [];
               val.forEach(val => {

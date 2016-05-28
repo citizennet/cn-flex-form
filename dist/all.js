@@ -1622,7 +1622,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             if (form.schema.type === 'array') {
               var _ret2 = function () {
                 var valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-                if (!valProp) return {
+                if (!valProp || !val) return {
                     v: undefined
                   };
 
