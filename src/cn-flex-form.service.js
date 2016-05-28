@@ -1127,14 +1127,14 @@
               newVal = [];
               _.each(val, val => {
                 let valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-                let match = valProp ? {[valProp]: val} : val;
-                newVal.push(_.find(select.getTitleMap(), match));
+                newVal.push(valProp ? _.find(select.getTitleMap(), {[valProp]: val}) : val);
+                //let match = valProp ? {[valProp]: val} : val;
               });
             }
             else {
               let valProp = select.valueProperty || form.schema.type !== 'object' && 'value';
-              let match = valProp ? {[valProp]: val} : val;
-              newVal = _.find(select.getTitleMap(), match);
+              newVal = valProp ? _.find(select.getTitleMap(), {[valProp]: val}) : val;
+              //let match = valProp ? {[valProp]: val} : val;
             }
             //console.log('newVal:', newVal);
             if(newVal) setter(newVal);
