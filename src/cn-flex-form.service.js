@@ -1124,17 +1124,19 @@
           if(event === 'tag-init') {
             var newVal;
             if(form.schema.type === 'array') {
+              let valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
+              if(!valProp) return;
+
               newVal = [];
-              _.each(val, val => {
-                let valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-                newVal.push(valProp ? _.find(select.getTitleMap(), {[valProp]: val}) : val);
-                //let match = valProp ? {[valProp]: val} : val;
+              val.forEach(val => {
+                newVal.push(_.find(select.getTitleMap(), {[valProp]: val}));
               });
             }
             else {
               let valProp = select.valueProperty || form.schema.type !== 'object' && 'value';
-              newVal = valProp ? _.find(select.getTitleMap(), {[valProp]: val}) : val;
-              //let match = valProp ? {[valProp]: val} : val;
+              if(!valProp) return;
+
+              newVal = _.find(select.getTitleMap(), {[valProp]: val});
             }
             //console.log('newVal:', newVal);
             if(newVal) setter(newVal);

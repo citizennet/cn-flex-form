@@ -518,6 +518,8 @@
 })();
 'use strict';
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 (function () {
@@ -1618,17 +1620,25 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           if (event === 'tag-init') {
             var newVal;
             if (form.schema.type === 'array') {
-              newVal = [];
-              _.each(val, function (val) {
+              var _ret2 = function () {
                 var valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-                newVal.push(valProp ? _.find(select.getTitleMap(), _defineProperty({}, valProp, val)) : val);
-                //let match = valProp ? {[valProp]: val} : val;
-              });
+                if (!valProp) return {
+                    v: undefined
+                  };
+
+                newVal = [];
+                val.forEach(function (val) {
+                  newVal.push(_.find(select.getTitleMap(), _defineProperty({}, valProp, val)));
+                });
+              }();
+
+              if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
             } else {
-                var valProp = select.valueProperty || form.schema.type !== 'object' && 'value';
-                newVal = valProp ? _.find(select.getTitleMap(), _defineProperty({}, valProp, val)) : val;
-                //let match = valProp ? {[valProp]: val} : val;
-              }
+              var valProp = select.valueProperty || form.schema.type !== 'object' && 'value';
+              if (!valProp) return;
+
+              newVal = _.find(select.getTitleMap(), _defineProperty({}, valProp, val));
+            }
             //console.log('newVal:', newVal);
             if (newVal) setter(newVal);
           }
