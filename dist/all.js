@@ -770,10 +770,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
 
       fieldset.type = 'cn-fieldset';
-      _.each(fieldset.items, service.processField.bind(service));
+      fieldset.items.forEach(service.processField.bind(service));
 
       if (fieldset.collapsible) {
-        fieldset.toggleCollapse = function () {
+        fieldset.toggleCollapse = function (fieldset) {
           if (fieldset.collapsible) {
             fieldset.collapsed = !fieldset.collapsed;
           }
@@ -1622,7 +1622,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             if (form.schema.type === 'array') {
               var _ret2 = function () {
                 var valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-                if (!valProp || !val) return {
+                if (!valProp || !val || !_.isArray(val)) return {
                     v: undefined
                   };
 
@@ -2231,7 +2231,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-display.html', '\n        <div class="form-group cn-display{{form.htmlClass}}">\n          <input ng-show="form.key"\n                 class="form-control"\n                 id="{{form.key.join(\'.\')}}"\n                 name="{{form.key.join(\'.\')}}"\n                 ng-disabled="true"\n                 value="{{form.getDisplay(form.key, form.arrayIndex)}}">\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-fieldset.html', '\n        <fieldset ng-disabled="form.readonly" class="schema-form-fieldset {{form.htmlClass}}">\n          <legend ng-click="form.toggleCollapse()"\n                  ng-class="{\'sr-only\': !showTitle(), collapsible: form.collapsible}"\n                  ng-mouseenter="form.render = true">\n            <i ng-show="form.collapsible"\n               class="fa fa-caret-{{form.collapsed ? \'right\' : \'down\'}}"></i>\n            {{ form.title }}\n          </legend>\n          <div class="help-block" ng-show="form.description" ng-bind-html="form.description"></div>\n          <div collapse="form.collapsed">\n            <div ng-if="form.render">\n              <sf-decorator ng-repeat="item in form.items" form="item"/>\n            </div>\n          </div>\n        </fieldset>');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-fieldset.html', '\n        <fieldset ng-disabled="form.readonly" class="schema-form-fieldset {{form.htmlClass}}">\n          <legend ng-click="form.toggleCollapse(form)"\n                  ng-class="{\'sr-only\': !showTitle(), collapsible: form.collapsible}"\n                  ng-mouseenter="form.render = true">\n            <i ng-show="form.collapsible"\n               class="fa fa-caret-{{form.collapsed ? \'right\' : \'down\'}}"></i>\n            {{ form.title }}\n          </legend>\n          <div class="help-block" ng-show="form.description" ng-bind-html="form.description"></div>\n          <div collapse="form.collapsed">\n            <div ng-if="form.render">\n              <sf-decorator ng-repeat="item in form.items" form="item"/>\n            </div>\n          </div>\n        </fieldset>');
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-mediaupload.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\n          <media-upload ng-model="$$value$$"\n                        cn-file-type="form.fileType"\n                        cn-upload-path="form.uploadPath"\n                        cn-data="form.data"\n                        cn-preview-path="form.previewPath"\n                        cn-model-value-key="form.modelValueKey"\n                        ng-model-options="form.ngModelOptions"\n                        sf-changed="form"\n                        schema-validate="form"\n                        ff-form="form"\n                        class="clearfix">\n          </media-upload>\n          <span class="help-block" sf-message="form.description"></span>\n       </div>');
 

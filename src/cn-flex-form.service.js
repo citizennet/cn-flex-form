@@ -263,10 +263,10 @@
       var service = this;
 
       fieldset.type = 'cn-fieldset';
-      _.each(fieldset.items, service.processField.bind(service));
+      fieldset.items.forEach(service.processField.bind(service));
 
       if(fieldset.collapsible) {
-        fieldset.toggleCollapse = function() {
+        fieldset.toggleCollapse = (fieldset) => {
           if(fieldset.collapsible) {
             fieldset.collapsed = !fieldset.collapsed;
           }
@@ -1125,7 +1125,7 @@
             var newVal;
             if(form.schema.type === 'array') {
               let valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-              if(!valProp || !val) return;
+              if(!valProp || !val || !_.isArray(val)) return;
 
               newVal = [];
               val.forEach(val => {
