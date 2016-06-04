@@ -8,6 +8,13 @@
   schemaFormConfig.$inject = ['cnFlexFormServiceProvider'];
 
   function schemaFormConfig(cnFlexFormServiceProvider) {
+    tv4.addFormat({
+      'url': data => {
+        console.log(/https?:\/\/.{2}/.test(data))
+        return _.isString(data) && !/https?:\/\/.{2}/.test(data) && 'invalid url'
+      }
+    });
+
     var extensions = [
       'cn-fieldset',
       'cn-toggle',
