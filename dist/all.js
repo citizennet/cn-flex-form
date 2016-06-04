@@ -764,6 +764,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         }
         service.defaults[key] = angular.copy(schema.default);
       }
+
+      if (schema.format === 'url' && !field.validationMessage) {
+        if (!field.type) field.type = 'url';
+        field.validationMessage = 'Must be a valid url (https://...)';
+      }
     }
 
     function processFieldset(fieldset) {
@@ -870,6 +875,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
       if (!key) return;
 
+      console.log('key:', key);
       key = service.getKey(key);
 
       //key = key.split('.');
@@ -882,24 +888,29 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       key = sfPath.parse(key);
       depth = depth || service.schema.schema.properties;
 
-      if (_.last(key) === '') key.pop();
+      // why do we do this? it's breaking stuff
+      //if (_.last(key) === '') key.pop();
 
-      var first, next, matchArray;
+      var first = undefined,
+          next = undefined;
 
       while (key.length > 1) {
         first = key[0];
         next = key[1];
-        matchArray = next.match(/^\d*$/);
-        //if(first.slice(first.length - 2) === '[]') {
-        if (matchArray) {
-          depth = depth[key.shift()].items.properties;
-          key.shift();
+        if (/^\d*$/.test(next)) {
+          if (key.length === 2) {
+            depth = depth = depth[key.shift()];
+          } else {
+            depth = depth[key.shift()].items.properties;
+            key.shift();
+          }
         } else {
           depth = depth[key.shift()].properties;
         }
       }
 
-      first = key[0];
+      // if array item
+      first = key[0] || 'items';
 
       return depth[first];
     }
@@ -2200,6 +2211,13 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   schemaFormConfig.$inject = ['cnFlexFormServiceProvider'];
 
   function schemaFormConfig(cnFlexFormServiceProvider) {
+    tv4.addFormat({
+      'url': function url(data) {
+        console.log(/https?:\/\/.{2}/.test(data));
+        return _.isString(data) && !/https?:\/\/.{2}/.test(data) && 'invalid url';
+      }
+    });
+
     var extensions = ['cn-fieldset', 'cn-toggle', 'cn-datetimepicker', 'cn-autocomplete', 'cn-autocomplete-detailed', 'cn-currency', 'cn-radiobuttons', 'cn-percentage', 'cn-display', 'cn-mediaupload', 'cn-csvupload', 'cn-reusable', 'cn-table'];
 
     _.each(extensions, function (extension) {
