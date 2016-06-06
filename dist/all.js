@@ -2213,7 +2213,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   function schemaFormConfig(cnFlexFormServiceProvider) {
     tv4.addFormat({
       'url': function url(data) {
-        console.log(/https?:\/\/.{2}/.test(data));
         return _.isString(data) && !/https?:\/\/.{2}/.test(data) && 'invalid url';
       }
     });
