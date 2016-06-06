@@ -8,6 +8,13 @@
   schemaFormConfig.$inject = ['cnFlexFormServiceProvider'];
 
   function schemaFormConfig(cnFlexFormServiceProvider) {
+    tv4.addFormat({
+      'url': data => {
+        console.log(/https?:\/\/.{2}/.test(data))
+        return _.isString(data) && !/https?:\/\/.{2}/.test(data) && 'invalid url'
+      }
+    });
+
     var extensions = [
       'cn-fieldset',
       'cn-toggle',
@@ -279,7 +286,7 @@
         'app/components/cn-flex-form/forms/cn-fieldset.html',
         `
         <fieldset ng-disabled="form.readonly" class="schema-form-fieldset {{form.htmlClass}}">
-          <legend ng-click="form.toggleCollapse()"
+          <legend ng-click="form.toggleCollapse(form)"
                   ng-class="{'sr-only': !showTitle(), collapsible: form.collapsible}"
                   ng-mouseenter="form.render = true">
             <i ng-show="form.collapsible"

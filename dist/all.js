@@ -764,16 +764,21 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         }
         service.defaults[key] = angular.copy(schema.default);
       }
+
+      if (schema.format === 'url' && !field.validationMessage) {
+        if (!field.type) field.type = 'url';
+        field.validationMessage = 'Must be a valid url (https://...)';
+      }
     }
 
     function processFieldset(fieldset) {
       var service = this;
 
       fieldset.type = 'cn-fieldset';
-      _.each(fieldset.items, service.processField.bind(service));
+      fieldset.items.forEach(service.processField.bind(service));
 
       if (fieldset.collapsible) {
-        fieldset.toggleCollapse = function () {
+        fieldset.toggleCollapse = function (fieldset) {
           if (fieldset.collapsible) {
             fieldset.collapsed = !fieldset.collapsed;
           }
@@ -870,6 +875,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
       if (!key) return;
 
+      console.log('key:', key);
       key = service.getKey(key);
 
       //key = key.split('.');
@@ -882,24 +888,29 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       key = sfPath.parse(key);
       depth = depth || service.schema.schema.properties;
 
-      if (_.last(key) === '') key.pop();
+      // why do we do this? it's breaking stuff
+      //if (_.last(key) === '') key.pop();
 
-      var first, next, matchArray;
+      var first = undefined,
+          next = undefined;
 
       while (key.length > 1) {
         first = key[0];
         next = key[1];
-        matchArray = next.match(/^\d*$/);
-        //if(first.slice(first.length - 2) === '[]') {
-        if (matchArray) {
-          depth = depth[key.shift()].items.properties;
-          key.shift();
+        if (/^\d*$/.test(next)) {
+          if (key.length === 2) {
+            depth = depth = depth[key.shift()];
+          } else {
+            depth = depth[key.shift()].items.properties;
+            key.shift();
+          }
         } else {
           depth = depth[key.shift()].properties;
         }
       }
 
-      first = key[0];
+      // if array item
+      first = key[0] || 'items';
 
       return depth[first];
     }
@@ -1622,7 +1633,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             if (form.schema.type === 'array') {
               var _ret2 = function () {
                 var valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-                if (!valProp || !val) return {
+                if (!valProp || !val || !_.isArray(val)) return {
                     v: undefined
                   };
 
@@ -2200,6 +2211,13 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   schemaFormConfig.$inject = ['cnFlexFormServiceProvider'];
 
   function schemaFormConfig(cnFlexFormServiceProvider) {
+    tv4.addFormat({
+      'url': function url(data) {
+        console.log(/https?:\/\/.{2}/.test(data));
+        return _.isString(data) && !/https?:\/\/.{2}/.test(data) && 'invalid url';
+      }
+    });
+
     var extensions = ['cn-fieldset', 'cn-toggle', 'cn-datetimepicker', 'cn-autocomplete', 'cn-autocomplete-detailed', 'cn-currency', 'cn-radiobuttons', 'cn-percentage', 'cn-display', 'cn-mediaupload', 'cn-csvupload', 'cn-reusable', 'cn-table'];
 
     _.each(extensions, function (extension) {
@@ -2231,7 +2249,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-display.html', '\n        <div class="form-group cn-display{{form.htmlClass}}">\n          <input ng-show="form.key"\n                 class="form-control"\n                 id="{{form.key.join(\'.\')}}"\n                 name="{{form.key.join(\'.\')}}"\n                 ng-disabled="true"\n                 value="{{form.getDisplay(form.key, form.arrayIndex)}}">\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-fieldset.html', '\n        <fieldset ng-disabled="form.readonly" class="schema-form-fieldset {{form.htmlClass}}">\n          <legend ng-click="form.toggleCollapse()"\n                  ng-class="{\'sr-only\': !showTitle(), collapsible: form.collapsible}"\n                  ng-mouseenter="form.render = true">\n            <i ng-show="form.collapsible"\n               class="fa fa-caret-{{form.collapsed ? \'right\' : \'down\'}}"></i>\n            {{ form.title }}\n          </legend>\n          <div class="help-block" ng-show="form.description" ng-bind-html="form.description"></div>\n          <div collapse="form.collapsed">\n            <div ng-if="form.render">\n              <sf-decorator ng-repeat="item in form.items" form="item"/>\n            </div>\n          </div>\n        </fieldset>');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-fieldset.html', '\n        <fieldset ng-disabled="form.readonly" class="schema-form-fieldset {{form.htmlClass}}">\n          <legend ng-click="form.toggleCollapse(form)"\n                  ng-class="{\'sr-only\': !showTitle(), collapsible: form.collapsible}"\n                  ng-mouseenter="form.render = true">\n            <i ng-show="form.collapsible"\n               class="fa fa-caret-{{form.collapsed ? \'right\' : \'down\'}}"></i>\n            {{ form.title }}\n          </legend>\n          <div class="help-block" ng-show="form.description" ng-bind-html="form.description"></div>\n          <div collapse="form.collapsed">\n            <div ng-if="form.render">\n              <sf-decorator ng-repeat="item in form.items" form="item"/>\n            </div>\n          </div>\n        </fieldset>');
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-mediaupload.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\n          <media-upload ng-model="$$value$$"\n                        cn-file-type="form.fileType"\n                        cn-upload-path="form.uploadPath"\n                        cn-data="form.data"\n                        cn-preview-path="form.previewPath"\n                        cn-model-value-key="form.modelValueKey"\n                        ng-model-options="form.ngModelOptions"\n                        sf-changed="form"\n                        schema-validate="form"\n                        ff-form="form"\n                        class="clearfix">\n          </media-upload>\n          <span class="help-block" sf-message="form.description"></span>\n       </div>');
 

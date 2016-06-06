@@ -257,16 +257,21 @@
         }
         service.defaults[key] = angular.copy(schema.default);
       }
+
+      if(schema.format === 'url' && !field.validationMessage) {
+        if(!field.type) field.type = 'url';
+        field.validationMessage = 'Must be a valid url (https://...)';
+      }
     }
 
     function processFieldset(fieldset) {
       var service = this;
 
       fieldset.type = 'cn-fieldset';
-      _.each(fieldset.items, service.processField.bind(service));
+      fieldset.items.forEach(service.processField.bind(service));
 
       if(fieldset.collapsible) {
-        fieldset.toggleCollapse = function() {
+        fieldset.toggleCollapse = (fieldset) => {
           if(fieldset.collapsible) {
             fieldset.collapsed = !fieldset.collapsed;
           }
@@ -369,6 +374,7 @@
       var service = this;
       if(!key) return;
 
+      console.log('key:', key);
       key = service.getKey(key);
 
       //key = key.split('.');
@@ -381,25 +387,30 @@
       key = sfPath.parse(key);
       depth = depth || service.schema.schema.properties;
 
-      if (_.last(key) === '') key.pop();
+      // why do we do this? it's breaking stuff
+      //if (_.last(key) === '') key.pop();
 
-      var first, next, matchArray;
+      let first, next;
 
       while(key.length > 1) {
         first = key[0];
         next = key[1];
-        matchArray = next.match(/^\d*$/);
-        //if(first.slice(first.length - 2) === '[]') {
-        if(matchArray) {
-          depth = depth[key.shift()].items.properties;
-          key.shift();
+        if(/^\d*$/.test(next)) {
+          if(key.length === 2) {
+            depth = depth = depth[key.shift()];
+          }
+          else {
+            depth = depth[key.shift()].items.properties;
+            key.shift();
+          }
         }
         else {
           depth = depth[key.shift()].properties;
         }
       }
 
-      first = key[0];
+      // if array item
+      first = key[0] || 'items';
 
       return depth[first];
     }
@@ -1125,7 +1136,7 @@
             var newVal;
             if(form.schema.type === 'array') {
               let valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-              if(!valProp || !val) return;
+              if(!valProp || !val || !_.isArray(val)) return;
 
               newVal = [];
               val.forEach(val => {
