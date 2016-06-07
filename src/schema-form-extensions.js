@@ -9,7 +9,7 @@
 
   function schemaFormConfig(cnFlexFormServiceProvider) {
     tv4.addFormat({
-      'url': data => data && _.isString(data) && !/https?:\/\/.{2}/.test(data) && 'invalid url'
+      'url': data => _.isString(data) && !/^(https?:\/\/.{2}|$)/.test(data) && 'invalid url'
     });
 
     var extensions = [
