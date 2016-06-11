@@ -875,7 +875,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
       if (!key) return;
 
-      console.log('key:', key);
+      //console.log('key:', key);
       key = service.getKey(key);
 
       //key = key.split('.');
@@ -1426,8 +1426,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       //}
 
       var modelValue = {
-        "get": function get() {
-          //var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
+        get: function get() {
           var path = sfPath.parse(exp);
           var start = depth || service;
 
@@ -1435,18 +1434,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             start = start[path.shift()];
           }
 
-          //if(/\[]/g.test(exp)) {
-          //  console.log('exp:', exp, start, start && start[path[0]]);
-          //}
           return start && start[path[0]];
         },
-        "set": function set(val) {
-          //var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
+        getAssignable: function getAssignable() {
           var path = sfPath.parse(exp);
+          var progress = [];
           var start = depth || service;
 
           while (start && path.length > 1) {
             var key = path.shift();
+            progress.push(key);
             if (!start[key]) {
               if (/^\d?$/.test(path[0])) {
                 start[key] = [];
@@ -1457,11 +1454,19 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             start = start[key];
           }
 
-          start[path[0]] = val;
-
+          return {
+            obj: start,
+            key: path[0],
+            path: service.getKey(progress),
+            fullPath: service.getKey(progress.concat(path.slice(0, 1)))
+          };
+        },
+        set: function set(val) {
+          var assignable = this.getAssignable();
+          assignable.obj[assignable.key] = val;
           return val;
         },
-        "path": function path() {
+        path: function path() {
           return {
             exp: exp,
             depth: depth,
@@ -1469,10 +1474,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           };
         }
       };
-
-      //if(key) {
-      //  service.addToDataCache(key, modelValue);
-      //}
 
       return modelValue;
     }
