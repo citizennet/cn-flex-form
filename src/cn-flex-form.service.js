@@ -374,7 +374,7 @@
       var service = this;
       if(!key) return;
 
-      console.log('key:', key);
+      //console.log('key:', key);
       key = service.getKey(key);
 
       //key = key.split('.');
@@ -929,27 +929,24 @@
       //}
 
       var modelValue = {
-        "get": function() {
-          //var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
-          var path = sfPath.parse(exp);
-          var start = depth || service;
+        get() {
+          let path = sfPath.parse(exp);
+          let start = depth || service;
 
           while(start && path.length > 1) {
             start = start[path.shift()];
           }
 
-          //if(/\[]/g.test(exp)) {
-          //  console.log('exp:', exp, start, start && start[path[0]]);
-          //}
           return start && start[path[0]];
         },
-        "set": function(val) {
-          //var path = exp.replace(/\[]/g, '').replace(/\[(\d+)]/g, '.$1').split('.');
-          var path = sfPath.parse(exp);
-          var start = depth || service;
+        getAssignable() {
+          let path = sfPath.parse(exp);
+          let progress = [];
+          let start = depth || service;
 
           while(start && path.length > 1) {
-            var key = path.shift();
+            let key = path.shift();
+            progress.push(key);
             if(!start[key]) {
               if(/^\d?$/.test(path[0])) {
                 start[key] = [];
@@ -961,11 +958,19 @@
             start = start[key];
           }
 
-          start[path[0]] = val;
-
+          return {
+            obj: start,
+            key: path[0],
+            path: service.getKey(progress),
+            fullPath: service.getKey(progress.concat(path.slice(0, 1)))
+          };
+        },
+        set(val) {
+          let assignable = this.getAssignable();
+          assignable.obj[assignable.key] = val;
           return val;
         },
-        "path": function() {
+        path() {
           return {
             exp: exp,
             depth: depth,
@@ -973,10 +978,6 @@
           };
         }
       };
-
-      //if(key) {
-      //  service.addToDataCache(key, modelValue);
-      //}
 
       return modelValue;
     }
