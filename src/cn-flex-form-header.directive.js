@@ -30,6 +30,11 @@
                  ui-sref="{{vm.config.actionConfig.returnState}}">
                 {{vm.config.actionConfig.returnText || 'Cancel'}}
               </a>
+              <a class="btn"
+                 ng-if="vm.config.actionConfig.closeButton"
+                 ng-click="vm.config.actionConfig.closeButton.handler()">
+                 Cancel
+              </a>
               <span ng-repeat="button in vm.config.actionConfig.actions">
                 <a class="btn {{button.style && 'btn-'+button.style}}"
                    ng-disabled="vm.isDisabled(button)"
