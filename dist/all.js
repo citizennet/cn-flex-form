@@ -758,7 +758,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           var modelValue = model.get();
           // if there's an existing default and it's the same as the current value
           // update the current value to the new default
-          if (!service.defaults[key] || _.isUndefined(modelValue) || angular.equals(modelValue, service.defaults[key])) {
+          if (_.isUndefined(modelValue) || angular.equals(modelValue, service.defaults[key])) {
             model.set(schema.default);
           }
         }
