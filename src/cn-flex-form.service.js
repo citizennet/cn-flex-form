@@ -29,7 +29,7 @@
   function cnFlexFormServiceProvider(schemaFormDecoratorsProvider,
                                      cnFlexFormTypesProvider) {
     return {
-      registerField: registerField,
+      registerField,
       $get: CNFlexFormService
     };
 
