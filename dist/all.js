@@ -875,7 +875,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
       if (!key) return;
 
-      //console.log('key:', key);
+      console.log('key:', key);
       key = service.getKey(key);
 
       //key = key.split('.');
