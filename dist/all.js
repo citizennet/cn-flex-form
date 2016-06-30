@@ -1096,12 +1096,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         });
 
         return invert ? (!evaluation).toString() : evaluation.toString();
-      } else {
-        condition = original.replace(/model\./g, 'service.model.');
-        //console.log('eval:', condition, eval(condition));
-        // stupid hack so we can evaluate the evaluated results
-        return !!eval(condition) + '';
       }
+      return !!$parse(original)(service) + '';
     }
 
     function evaluatePredicate(val1, comparator, val2) {
