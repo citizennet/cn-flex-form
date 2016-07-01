@@ -761,6 +761,7 @@
 
         _.each(service.arrayListeners, (listener, key) => {
           let val = service.parseExpression(key, service.model).get();
+          console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
           if(!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(handler => handler(val, listener.prev));
             listener.prev = angular.copy(val);
@@ -1583,6 +1584,8 @@
       current._ogKeys = _.keys(update);
 
       service.deregisterHandlers(update.key);
+
+      $rootScope.$broadcast('cnFlexFormReprocessField', update.key);
 
       if(!isChild && current.redraw) current.redraw();
     }

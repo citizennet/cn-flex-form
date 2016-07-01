@@ -1256,6 +1256,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
         _.each(service.arrayListeners, function (listener, key) {
           var val = service.parseExpression(key, service.model).get();
+          console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
           if (!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(function (handler) {
               return handler(val, listener.prev);
@@ -2080,6 +2081,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       current._ogKeys = _.keys(update);
 
       service.deregisterHandlers(update.key);
+
+      $rootScope.$broadcast('cnFlexFormReprocessField', update.key);
 
       if (!isChild && current.redraw) current.redraw();
     }
