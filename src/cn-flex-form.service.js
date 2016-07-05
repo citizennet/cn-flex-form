@@ -29,7 +29,7 @@
   function cnFlexFormServiceProvider(schemaFormDecoratorsProvider,
                                      cnFlexFormTypesProvider) {
     return {
-      registerField: registerField,
+      registerField,
       $get: CNFlexFormService
     };
 
@@ -374,7 +374,7 @@
       var service = this;
       if(!key) return;
 
-      //console.log('key:', key);
+      // console.log('key:', key);
       key = service.getKey(key);
 
       //key = key.split('.');
@@ -603,12 +603,7 @@
 
         return invert ? (!evaluation).toString() : evaluation.toString();
       }
-      else {
-        condition = original.replace(/model\./g, 'service.model.');
-        //console.log('eval:', condition, eval(condition));
-        // stupid hack so we can evaluate the evaluated results
-        return !!eval(condition) + '';
-      }
+      return !!$parse(original)(service) + '';
     }
 
     function evaluatePredicate(val1, comparator, val2) {
@@ -766,6 +761,7 @@
 
         _.each(service.arrayListeners, (listener, key) => {
           let val = service.parseExpression(key, service.model).get();
+          console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
           if(!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(handler => handler(val, listener.prev));
             listener.prev = angular.copy(val);
@@ -1588,6 +1584,8 @@
       current._ogKeys = _.keys(update);
 
       service.deregisterHandlers(update.key);
+
+      $rootScope.$broadcast('cnFlexFormReprocessField', update.key);
 
       if(!isChild && current.redraw) current.redraw();
     }
