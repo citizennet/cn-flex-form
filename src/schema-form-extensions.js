@@ -120,7 +120,7 @@
             required="{{form.required}}"
             min-length="{{form.minLength}}"
             allowed-tags-pattern=".*"
-            dropdown="true"
+            dropdown-icon="true"
             item-formatter="form.itemFormatter"
             min-tags="{{form.schema.minItems}}"
             max-tags="{{form.schema.maxItems || form.getSchemaType() !== 'array' ? 1 : 0}}"
