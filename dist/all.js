@@ -1159,7 +1159,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
       var onArray = function onArray(cur, prev, reorder) {
 
-        if (!prev && prev !== 0) return;
+        if (!prev && prev !== 0 && (cur | 0) < 1) return;
         var i, l, key;
 
         if (prev > cur || reorder) {
@@ -1178,7 +1178,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
-            for (i = prev, l = cur; i < l; i++) {
+            for (i = prev | 0, l = cur; i < l; i++) {
               key = arrKey + '[' + i + ']' + '.' + fieldKey;
               service.registerHandler(key, handler, updateSchema, runHandler);
               //if(runHandler) handler(null, null, key);

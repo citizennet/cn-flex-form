@@ -661,7 +661,7 @@
       var service = this;
       var onArray = function(cur, prev, reorder) {
 
-        if(!prev && prev !== 0) return;
+        if(!prev && prev !== 0 && (cur | 0) < 1) return;
         var i, l, key;
 
         if(prev > cur || reorder) {
@@ -681,7 +681,7 @@
           }
         }
         else if(cur > (prev || 0)) {
-          for(i = prev, l = cur; i < l; i++) {
+          for(i = prev | 0, l = cur; i < l; i++) {
             key = arrKey + '[' + i + ']' + '.' + fieldKey;
             service.registerHandler(key, handler, updateSchema, runHandler);
             //if(runHandler) handler(null, null, key);
