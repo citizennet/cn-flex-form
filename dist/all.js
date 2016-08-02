@@ -1252,7 +1252,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         cnUtil.cleanModel(service.model);
 
         service.prevParams = angular.copy(service.params);
-        service.params = {};
+        service.params = cnFlexFormConfig.getStateParams();
 
         _.each(service.arrayListeners, function (listener, key) {
           var val = service.parseExpression(key, service.model).get();

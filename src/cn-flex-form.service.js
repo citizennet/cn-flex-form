@@ -757,7 +757,7 @@
         cnUtil.cleanModel(service.model);
 
         service.prevParams = angular.copy(service.params);
-        service.params = {};
+        service.params = cnFlexFormConfig.getStateParams();
 
         _.each(service.arrayListeners, (listener, key) => {
           let val = service.parseExpression(key, service.model).get();
