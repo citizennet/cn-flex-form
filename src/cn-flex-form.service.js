@@ -82,6 +82,7 @@
       deregisterArrayHandlers,
       getArrayCopies,
       getArrayCopiesFor,
+      getArrayScopes,
       getFromDataCache,
       getFromFormCache,
       getKey,
@@ -812,7 +813,6 @@
       console.log('initArrayCopyWatch: how many times does this event get registered?');
       var service = this;
 
-      //TODO: refactor this, only register event once
       service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
         var key = service.getKey(scope.form.key);
         var index = key.match(/^.*\[(\d+)].*$/);
@@ -822,7 +822,7 @@
 
         if(!scope.form.condition) scope.form.condition = 'true';
 
-        service.addArrayCopy(scope.form, key, index);
+        service.addArrayCopy(scope, key, index);
         //console.log('service.arrayCopies:', service.arrayCopies);
         scope.$emit('flexFormArrayCopyAdded', key);
       }));
@@ -853,7 +853,7 @@
 
     function getArrayCopies(key) {
       var service = this;
-      return service.arrayCopies[key];
+      return _.pluck(service.getArrayScopes(key), 'form');
     }
 
     function getArrayCopiesFor(keyStart) {
@@ -862,10 +862,15 @@
       keyStart += '[]';
 
       _.each(service.arrayCopies, (copies, key) => {
-        if(key.includes(keyStart)) copiesList.push(copies);
+        if(key.includes(keyStart)) copiesList.push(copies.form);
       });
 
       return copiesList;
+    }
+
+    function getArrayScopes(key) {
+      var service = this;
+      return service.arrayCopies[key];
     }
 
     function addToFormCache(field, key) {
@@ -1546,9 +1551,7 @@
             }
             var copies = service.getArrayCopies(form.key);
             if(copies) {
-              _.each(copies, function(copy) {
-                service.reprocessField(copy, form);
-              });
+              copies.forEach(copy => copy && service.reprocessField(copy, form));
             }
           });
         }
@@ -1587,7 +1590,11 @@
 
       $rootScope.$broadcast('cnFlexFormReprocessField', update.key);
 
-      if(!isChild && current.redraw) current.redraw();
+      // why do we redraw? If we're doing it to show error message
+      // that has been addressed from the angular-schema-form library
+      // if there's another issue, try triggering the specific action required
+      // instead of redrawing the whole form
+      // if(!isChild && current.redraw) current.redraw();
     }
 
     function reprocessSchema(schema, key, keys) {
