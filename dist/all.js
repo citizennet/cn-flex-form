@@ -590,6 +590,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       deregisterArrayHandlers: deregisterArrayHandlers,
       getArrayCopies: getArrayCopies,
       getArrayCopiesFor: getArrayCopiesFor,
+      getArrayScopes: getArrayScopes,
       getFromDataCache: getFromDataCache,
       getFromFormCache: getFromFormCache,
       getKey: getKey,
@@ -1252,7 +1253,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         cnUtil.cleanModel(service.model);
 
         service.prevParams = angular.copy(service.params);
-        service.params = {};
+        service.params = cnFlexFormConfig.getStateParams();
 
         _.each(service.arrayListeners, function (listener, key) {
           var val = service.parseExpression(key, service.model).get();
@@ -1310,7 +1311,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       console.log('initArrayCopyWatch: how many times does this event get registered?');
       var service = this;
 
-      //TODO: refactor this, only register event once
       service.events.push($rootScope.$on('schemaFormPropagateScope', function (event, scope) {
         var key = service.getKey(scope.form.key);
         var index = key.match(/^.*\[(\d+)].*$/);
@@ -1320,7 +1320,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
         if (!scope.form.condition) scope.form.condition = 'true';
 
-        service.addArrayCopy(scope.form, key, index);
+        service.addArrayCopy(scope, key, index);
         //console.log('service.arrayCopies:', service.arrayCopies);
         scope.$emit('flexFormArrayCopyAdded', key);
       }));
@@ -1351,7 +1351,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
     function getArrayCopies(key) {
       var service = this;
-      return service.arrayCopies[key];
+      return _.pluck(service.getArrayScopes(key), 'form');
     }
 
     function getArrayCopiesFor(keyStart) {
@@ -1360,10 +1360,15 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       keyStart += '[]';
 
       _.each(service.arrayCopies, function (copies, key) {
-        if (key.includes(keyStart)) copiesList.push(copies);
+        if (key.includes(keyStart)) copiesList.push(copies.form);
       });
 
       return copiesList;
+    }
+
+    function getArrayScopes(key) {
+      var service = this;
+      return service.arrayCopies[key];
     }
 
     function addToFormCache(field, key) {
@@ -2044,8 +2049,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             }
             var copies = service.getArrayCopies(form.key);
             if (copies) {
-              _.each(copies, function (copy) {
-                service.reprocessField(copy, form);
+              copies.forEach(function (copy) {
+                return copy && service.reprocessField(copy, form);
               });
             }
           });
@@ -2084,7 +2089,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
       $rootScope.$broadcast('cnFlexFormReprocessField', update.key);
 
-      if (!isChild && current.redraw) current.redraw();
+      // why do we redraw? If we're doing it to show error message
+      // that has been addressed from the angular-schema-form library
+      // if there's another issue, try triggering the specific action required
+      // instead of redrawing the whole form
+      // if(!isChild && current.redraw) current.redraw();
     }
 
     function reprocessSchema(schema, key, keys) {
