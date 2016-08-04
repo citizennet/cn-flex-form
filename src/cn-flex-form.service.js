@@ -475,11 +475,11 @@
 
       _.each(field.watch, function(watch) {
         if(watch.resolution) {
-          var condition = watch.condition;
-          var functionCondition = service.isConditionFunction(condition);
+          let condition = watch.condition;
+          let functionCondition = service.isConditionFunction(condition);
 
-          var resolution = watch.resolution;
-          var handler;
+          let resolution = watch.resolution;
+          let handler;
 
           if(_.isFunction(resolution)) {
             handler = function(cur, prev) {
@@ -516,23 +516,23 @@
             resolution = resolution.match(/(\S+) ?= ?(\S+)/);
 
             handler = (val, prev, key, trigger) => {
-              let updatePath, fromPath;
+              console.log('condition:', condition);
+              let curCondition = condition && replaceArrayIndex(condition, key);
+              console.log('curCondition:', curCondition);
+              let updatePath = replaceArrayIndex(resolution[1], key);
+              console.log('updatePath:', updatePath);
+              let fromPath = replaceArrayIndex(resolution[2], key);
+              console.log('fromPath:', fromPath);
 
-              if(resolution[1].includes('arrayIndex')) {
-                updatePath = replaceArrayIndex(resolution[1], key);
-              }
               let update = service.parseExpression(updatePath || resolution[1]);
 
               // avoid loop where two watches keep triggering each other
               if(trigger === update.path().key) return;
               trigger = update.path().key;
 
-              if (resolution[2].includes('arrayIndex')) {
-                fromPath = replaceArrayIndex(resolution[2], key);
-              }
               let from = service.parseExpression(fromPath || resolution[2]);
 
-              var parsedCondition = functionCondition ? service.parseCondition(functionCondition, condition) : condition;
+              var parsedCondition = functionCondition ? service.parseCondition(functionCondition, curCondition) : curCondition;
               if(!parsedCondition || $parse(parsedCondition)(service)) {
                 if(adjustment.date) {
                   update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
@@ -762,7 +762,7 @@
 
         _.each(service.arrayListeners, (listener, key) => {
           let val = service.parseExpression(key, service.model).get();
-          console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
+          // console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
           if(!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(handler => handler(val, listener.prev));
             listener.prev = angular.copy(val);
@@ -1630,10 +1630,11 @@
     }
 
     function replaceArrayIndex(resolve, key) {
+      if(!resolve.includes('arrayIndex')) return resolve;
       var arrayIndexKey = /([^.]*)\[arrayIndex\]/.exec(resolve);
       var re = new RegExp(arrayIndexKey[1] + '\\[(\\d+)\\]');
       var index = re.exec(key);
-      return resolve.replace(arrayIndexKey[0], index[0]);
+      return resolve.replace(new RegExp(arrayIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
     }
 
     function getArrayIndex(key) {
