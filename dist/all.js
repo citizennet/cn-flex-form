@@ -1017,21 +1017,17 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
               resolution = resolution.match(/(\S+) ?= ?(\S+)/);
 
               handler = function handler(val, prev, key, trigger) {
-                console.log('condition:', condition);
                 var curCondition = condition && replaceArrayIndex(condition, key);
-                console.log('curCondition:', curCondition);
                 var updatePath = replaceArrayIndex(resolution[1], key);
-                console.log('updatePath:', updatePath);
                 var fromPath = replaceArrayIndex(resolution[2], key);
-                console.log('fromPath:', fromPath);
 
-                var update = service.parseExpression(updatePath || resolution[1]);
+                var update = service.parseExpression(updatePath);
 
                 // avoid loop where two watches keep triggering each other
                 if (trigger === update.path().key) return;
                 trigger = update.path().key;
 
-                var from = service.parseExpression(fromPath || resolution[2]);
+                var from = service.parseExpression(fromPath);
 
                 var parsedCondition = functionCondition ? service.parseCondition(functionCondition, curCondition) : curCondition;
                 if (!parsedCondition || $parse(parsedCondition)(service)) {
@@ -1961,7 +1957,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
       service.refreshSchema = _.debounce(function (updateSchema) {
         var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
-        console.log('service.schema.params, params:', service.schema.params, params);
+        // console.log('service.schema.params, params:', service.schema.params, params);
         var diff = cnUtil.diff(service.schema.params, params, true);
         var keys;
 
@@ -2082,6 +2078,13 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     function reprocessField(current, update, isChild) {
       var service = this;
 
+      // other logic in the service will add conition = 'true' to force
+      // condition to eval true, so we set the update condition to 'true'
+      // before comparing
+      if (!update.condition && current.condition) update.condition = 'true';
+      var redraw = !isChild && current.condition !== update.condition;
+      console.log('redraw:', redraw, current.condition, update.condition);
+
       _.extend(current, _.omit(update, 'items', 'key'));
 
       current._ogKeys.forEach(function (key) {
@@ -2097,7 +2100,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       // that has been addressed from the angular-schema-form library
       // if there's another issue, try triggering the specific action required
       // instead of redrawing the whole form
-      // if(!isChild && current.redraw) current.redraw();
+      if (redraw && current.redraw) current.redraw();
     }
 
     function reprocessSchema(schema, key, keys) {
