@@ -974,99 +974,99 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
       _.each(field.watch, function (watch) {
         if (watch.resolution) {
-          var condition = watch.condition;
-          var functionCondition = service.isConditionFunction(condition);
+          var adjustment;
 
-          var resolution = watch.resolution;
-          var handler;
+          (function () {
+            var condition = watch.condition;
+            var functionCondition = service.isConditionFunction(condition);
 
-          if (_.isFunction(resolution)) {
-            handler = function handler(cur, prev) {
-              var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
-              if (!parsedCondition || $parse(parsedCondition)(service)) {
-                resolution(cur, prev);
-              }
-            };
-          } else {
-            var adjustment = {};
+            var resolution = watch.resolution;
+            var handler = undefined;
 
-            adjustment.date = resolution.match(/\+ ?(\d+) days/);
-
-            if (adjustment.date) {
-              adjustment.date = adjustment.date[1];
-              resolution = resolution.replace(adjustment.date, '').trim();
+            if (_.isFunction(resolution)) {
+              handler = function handler(cur, prev) {
+                var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
+                if (!parsedCondition || $parse(parsedCondition)(service)) {
+                  resolution(cur, prev);
+                }
+              };
             } else {
-              adjustment.math = resolution.match(/(\+|\-|\/|\*) ?(\S+)/);
+              adjustment = {};
 
-              if (adjustment.math) {
-                adjustment.operator = {
-                  '+': 'add',
-                  '-': 'subtract',
-                  '*': 'multiply',
-                  '/': 'divide'
-                }[adjustment.math[1]];
 
-                adjustment.adjuster = service.parseExpression(adjustment.math[2]);
-              }
-            }
+              adjustment.date = resolution.match(/\+ ?(\d+) days/);
 
-            resolution = resolution.match(/(\S+) ?= ?(\S+)/);
+              if (adjustment.date) {
+                adjustment.date = adjustment.date[1];
+                resolution = resolution.replace(adjustment.date, '').trim();
+              } else {
+                adjustment.math = resolution.match(/(\+|\-|\/|\*) ?(\S+)/);
 
-            handler = function handler(val, prev, key, trigger) {
-              var updatePath = undefined,
-                  fromPath = undefined;
+                if (adjustment.math) {
+                  adjustment.operator = {
+                    '+': 'add',
+                    '-': 'subtract',
+                    '*': 'multiply',
+                    '/': 'divide'
+                  }[adjustment.math[1]];
 
-              if (resolution[1].includes('arrayIndex')) {
-                updatePath = replaceArrayIndex(resolution[1], key);
-              }
-              var update = service.parseExpression(updatePath || resolution[1]);
-
-              // avoid loop where two watches keep triggering each other
-              if (trigger === update.path().key) return;
-              trigger = update.path().key;
-
-              if (resolution[2].includes('arrayIndex')) {
-                fromPath = replaceArrayIndex(resolution[2], key);
-              }
-              var from = service.parseExpression(fromPath || resolution[2]);
-
-              var parsedCondition = functionCondition ? service.parseCondition(functionCondition, condition) : condition;
-              if (!parsedCondition || $parse(parsedCondition)(service)) {
-                if (adjustment.date) {
-                  update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
-                } else if (adjustment.math) {
-                  //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
-                  //console.log('_.%s(%s, %s):', adjustment.operator, from.get(), adjustment.adjuster.get(), result);
-                  var result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
-                  //console.log('eval(%s %s %s):', from.get(), adjustment.math[1], adjustment.adjuster.get(), result);
-                  //console.log('result:', result);
-                  //console.log('adjustment.math:', adjustment, from.get(), adjustment.adjuster.get(), result);
-                  //console.log('schema.format:', schema.format);
-                  schema = schema || field.items && (field.items[0].schema || field.items[0].items && field.items[0].items[0].schema);
-                  if (field.type === 'cn-currency') {
-                    var p = schema && schema.format === 'currency-dollars' ? 2 : 0;
-
-                    if (adjustment.math[1] === '*') {
-                      result = _.floor(result, p);
-                    } else if (adjustment.math[1] === '/') {
-                      result = _.ceil(result, p);
-                    } else {
-                      result = _.round(result, p);
-                    }
-                  }
-                  //service.listeners[update.path().key].prev = result;
-                  if (service.listeners[trigger]) {
-                    service.listeners[trigger].trigger = key;
-                  }
-                  update.set(result || 0);
-                } else {
-                  update.set(from.get());
+                  adjustment.adjuster = service.parseExpression(adjustment.math[2]);
                 }
               }
-            };
-          }
 
-          service.registerHandler(field, handler, field.updateSchema, watch.initialize);
+              resolution = resolution.match(/(\S+) ?= ?(\S+)/);
+
+              handler = function handler(val, prev, key, trigger) {
+                var curCondition = condition && replaceArrayIndex(condition, key);
+                var updatePath = replaceArrayIndex(resolution[1], key);
+                var fromPath = replaceArrayIndex(resolution[2], key);
+
+                var update = service.parseExpression(updatePath);
+
+                // avoid loop where two watches keep triggering each other
+                if (trigger === update.path().key) return;
+                trigger = update.path().key;
+
+                var from = service.parseExpression(fromPath);
+
+                var parsedCondition = functionCondition ? service.parseCondition(functionCondition, curCondition) : curCondition;
+                if (!parsedCondition || $parse(parsedCondition)(service)) {
+                  if (adjustment.date) {
+                    update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
+                  } else if (adjustment.math) {
+                    //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
+                    //console.log('_.%s(%s, %s):', adjustment.operator, from.get(), adjustment.adjuster.get(), result);
+                    var result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
+                    //console.log('eval(%s %s %s):', from.get(), adjustment.math[1], adjustment.adjuster.get(), result);
+                    //console.log('result:', result);
+                    //console.log('adjustment.math:', adjustment, from.get(), adjustment.adjuster.get(), result);
+                    //console.log('schema.format:', schema.format);
+                    schema = schema || field.items && (field.items[0].schema || field.items[0].items && field.items[0].items[0].schema);
+                    if (field.type === 'cn-currency') {
+                      var p = schema && schema.format === 'currency-dollars' ? 2 : 0;
+
+                      if (adjustment.math[1] === '*') {
+                        result = _.floor(result, p);
+                      } else if (adjustment.math[1] === '/') {
+                        result = _.ceil(result, p);
+                      } else {
+                        result = _.round(result, p);
+                      }
+                    }
+                    //service.listeners[update.path().key].prev = result;
+                    if (service.listeners[trigger]) {
+                      service.listeners[trigger].trigger = key;
+                    }
+                    update.set(result || 0);
+                  } else {
+                    update.set(from.get());
+                  }
+                }
+              };
+            }
+
+            service.registerHandler(field, handler, field.updateSchema, watch.initialize);
+          })();
         }
       });
     }
@@ -1257,7 +1257,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
         _.each(service.arrayListeners, function (listener, key) {
           var val = service.parseExpression(key, service.model).get();
-          console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
+          // console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
           if (!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(function (handler) {
               return handler(val, listener.prev);
@@ -1634,7 +1634,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           if (event === 'tag-init') {
             var newVal;
             if (form.schema.type === 'array') {
-              var _ret2 = function () {
+              var _ret3 = function () {
                 var valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
                 if (!valProp || !val || !_.isArray(val)) return {
                     v: undefined
@@ -1646,7 +1646,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
                 });
               }();
 
-              if ((typeof _ret2 === 'undefined' ? 'undefined' : _typeof(_ret2)) === "object") return _ret2.v;
+              if ((typeof _ret3 === 'undefined' ? 'undefined' : _typeof(_ret3)) === "object") return _ret3.v;
             } else {
               var valProp = select.valueProperty || form.schema.type !== 'object' && 'value';
               if (!valProp) return;
@@ -1957,7 +1957,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
       service.refreshSchema = _.debounce(function (updateSchema) {
         var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
-        console.log('service.schema.params, params:', service.schema.params, params);
+        // console.log('service.schema.params, params:', service.schema.params, params);
         var diff = cnUtil.diff(service.schema.params, params, true);
         var keys;
 
@@ -2078,6 +2078,13 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     function reprocessField(current, update, isChild) {
       var service = this;
 
+      // other logic in the service will add conition = 'true' to force
+      // condition to eval true, so we set the update condition to 'true'
+      // before comparing
+      if (!update.condition && current.condition) update.condition = 'true';
+      var redraw = !isChild && current.condition !== update.condition;
+      console.log('redraw:', redraw, current.condition, update.condition);
+
       _.extend(current, _.omit(update, 'items', 'key'));
 
       current._ogKeys.forEach(function (key) {
@@ -2093,7 +2100,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       // that has been addressed from the angular-schema-form library
       // if there's another issue, try triggering the specific action required
       // instead of redrawing the whole form
-      // if(!isChild && current.redraw) current.redraw();
+      if (redraw && current.redraw) current.redraw();
     }
 
     function reprocessSchema(schema, key, keys) {
@@ -2129,10 +2136,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     }
 
     function replaceArrayIndex(resolve, key) {
+      if (!resolve.includes('arrayIndex')) return resolve;
       var arrayIndexKey = /([^.]*)\[arrayIndex\]/.exec(resolve);
       var re = new RegExp(arrayIndexKey[1] + '\\[(\\d+)\\]');
       var index = re.exec(key);
-      return resolve.replace(arrayIndexKey[0], index[0]);
+      return resolve.replace(new RegExp(arrayIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
     }
 
     function getArrayIndex(key) {

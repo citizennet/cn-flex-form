@@ -475,11 +475,11 @@
 
       _.each(field.watch, function(watch) {
         if(watch.resolution) {
-          var condition = watch.condition;
-          var functionCondition = service.isConditionFunction(condition);
+          let condition = watch.condition;
+          let functionCondition = service.isConditionFunction(condition);
 
-          var resolution = watch.resolution;
-          var handler;
+          let resolution = watch.resolution;
+          let handler;
 
           if(_.isFunction(resolution)) {
             handler = function(cur, prev) {
@@ -516,23 +516,19 @@
             resolution = resolution.match(/(\S+) ?= ?(\S+)/);
 
             handler = (val, prev, key, trigger) => {
-              let updatePath, fromPath;
+              let curCondition = condition && replaceArrayIndex(condition, key);
+              let updatePath = replaceArrayIndex(resolution[1], key);
+              let fromPath = replaceArrayIndex(resolution[2], key);
 
-              if(resolution[1].includes('arrayIndex')) {
-                updatePath = replaceArrayIndex(resolution[1], key);
-              }
-              let update = service.parseExpression(updatePath || resolution[1]);
+              let update = service.parseExpression(updatePath);
 
               // avoid loop where two watches keep triggering each other
               if(trigger === update.path().key) return;
               trigger = update.path().key;
 
-              if (resolution[2].includes('arrayIndex')) {
-                fromPath = replaceArrayIndex(resolution[2], key);
-              }
-              let from = service.parseExpression(fromPath || resolution[2]);
+              let from = service.parseExpression(fromPath);
 
-              var parsedCondition = functionCondition ? service.parseCondition(functionCondition, condition) : condition;
+              var parsedCondition = functionCondition ? service.parseCondition(functionCondition, curCondition) : curCondition;
               if(!parsedCondition || $parse(parsedCondition)(service)) {
                 if(adjustment.date) {
                   update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
@@ -762,7 +758,7 @@
 
         _.each(service.arrayListeners, (listener, key) => {
           let val = service.parseExpression(key, service.model).get();
-          console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
+          // console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
           if(!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(handler => handler(val, listener.prev));
             listener.prev = angular.copy(val);
@@ -1458,7 +1454,7 @@
       var service = this;
       service.refreshSchema = _.debounce(function(updateSchema) {
         var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
-        console.log('service.schema.params, params:', service.schema.params, params);
+        // console.log('service.schema.params, params:', service.schema.params, params);
         var diff = cnUtil.diff(service.schema.params, params, true);
         var keys;
 
@@ -1579,6 +1575,13 @@
     function reprocessField(current, update, isChild) {
       var service = this;
 
+      // other logic in the service will add conition = 'true' to force
+      // condition to eval true, so we set the update condition to 'true'
+      // before comparing
+      if(!update.condition && current.condition) update.condition = 'true';
+      let redraw = !isChild && current.condition !== update.condition;
+      console.log('redraw:', redraw, current.condition, update.condition);
+
       _.extend(current, _.omit(update, 'items', 'key'));
 
       current._ogKeys.forEach(key => {
@@ -1594,7 +1597,7 @@
       // that has been addressed from the angular-schema-form library
       // if there's another issue, try triggering the specific action required
       // instead of redrawing the whole form
-      // if(!isChild && current.redraw) current.redraw();
+      if(redraw && current.redraw) current.redraw();
     }
 
     function reprocessSchema(schema, key, keys) {
@@ -1630,10 +1633,11 @@
     }
 
     function replaceArrayIndex(resolve, key) {
+      if(!resolve.includes('arrayIndex')) return resolve;
       var arrayIndexKey = /([^.]*)\[arrayIndex\]/.exec(resolve);
       var re = new RegExp(arrayIndexKey[1] + '\\[(\\d+)\\]');
       var index = re.exec(key);
-      return resolve.replace(arrayIndexKey[0], index[0]);
+      return resolve.replace(new RegExp(arrayIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
     }
 
     function getArrayIndex(key) {
