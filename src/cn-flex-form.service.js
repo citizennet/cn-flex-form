@@ -230,7 +230,6 @@
           schema = field.schema;
 
       if(schema) {
-
         field.getSchemaType = function() {
           return _.isArray(schema.type) ? _.first(schema.type) : schema.type;
         };
@@ -1116,6 +1115,26 @@
       }
     }
 
+    function getSelectValProp(select) {
+      let isArray = select.getSchemaType() === 'array';
+      return select.valueProperty ||
+        (isArray ? select.schema.items.type : select.schema.type) !== 'object' && 'value';
+    }
+
+    function getAllowedSelectValue(select, val, titleMap) {
+      titleMap = titleMap || select.getTitleMap();
+      let valProp = getSelectValProp(select);
+      if(!valProp) return;
+
+      if(select.schema.type === 'array') {
+        if(!val || !_.isArray(val)) return;
+        return val.filter(item => _.find(titleMap, {[valProp]: val}));
+      }
+      else {
+        return _.find(titleMap, {[valProp]: val});
+      }
+    }
+
     function processSelect(select) {
       var service = this,
           schema = select.schema;
@@ -1126,29 +1145,13 @@
         };
 
         select.onInit = function(val, form, event, setter) {
+          // make sure we use correct value
           var modelValue = service.parseExpression(form.key, service.model);
-          // make sure we have correct value
-          val = modelValue.get();
           //console.log('service.getKey(form.key), val:', service.getKey(form.key), val);
           if(event === 'tag-init') {
-            var newVal;
-            if(form.schema.type === 'array') {
-              let valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-              if(!valProp || !val || !_.isArray(val)) return;
-
-              newVal = [];
-              val.forEach(val => {
-                newVal.push(_.find(select.getTitleMap(), {[valProp]: val}));
-              });
-            }
-            else {
-              let valProp = select.valueProperty || form.schema.type !== 'object' && 'value';
-              if(!valProp) return;
-
-              newVal = _.find(select.getTitleMap(), {[valProp]: val});
-            }
-            //console.log('newVal:', newVal);
-            if(newVal) setter(newVal);
+            let newVal = getAllowedSelectValue(select, modelValue.get());
+            console.log('onInit: key, newVal:', form.key, newVal);
+            if(newVal !== undefined) setter(newVal);
           }
         };
       }
@@ -1219,17 +1222,23 @@
         }
         else {
           if(!select.selectionStyle) {
-            if(select.key === 'tags') {
-              select.selectionStyle = 'tags';
-            }
-            else if(select.getSchemaType() === 'array' && select.schema.maxItems !== 1) {
-              select.selectionStyle = 'list';
-            }
-            else {
-              select.selectionStyle = 'select';
-            }
+            select.selectionStyle = select.key === 'tags' ?
+              'tags' : (select.getSchemaType() === 'array' && select.schema.maxItems !== 1) ?
+                'list' : 'select';
           }
           select.type = 'cn-autocomplete';
+        }
+
+        if(select.titleMapResolve) {
+          $rootScope.$on('cnFlexFormDiff:data', (e, data) => {
+            if(data[select.titleMapResolve]) {
+              let modelValue = service.parseExpression(select.key, service.model);
+              let val = modelValue.get();
+              if(val !== undefined) {
+                modelValue.set(getAllowedSelectValue(select, val, data[select.titleMapResolve]));
+              }
+            }
+          });
         }
       }
 
@@ -1506,6 +1515,7 @@
         service.schema.params = schema.params;
 
         if(schema.diff.data) {
+          $rootScope.$broadcast('cnFlexFormDiff:data', schema.diff.data);
           _.each(schema.diff.data, (data, prop) => {
             if(data && data.data && !_.isEmpty(service.schema.data[prop].data) && !data.reset) {
               data.data = service.schema.data[prop].data.concat(data.data);
@@ -1524,6 +1534,7 @@
         var keys = [];
 
         if(schema.diff.schema) {
+          $rootScope.$broadcast('cnFlexFormDiff:data', schema.diff.schema);
           _.each(schema.diff.schema, function(schema, key) {
             service.schema.schema.properties[key] = schema;
             reprocessSchema(schema, key, keys);
@@ -1531,6 +1542,7 @@
         }
 
         if(schema.diff.form) {
+          $rootScope.$broadcast('cnFlexFormDiff:data', schema.diff.form);
           _.each(schema.diff.form, function(form) {
 
             if(keys.indexOf(form.key) === -1) {
@@ -1580,7 +1592,7 @@
       // before comparing
       if(!update.condition && current.condition) update.condition = 'true';
       let redraw = !isChild && current.condition !== update.condition;
-      console.log('redraw:', redraw, current.condition, update.condition);
+      console.log('redraw:', service.getKey(current.key), current);
 
       _.extend(current, _.omit(update, 'items', 'key'));
 

@@ -518,8 +518,6 @@
 })();
 'use strict';
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 (function () {
@@ -737,7 +735,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           schema = field.schema;
 
       if (schema) {
-
         field.getSchemaType = function () {
           return _.isArray(schema.type) ? _.first(schema.type) : schema.type;
         };
@@ -1617,6 +1614,26 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       }
     }
 
+    function getSelectValProp(select) {
+      var isArray = select.getSchemaType() === 'array';
+      return select.valueProperty || (isArray ? select.schema.items.type : select.schema.type) !== 'object' && 'value';
+    }
+
+    function getAllowedSelectValue(select, val, titleMap) {
+      titleMap = titleMap || select.getTitleMap();
+      var valProp = getSelectValProp(select);
+      if (!valProp) return;
+
+      if (select.schema.type === 'array') {
+        if (!val || !_.isArray(val)) return;
+        return val.filter(function (item) {
+          return _.find(titleMap, _defineProperty({}, valProp, val));
+        });
+      } else {
+        return _.find(titleMap, _defineProperty({}, valProp, val));
+      }
+    }
+
     function processSelect(select) {
       var service = this,
           schema = select.schema;
@@ -1627,34 +1644,13 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         };
 
         select.onInit = function (val, form, event, setter) {
+          // make sure we use correct value
           var modelValue = service.parseExpression(form.key, service.model);
-          // make sure we have correct value
-          val = modelValue.get();
           //console.log('service.getKey(form.key), val:', service.getKey(form.key), val);
           if (event === 'tag-init') {
-            var newVal;
-            if (form.schema.type === 'array') {
-              var _ret3 = function () {
-                var valProp = select.valueProperty || select.schema.items.type !== 'object' && 'value';
-                if (!valProp || !val || !_.isArray(val)) return {
-                    v: undefined
-                  };
-
-                newVal = [];
-                val.forEach(function (val) {
-                  newVal.push(_.find(select.getTitleMap(), _defineProperty({}, valProp, val)));
-                });
-              }();
-
-              if ((typeof _ret3 === 'undefined' ? 'undefined' : _typeof(_ret3)) === "object") return _ret3.v;
-            } else {
-              var valProp = select.valueProperty || form.schema.type !== 'object' && 'value';
-              if (!valProp) return;
-
-              newVal = _.find(select.getTitleMap(), _defineProperty({}, valProp, val));
-            }
-            //console.log('newVal:', newVal);
-            if (newVal) setter(newVal);
+            var newVal = getAllowedSelectValue(select, modelValue.get());
+            console.log('onInit: key, newVal:', form.key, newVal);
+            if (newVal !== undefined) setter(newVal);
           }
         };
       }
@@ -1724,15 +1720,21 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           select.type = 'cn-autocomplete-detailed';
         } else {
           if (!select.selectionStyle) {
-            if (select.key === 'tags') {
-              select.selectionStyle = 'tags';
-            } else if (select.getSchemaType() === 'array' && select.schema.maxItems !== 1) {
-              select.selectionStyle = 'list';
-            } else {
-              select.selectionStyle = 'select';
-            }
+            select.selectionStyle = select.key === 'tags' ? 'tags' : select.getSchemaType() === 'array' && select.schema.maxItems !== 1 ? 'list' : 'select';
           }
           select.type = 'cn-autocomplete';
+        }
+
+        if (select.titleMapResolve) {
+          $rootScope.$on('cnFlexFormDiff:data', function (e, data) {
+            if (data[select.titleMapResolve]) {
+              var modelValue = service.parseExpression(select.key, service.model);
+              var val = modelValue.get();
+              if (val !== undefined) {
+                modelValue.set(getAllowedSelectValue(select, val, data[select.titleMapResolve]));
+              }
+            }
+          });
         }
       }
 
@@ -2008,6 +2010,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         service.schema.params = schema.params;
 
         if (schema.diff.data) {
+          $rootScope.$broadcast('cnFlexFormDiff:data', schema.diff.data);
           _.each(schema.diff.data, function (data, prop) {
             if (data && data.data && !_.isEmpty(service.schema.data[prop].data) && !data.reset) {
               data.data = service.schema.data[prop].data.concat(data.data);
@@ -2026,6 +2029,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         var keys = [];
 
         if (schema.diff.schema) {
+          $rootScope.$broadcast('cnFlexFormDiff:data', schema.diff.schema);
           _.each(schema.diff.schema, function (schema, key) {
             service.schema.schema.properties[key] = schema;
             reprocessSchema(schema, key, keys);
@@ -2033,6 +2037,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         }
 
         if (schema.diff.form) {
+          $rootScope.$broadcast('cnFlexFormDiff:data', schema.diff.form);
           _.each(schema.diff.form, function (form) {
 
             if (keys.indexOf(form.key) === -1) {
@@ -2083,7 +2088,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       // before comparing
       if (!update.condition && current.condition) update.condition = 'true';
       var redraw = !isChild && current.condition !== update.condition;
-      console.log('redraw:', redraw, current.condition, update.condition);
+      console.log('redraw:', service.getKey(current.key), current);
 
       _.extend(current, _.omit(update, 'items', 'key'));
 
