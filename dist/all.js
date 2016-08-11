@@ -518,8 +518,6 @@
 })();
 'use strict';
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 (function () {
@@ -1628,30 +1626,22 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       console.log('valProp:', valProp);
 
       if (select.getSchemaType() === 'array') {
-        var _ret3 = function () {
-          if (!val || !_.isArray(val)) return {
-              v: undefined
-            };
+        if (!val || !_.isArray(val)) return;
 
-          var loopVal = [];
-          val.forEach(function (x) {
-            loopVal.push(_.find(titleMap, _defineProperty({}, valProp, x)));
-          });
-          console.log('loopVal:', val, loopVal, titleMap);
+        // let loopVal = [];
+        // val.forEach(x => {
+        //   loopVal.push(_.find(titleMap, {[valProp]: x}));
+        // });
+        // console.log('loopVal:', val, loopVal, titleMap);
 
-          var mapVal = val.map(function (x) {
-            return _.find(titleMap, _defineProperty({}, valProp, x));
-          }).filter(function (x) {
-            return x !== undefined;
-          });
-          console.log('mapVal:', val, mapVal, titleMap);
+        var mapVal = val.map(function (x) {
+          return _.find(titleMap, _defineProperty({}, valProp, x));
+        }).filter(function (x) {
+          return x !== undefined;
+        });
+        // console.log('mapVal:', val, mapVal, titleMap);
 
-          return {
-            v: mapVal
-          };
-        }();
-
-        if ((typeof _ret3 === 'undefined' ? 'undefined' : _typeof(_ret3)) === "object") return _ret3.v;
+        return mapVal;
       } else {
         return _.find(titleMap, _defineProperty({}, valProp, val));
       }

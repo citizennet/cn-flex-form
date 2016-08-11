@@ -1130,14 +1130,14 @@
       if(select.getSchemaType() === 'array') {
         if(!val || !_.isArray(val)) return;
 
-        let loopVal = [];
-        val.forEach(x => {
-          loopVal.push(_.find(titleMap, {[valProp]: x}));
-        });
-        console.log('loopVal:', val, loopVal, titleMap);
+        // let loopVal = [];
+        // val.forEach(x => {
+        //   loopVal.push(_.find(titleMap, {[valProp]: x}));
+        // });
+        // console.log('loopVal:', val, loopVal, titleMap);
 
         let mapVal = val.map(x => _.find(titleMap, {[valProp]: x})).filter(x => x !== undefined);
-        console.log('mapVal:', val, mapVal, titleMap);
+        // console.log('mapVal:', val, mapVal, titleMap);
 
         return mapVal;
       }
