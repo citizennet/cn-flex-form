@@ -1125,10 +1125,21 @@
       titleMap = titleMap || select.getTitleMap();
       let valProp = getSelectValProp(select);
       if(!valProp) return;
+      console.log('valProp:', valProp);
 
-      if(select.schema.type === 'array') {
+      if(select.getSchemaType() === 'array') {
         if(!val || !_.isArray(val)) return;
-        return val.filter(item => _.find(titleMap, {[valProp]: val}));
+
+        let loopVal = [];
+        val.forEach(x => {
+          loopVal.push(_.find(titleMap, {[valProp]: x}));
+        });
+        console.log('loopVal:', val, loopVal, titleMap);
+
+        let mapVal = val.map(x => _.find(titleMap, {[valProp]: x})).filter(x => x !== undefined);
+        console.log('mapVal:', val, mapVal, titleMap);
+
+        return mapVal;
       }
       else {
         return _.find(titleMap, {[valProp]: val});
