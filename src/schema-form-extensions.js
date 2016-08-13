@@ -55,6 +55,7 @@
               schema-validate="form"
               on-value="form.onValue"
               off-value="form.offValue"
+              read-only="form.readonly"
               undefined-class="form.undefinedClass"/>
             <span ng-show="form.onText && form.offText">
               {{$$value$$ === form.onValue ? form.onText : form.offText}}
