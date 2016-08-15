@@ -36,14 +36,31 @@
                  Cancel
               </a>
               <span ng-repeat="button in vm.config.actionConfig.actions">
-                <a class="btn {{button.style && 'btn-'+button.style}}"
-                   ng-disabled="vm.isDisabled(button)"
-                   ng-class="{'btn-primary': $index === vm.config.actionConfig.actions.length - 1}"
-                   ng-click="vm.submit({ handler: button.handler})"
-                   tooltip="{{button.helptext}}"
-                   tooltip-placement="bottom"
-                   ng-bind-html="button.text || 'Save'">
-                </a>
+                <span ng-class="{'btn-group': button.options}">
+                  <button class="btn {{button.style && 'btn-'+button.style}}"
+                     ng-disabled="vm.isDisabled(button)"
+                     ng-class="{'btn-primary': $index === vm.config.actionConfig.actions.length - 1}"
+                     ng-click="vm.submit({handler: button.handler})"
+                     tooltip="{{button.helptext}}"
+                     tooltip-placement="bottom"
+                     ng-bind-html="button.text || 'Save'">
+                  </button>
+                  <button class="btn {{button.style && 'btn-'+button.style}} dropdown-toggle"
+                          ng-disabled="vm.isDisabled(button)"
+                          ng-class="{'btn-primary': $index === vm.config.actionConfig.actions.length - 1}"
+                          ng-show="button.options"
+                          data-toggle="dropdown">
+                    <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu" ng-if="button.options">
+                    <li ng-repeat="option in button.options"
+                        ng-disabled="vm.isDisabled(option)">
+                      <a ng-click="vm.submit({handler: option.handler})"
+                         ng-bind-html="option.text">
+                      </a>
+                    </li>
+                  </ul>
+                </span>
               </span>
             </div>
             <p class="data-updated-at text-right"
