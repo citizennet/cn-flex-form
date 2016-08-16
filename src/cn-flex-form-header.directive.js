@@ -37,21 +37,21 @@
               </a>
               <span ng-repeat="button in vm.config.actionConfig.actions">
                 <span ng-class="{'btn-group': button.options}">
-                  <button class="btn {{button.style && 'btn-'+button.style}}"
+                  <a class="btn {{button.style && 'btn-'+button.style}}"
                      ng-disabled="vm.isDisabled(button)"
                      ng-class="{'btn-primary': $index === vm.config.actionConfig.actions.length - 1}"
                      ng-click="vm.submit({handler: button.handler})"
                      tooltip="{{button.helptext}}"
                      tooltip-placement="bottom"
                      ng-bind-html="button.text || 'Save'">
-                  </button>
-                  <button class="btn {{button.style && 'btn-'+button.style}} dropdown-toggle"
+                  </a>
+                  <a class="btn {{button.style && 'btn-'+button.style}} dropdown-toggle"
                           ng-disabled="vm.isDisabled(button)"
                           ng-class="{'btn-primary': $index === vm.config.actionConfig.actions.length - 1}"
                           ng-show="button.options"
                           data-toggle="dropdown">
                     <span class="caret"></span>
-                  </button>
+                  </a>
                   <ul class="dropdown-menu" ng-if="button.options">
                     <li ng-repeat="option in button.options"
                         ng-disabled="vm.isDisabled(option)">
