@@ -1245,7 +1245,8 @@
               let modelValue = service.parseExpression(select.key, service.model);
               let val = modelValue.get();
               if(val !== undefined) {
-                modelValue.set(getAllowedSelectValue(select, val, data[select.titleMapResolve]));
+                let valid = getAllowedSelectValue(select, val, data[select.titleMapResolve]); 
+                if(valid === undefined) modelValue.set();
               }
             }
           });
@@ -1544,7 +1545,7 @@
         var keys = [];
 
         if(schema.diff.schema) {
-          $rootScope.$broadcast('cnFlexFormDiff:data', schema.diff.schema);
+          $rootScope.$broadcast('cnFlexFormDiff:schema', schema.diff.schema);
           _.each(schema.diff.schema, function(schema, key) {
             service.schema.schema.properties[key] = schema;
             reprocessSchema(schema, key, keys);
@@ -1552,7 +1553,7 @@
         }
 
         if(schema.diff.form) {
-          $rootScope.$broadcast('cnFlexFormDiff:data', schema.diff.form);
+          $rootScope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
           _.each(schema.diff.form, function(form) {
 
             if(keys.indexOf(form.key) === -1) {
