@@ -1137,9 +1137,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       }
 
       var cur = service.parseExpression(key, service.model).get();
+      var defaultValue = service.getSchema(key).default;
 
       if (!service.listeners[key]) {
-        var prev = angular.copy(cur);
+        var prev = _.isUndefined(cur) ? defaultValue : angular.copy(cur);
         service.listeners[key] = {
           handlers: [],
           updateSchema: updateSchema,
