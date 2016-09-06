@@ -103,6 +103,7 @@
       processFieldset,
       processFieldWatch,
       processComponent,
+      processConditional,
       processCurrency,
       processPercentage,
       processDate,
@@ -336,6 +337,9 @@
             handler.call(service, field);
           }
 
+          if(field.conditionals) {
+            service.processConditional(field);
+          }
           if(field.updateSchema) {
             service.registerHandler(field, null, field.updateSchema);
           }
@@ -369,6 +373,7 @@
       }
       return key;
     }
+
 
     function getSchema(key, depth) {
       var service = this;
@@ -466,6 +471,26 @@
       });
     }
 
+    function processConditional(field) {
+      var service = this;
+      _.each(field.conditionals, (condition, key) => {
+        let functionCondition = service.isConditionFunction(condition);
+        let handler = (val, prev) => {
+          let parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
+          field[key] = functionCondition ? service.parseCondition(functionCondition) : $parse(condition)(service);
+        };
+        field
+            .conditionals[key]
+            .match(/model\.([^\s]+)/g)
+            .map(path => path.match(/model\.([^\s]+)/)[1])
+            .forEach(key => {
+              console.log('registering conditional handler:', key);
+              service.registerHandler(key, handler);
+            });
+        handler();
+      });
+    }
+
     function processFieldWatch(field) {
       var service = this,
           schema = field.schema;
@@ -535,9 +560,10 @@
                 else if(adjustment.math) {
                   //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
                   //console.log('_.%s(%s, %s):', adjustment.operator, from.get(), adjustment.adjuster.get(), result);
-                  let result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
+                  //let result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
+                  let result = $parse(from.get() + adjustment.math[1] + adjustment.adjuster.get())();
                   //console.log('eval(%s %s %s):', from.get(), adjustment.math[1], adjustment.adjuster.get(), result);
-                  //console.log('result:', result);
+                  //console.log('result:', result, from.get() + adjustment.math[1] + adjustment.adjuster.get(), resolution);
                   //console.log('adjustment.math:', adjustment, from.get(), adjustment.adjuster.get(), result);
                   //console.log('schema.format:', schema.format);
                   schema = schema || field.items && (field.items[0].schema || (field.items[0].items && field.items[0].items[0].schema));
@@ -582,6 +608,15 @@
           functionName = condition[2],
           functionArgument = condition[3];
 
+      if(functionName.includes('.')) {
+        let pattern = functionName.match(/(.*)\.([^.]+)$/);
+        let path = pattern[1];
+        let method = pattern[2];
+        let scope = $parse(path)(service);
+        functionArgument = $parse(functionArgument)(service);
+
+        return invert ? !(scope && scope[method](functionArgument)) : (scope && scope[method](functionArgument));
+      }
       if(functionName === 'any') {
         var predicate = functionArgument.match(/(.+)\[\]\.*(.*)(===|>|<|>=|<=)(.+)/),
             arr = service.parseExpression(predicate[1]).get(),
