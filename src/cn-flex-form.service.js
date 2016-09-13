@@ -446,6 +446,11 @@
     function handleResolve(field, fieldProp, exp) {
       var service = this;
       var data = service.parseExpression(exp).get();
+      // if we're resolving from model but defaults haven't been applied yet, resolve from default itself
+      if(!data && exp.indexOf('model.') === 0) {
+        data = service.getSchema(exp.replace('model.', '')).default;
+      }
+      console.log('handleResolve:', data, fieldProp, exp);
       if (data && data.cursor) {
         field.loadMore = function() {
           var dataProp = exp.match(/schema\.data\.(.+)/)[1];
