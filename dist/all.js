@@ -609,6 +609,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       processFieldset: processFieldset,
       processFieldWatch: processFieldWatch,
       processComponent: processComponent,
+      processConditional: processConditional,
       processCurrency: processCurrency,
       processPercentage: processPercentage,
       processDate: processDate,
@@ -836,6 +837,9 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             handler.call(service, field);
           }
 
+          if (field.conditionals) {
+            service.processConditional(field);
+          }
           if (field.updateSchema) {
             service.registerHandler(field, null, field.updateSchema);
           }
@@ -938,6 +942,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     function handleResolve(field, fieldProp, exp) {
       var service = this;
       var data = service.parseExpression(exp).get();
+      // if we're resolving from model but defaults haven't been applied yet, resolve from default itself
+      if (!data && exp.indexOf('model.') === 0) {
+        data = service.getSchema(exp.replace('model.', '')).default;
+      }
+      console.log('handleResolve:', data, fieldProp, exp);
       if (data && data.cursor) {
         field.loadMore = function () {
           var dataProp = exp.match(/schema\.data\.(.+)/)[1];
@@ -960,6 +969,24 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       register[fieldKey].push({
         field: field,
         prop: fieldProp
+      });
+    }
+
+    function processConditional(field) {
+      var service = this;
+      _.each(field.conditionals, function (condition, key) {
+        var functionCondition = service.isConditionFunction(condition);
+        var handler = function handler(val, prev) {
+          var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
+          field[key] = functionCondition ? service.parseCondition(functionCondition) : $parse(condition)(service);
+        };
+        field.conditionals[key].match(/model\.([^\s]+)/g).map(function (path) {
+          return path.match(/model\.([^\s]+)/)[1];
+        }).forEach(function (key) {
+          console.log('registering conditional handler:', key);
+          service.registerHandler(key, handler);
+        });
+        handler();
       });
     }
 
@@ -1033,9 +1060,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
                   } else if (adjustment.math) {
                     //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
                     //console.log('_.%s(%s, %s):', adjustment.operator, from.get(), adjustment.adjuster.get(), result);
-                    var result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
+                    //let result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
+                    var result = $parse(from.get() + adjustment.math[1] + adjustment.adjuster.get())();
                     //console.log('eval(%s %s %s):', from.get(), adjustment.math[1], adjustment.adjuster.get(), result);
-                    //console.log('result:', result);
+                    //console.log('result:', result, from.get() + adjustment.math[1] + adjustment.adjuster.get(), resolution);
                     //console.log('adjustment.math:', adjustment, from.get(), adjustment.adjuster.get(), result);
                     //console.log('schema.format:', schema.format);
                     schema = schema || field.items && (field.items[0].schema || field.items[0].items && field.items[0].items[0].schema);
@@ -1078,6 +1106,15 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           functionName = condition[2],
           functionArgument = condition[3];
 
+      if (functionName.includes('.')) {
+        var pattern = functionName.match(/(.*)\.([^.]+)$/);
+        var path = pattern[1];
+        var method = pattern[2];
+        var scope = $parse(path)(service);
+        functionArgument = $parse(functionArgument)(service);
+
+        return invert ? !(scope && scope[method](functionArgument)) : scope && scope[method](functionArgument);
+      }
       if (functionName === 'any') {
         var predicate = functionArgument.match(/(.+)\[\]\.*(.*)(===|>|<|>=|<=)(.+)/),
             arr = service.parseExpression(predicate[1]).get(),
@@ -1137,9 +1174,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       }
 
       var cur = service.parseExpression(key, service.model).get();
+      var defaultValue = service.getSchema(key).default;
 
       if (!service.listeners[key]) {
-        var prev = angular.copy(cur);
+        var prev = _.isUndefined(cur) ? defaultValue : angular.copy(cur);
         service.listeners[key] = {
           handlers: [],
           updateSchema: updateSchema,
@@ -2275,7 +2313,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete-detailed.html', '\n        <div sf-array="form"\n             class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}-input"\n                 ng-show="showTitle()">{{form.title}}</label>\n          <ol class="list-group cn-autocomplete-list"\n              ng-show="modelArray.length"\n              ng-model="modelArray">\n            <li class="list-group-item {{form.fieldHtmlClass}}"\n                ng-repeat="item in modelArray track by $index">\n              <button ng-hide="form.readonly || form.remove === null"\n                      ng-click="deleteFromArray($index)"\n                      type="button" class="close pull-right">\n                <span aria-hidden="true">&times;</span>\n              </button>\n              <sf-decorator ng-init="arrayIndex = $index" form="copyWithIndex($index)"/>\n            </li>\n          </ol>\n          ' + sharedAutocompleteTpl + '\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-currency.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key.join(\'.\')}}">{{form.title}}</label>\n          <div class="{{form.fieldClass}} input-group">\n            <label class="input-group-addon"\n                   ng-disabled="form.readonly"\n                   for="{{form.key.join(\'.\')}}">$</label>\n            <input class="form-control"\n                   cn-currency-format="{{form.currencyFormat}}"\n                   cn-currency-placeholder="{{form.placeholder}}"\n                   ng-show="form.key"\n                   ng-model-options="form.ngModelOptions"\n                   ng-disabled="form.readonly"\n                   sf-changed="form"\n                   schema-validate="form"\n                   ff-validate="form"\n                   ng-required="{{form.ngRequired}}"\n                   type="text"\n                   step="any"\n                   min="{{form.min}}"\n                   max="{{form.max}}"\n                   id="{{form.key.join(\'.\')}}"\n                   name="{{form.key.join(\'.\')}}"\n                   ng-model="$$value$$">\n          </div>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-currency.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key.join(\'.\')}}">{{form.title}}</label>\n          <div class="{{form.fieldClass}} input-group">\n            <label class="input-group-addon"\n                   ng-disabled="form.readonly"\n                   for="{{form.key.join(\'.\')}}">$</label>\n            <input class="form-control"\n                   cn-currency-format="{{form.currencyFormat}}"\n                   cn-currency-placeholder="{{form.placeholder}}"\n                   ng-show="form.key"\n                   ng-model-options="form.ngModelOptions"\n                   ng-disabled="form.readonly"\n                   sf-changed="form"\n                   schema-validate="form"\n                   type="text"\n                   step="any"\n                   min="{{form.min}}"\n                   max="{{form.max}}"\n                   id="{{form.key.join(\'.\')}}"\n                   name="{{form.key.join(\'.\')}}"\n                   ng-model="$$value$$">\n          </div>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-radiobuttons.html', '\n        <div class="form-group schema-form-radiobuttons cn-radiobuttons {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label" ng-show="showTitle()">{{form.title}}</label>\n          <div class="btn-group clearfix">\n            <label class="btn btn-{{item.value}} {{form.btnClass}} {{item.value === $$value$$ ? \'active\' : \'\'}}"\n                   ng-repeat="item in form.titleMap">\n              <input type="radio"\n                     class="{{form.fieldHtmlClass}} hide"\n                     sf-changed="form"\n                     ng-disabled="form.readonly"\n                     ng-model="$$value$$"\n                     ng-model-options="form.ngModelOptions"\n                     schema-validate="form"\n                     ff-validate="form"\n                     ng-value="item.value"\n                     name="{{form.key.join(\'.\')}}">\n              <i class="fa fa-{{item.value}} fa-lg"></i>\n              <span ng-bind-html="item.name"></span>\n            </label>\n          </div>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 

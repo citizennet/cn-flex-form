@@ -196,8 +196,6 @@
                    ng-disabled="form.readonly"
                    sf-changed="form"
                    schema-validate="form"
-                   ff-validate="form"
-                   ng-required="{{form.ngRequired}}"
                    type="text"
                    step="any"
                    min="{{form.min}}"
