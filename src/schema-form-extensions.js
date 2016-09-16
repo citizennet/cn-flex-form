@@ -82,6 +82,7 @@
             schema-validate="form"
             input-id="{{form.key.join('.')}}"
             min-date="form.minDate"
+            max-date="form.maxDate"
             max-view="{{form.maxView}}"
             cn-date-required="form.required"
             placeholder="{{form.placeholder}}"
