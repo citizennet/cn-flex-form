@@ -37,7 +37,7 @@
   function cnFlexFormModalLoaderServiceProvider() {
 
     var provider = {
-      addMapping: addMapping,
+      addMapping,
       $get: cnFlexFormModalLoaderService
     };
 

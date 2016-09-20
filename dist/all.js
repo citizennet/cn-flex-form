@@ -975,6 +975,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     function processConditional(field) {
       var service = this;
       _.each(field.conditionals, function (condition, key) {
+
         var functionCondition = service.isConditionFunction(condition);
         var handler = function handler(val, prev) {
           var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
