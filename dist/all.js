@@ -883,8 +883,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       key = sfPath.parse(key);
       depth = depth || service.schema.schema.properties;
 
-      var first = void 0,
-          next = void 0;
+      var first = undefined,
+          next = undefined;
 
       while (key.length > 1) {
         first = key[0];
@@ -970,37 +970,41 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       _.each(field.conditionals, function (condition, key) {
         var functionCondition = service.isConditionFunction(condition);
 
-        var paths = field.conditionals[key].match(/model\.([^\s]+)/g) // Strips model. from conditional expressions
+        field.conditionals[key].match(/model\.([^\s]+)/g) // Strips model. from conditional expressions
         .map(function (path) {
           return path.match(/model\.([^\s]+)/)[1];
         }).forEach(function (conditionalKey) {
           if (field.key.includes('[]')) {
-            var parentArray = field.key.substring(0, field.key.lastIndexOf('[]') + 2);
-            service.registerHandler(parentArray, function (val, prev, parentKey, trigger) {
-              var replacedCondition = replaceArrayIndex(condition, parentKey);
-              service.registerHandler(replaceArrayIndex(conditionalKey, parentKey), function (val, prev, fieldKey) {
+            (function () {
+              var parentArray = field.key.substr(0, field.key.lastIndexOf('[]') + 2);
+              var primaryKey = field.key.substr(field.key.lastIndexOf('[]') + 3);
+              service.registerHandler(parentArray, function (val, prev, parentKey, trigger) {
+                var replacedCondition = replaceArrayIndex(condition, parentKey);
+
                 $rootScope.$on('flexFormArrayCopyAdded:' + service.getKey(field.key), function (event, scope) {
-                  console.log(':: key ::', fieldKey, parentKey, key, field.key, conditionalKey);
-                  console.log(':: service.find ::', service.getArrayCopies(field.key));
-                  console.log(':: scope.form ::', scope.form);
+                  service.registerHandler(replaceArrayIndex(conditionalKey, parentKey), function (val, prev, fieldKey) {
+                    console.log(':: key ::', fieldKey, parentKey, key, field.key, conditionalKey);
+                    console.log(':: service.find ::', service.getArrayCopies(field.key));
+                    console.log(':: scope.form ::', scope.form);
 
-                  var arrayCopy = _.find(service.getArrayCopies(field.key), function (form) {
-                    console.log(':: form ::', form, fieldKey);
-                    var index = _.findIndex(form.key, fieldKey) - 1;
-                    var parentIndex = parentKey.match(/\[(\d+)]$/)[1];
-                    console.log(':: index ::', index, parentIndex);
-                    return form.key[index] === parentIndex;
-                  });
+                    var arrayCopy = _.filter(service.getArrayCopies(field.key), function (form) {
+                      console.log(':: form ::', form, fieldKey);
+                      var index = form.key[form.key.indexOf(primaryKey) - 1];
+                      var parentIndex = parseInt(parentKey.match(/\[(\d+)]$/)[1]);
+                      console.log(':: index ::', index, parentIndex);
+                      return index === parentIndex;
+                    });
 
-                  if (arrayCopy) {
-                    arrayCopy[key] = functionCondition ? service.parseCondition(service.isConditionFunction(replacedCondition)) : $parse(replacedCondition)(service);
-                  }
+                    arrayCopy.forEach(function (copy) {
+                      copy[key] = functionCondition ? service.parseCondition(service.isConditionFunction(replacedCondition)) : $parse(replacedCondition)(service);
+                    });
 
-                  console.log(':: arrayCopy ::', arrayCopy);
-                  console.log(':: field + key ::', field, key);
+                    console.log(':: arrayCopy ::', arrayCopy);
+                    console.log(':: field + key ::', field, key);
+                  }, null, true);
                 });
-              }, null, true);
-            });
+              });
+            })();
           } else {
             service.registerHandler(conditionalKey, function (val, prev, fieldKey) {
               field[key] = functionCondition ? service.parseCondition(functionCondition) : $parse(condition)(service);
@@ -1026,7 +1030,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             var functionCondition = service.isConditionFunction(condition);
 
             var resolution = watch.resolution;
-            var handler = void 0;
+            var handler = undefined;
 
             if (_.isFunction(resolution)) {
               handler = function handler(cur, prev) {
@@ -1231,21 +1235,21 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
-          for (i = prev | 0, l = cur; i < l; i++) {
-            if (!fieldKey) {
-              var localKey = arrKey + '[' + i + ']';
-              var val = service.parseExpression(localKey, service.model).get();
-              console.log(':: localKey ::', localKey);
-              console.log(':: val ::', val);
+            for (i = prev | 0, l = cur; i < l; i++) {
+              if (!fieldKey) {
+                var localKey = arrKey + '[' + i + ']';
+                var val = service.parseExpression(localKey, service.model).get();
+                console.log(':: localKey ::', localKey);
+                console.log(':: val ::', val);
 
-              handler(val, undefined, localKey);
-            } else {
-              key = arrKey + '[' + i + ']' + '.' + fieldKey;
-              service.registerHandler(key, handler, updateSchema, runHandler);
-              //if(runHandler) handler(null, null, key);
+                handler(val, undefined, localKey);
+              } else {
+                key = arrKey + '[' + i + ']' + '.' + fieldKey;
+                service.registerHandler(key, handler, updateSchema, runHandler);
+                //if(runHandler) handler(null, null, key);
+              }
             }
           }
-        }
       };
 
       var arrVal = service.parseExpression(arrKey, service.model).get();
@@ -2102,7 +2106,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             // For example, if a specific field in an array is updated, the formKey
             // will be something like creative[1].startDate where as form.key will be creative[].startDate
             var formKeysAreDifferent = !_.eq(form.key, formKey);
-            formKeysAreDifferent && _.assign(form, { altKey: formKey });
+            if (formKeysAreDifferent) _.assign(form, { altKey: formKey });
 
             if (keys.indexOf(form.key) === -1) {
               keys.push(form.key);

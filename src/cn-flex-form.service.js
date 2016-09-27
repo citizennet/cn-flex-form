@@ -474,44 +474,46 @@
       _.each(field.conditionals, (condition, key) => {
         const functionCondition = service.isConditionFunction(condition);
 
-        const paths = field
+        field
           .conditionals[key]
           .match(/model\.([^\s]+)/g) // Strips model. from conditional expressions
           .map(path => path.match(/model\.([^\s]+)/)[1])
           .forEach(conditionalKey => { 
-            if (field.key.includes('[]')) {
-              const parentArray = field.key.substring(0, field.key.lastIndexOf('[]') + 2);
+            if(field.key.includes('[]')) {
+              const parentArray = field.key.substr(0, field.key.lastIndexOf('[]') + 2);
+              const primaryKey = field.key.substr(field.key.lastIndexOf('[]') + 3);
               service.registerHandler(parentArray, (val, prev, parentKey, trigger) => {
                 const replacedCondition = replaceArrayIndex(condition, parentKey);
-                service.registerHandler(replaceArrayIndex(conditionalKey, parentKey), (val, prev, fieldKey) => {
-                  $rootScope.$on(`flexFormArrayCopyAdded:${service.getKey(field.key)}`, (event, scope) => {
+
+                $rootScope.$on(`flexFormArrayCopyAdded:${service.getKey(field.key)}`, (event, scope) => {
+                  service.registerHandler(replaceArrayIndex(conditionalKey, parentKey), (val, prev, fieldKey) => {
                     console.log(':: key ::', fieldKey, parentKey, key, field.key, conditionalKey);
                     console.log(':: service.find ::', service.getArrayCopies(field.key));
                     console.log(':: scope.form ::', scope.form);
 
-                    const arrayCopy = _.find(service.getArrayCopies(field.key), (form) => {
+                    const arrayCopy = _.filter(service.getArrayCopies(field.key), (form) => {
                       console.log(':: form ::', form, fieldKey);
-                      const index = _.findIndex(form.key, fieldKey) - 1;
-                      const parentIndex = parentKey.match(/\[(\d+)]$/)[1];
-                      console.log(':: index ::', index, parentIndex)
-                      return form.key[index] === parentIndex;
+                      const index = form.key[form.key.indexOf(primaryKey) - 1];
+                      const parentIndex = parseInt(parentKey.match(/\[(\d+)]$/)[1]);
+                      console.log(':: index ::', index, parentIndex);
+                      return index === parentIndex;
                     });
                     
-                    if (arrayCopy) {
-                      arrayCopy[key] = functionCondition ? service.parseCondition(service.isConditionFunction(replacedCondition)) : $parse(replacedCondition)(service);
-                    }
+                    arrayCopy.forEach(copy => {
+                      copy[key] = functionCondition ? service.parseCondition(service.isConditionFunction(replacedCondition)) : $parse(replacedCondition)(service);
+                    });
 
                     console.log(':: arrayCopy ::', arrayCopy);
                     console.log(':: field + key ::', field, key);
-                  });
-                }, null, true);
+                  }, null, true);
+                });
               });
             } 
             else {
               service.registerHandler(conditionalKey, (val, prev, fieldKey) => {
                 field[key] = functionCondition ? service.parseCondition(functionCondition) : $parse(condition)(service);
                 console.log(':: field + key ::', field, key);
-              }, null, true)
+              }, null, true);
             }
           });
       });
@@ -1610,7 +1612,7 @@
             // For example, if a specific field in an array is updated, the formKey
             // will be something like creative[1].startDate where as form.key will be creative[].startDate
             const formKeysAreDifferent = !_.eq(form.key, formKey);
-            formKeysAreDifferent && _.assign(form, { altKey: formKey });
+            if(formKeysAreDifferent) _.assign(form, { altKey: formKey });
              
             if(keys.indexOf(form.key) === -1) {
               keys.push(form.key);
