@@ -125,6 +125,7 @@
       registerArrayHandlers,
       registerHandler,
       registerResolve,
+      reprocessCopies,
       reprocessField,
       setArrayIndex,
       setupConfig,
@@ -379,21 +380,10 @@
       var service = this;
       if(!key) return;
 
-      // console.log('key:', key);
       key = service.getKey(key);
 
-      //key = key.split('.');
-      //key = key
-      //    .replace(/arrayIndex/g, '')
-      //    .replace(/(\[')([^.]+)\.([^.]+)('])/g, '.$2%ff_dt%$3')
-      //    .replace(/\./g, '%ff_sp%')
-      //    .replace(/%ff_dt%/g, '.')
-      //    .split('%ff_sp%');
       key = sfPath.parse(key);
       depth = depth || service.schema.schema.properties;
-
-      // why do we do this? it's breaking stuff
-      //if (_.last(key) === '') key.pop();
 
       let first, next;
 
@@ -446,11 +436,12 @@
     function handleResolve(field, fieldProp, exp) {
       var service = this;
       var data = service.parseExpression(exp).get();
+
       // if we're resolving from model but defaults haven't been applied yet, resolve from default itself
       if(!data && exp.indexOf('model.') === 0) {
         data = service.getSchema(exp.replace('model.', '')).default;
       }
-      console.log('handleResolve:', data, fieldProp, exp);
+
       if (data && data.cursor) {
         field.loadMore = function() {
           var dataProp = exp.match(/schema\.data\.(.+)/)[1];
@@ -459,6 +450,7 @@
       } else {
         delete field.loadMore;
       }
+
       field[fieldProp] = (data && data.data) ? data.data : data;
     }
 
@@ -477,22 +469,51 @@
     }
 
     function processConditional(field) {
-      var service = this;
+      const service = this;
+
       _.each(field.conditionals, (condition, key) => {
-        let functionCondition = service.isConditionFunction(condition);
-        let handler = (val, prev) => {
-          let parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
-          field[key] = functionCondition ? service.parseCondition(functionCondition) : $parse(condition)(service);
-        };
-        field
-            .conditionals[key]
-            .match(/model\.([^\s]+)/g)
-            .map(path => path.match(/model\.([^\s]+)/)[1])
-            .forEach(key => {
-              console.log('registering conditional handler:', key);
-              service.registerHandler(key, handler);
-            });
-        handler();
+        const functionCondition = service.isConditionFunction(condition);
+
+        const paths = field
+          .conditionals[key]
+          .match(/model\.([^\s]+)/g) // Strips model. from conditional expressions
+          .map(path => path.match(/model\.([^\s]+)/)[1])
+          .forEach(conditionalKey => { 
+            if (field.key.includes('[]')) {
+              const parentArray = field.key.substring(0, field.key.lastIndexOf('[]') + 2);
+              service.registerHandler(parentArray, (val, prev, parentKey, trigger) => {
+                const replacedCondition = replaceArrayIndex(condition, parentKey);
+                service.registerHandler(replaceArrayIndex(conditionalKey, parentKey), (val, prev, fieldKey) => {
+                  $rootScope.$on(`flexFormArrayCopyAdded:${service.getKey(field.key)}`, (event, scope) => {
+                    console.log(':: key ::', fieldKey, parentKey, key, field.key, conditionalKey);
+                    console.log(':: service.find ::', service.getArrayCopies(field.key));
+                    console.log(':: scope.form ::', scope.form);
+
+                    const arrayCopy = _.find(service.getArrayCopies(field.key), (form) => {
+                      console.log(':: form ::', form, fieldKey);
+                      const index = _.findIndex(form.key, fieldKey) - 1;
+                      const parentIndex = parentKey.match(/\[(\d+)]$/)[1];
+                      console.log(':: index ::', index, parentIndex)
+                      return form.key[index] === parentIndex;
+                    });
+                    
+                    if (arrayCopy) {
+                      arrayCopy[key] = functionCondition ? service.parseCondition(service.isConditionFunction(replacedCondition)) : $parse(replacedCondition)(service);
+                    }
+
+                    console.log(':: arrayCopy ::', arrayCopy);
+                    console.log(':: field + key ::', field, key);
+                  });
+                }, null, true);
+              });
+            } 
+            else {
+              service.registerHandler(conditionalKey, (val, prev, fieldKey) => {
+                field[key] = functionCondition ? service.parseCondition(functionCondition) : $parse(condition)(service);
+                console.log(':: field + key ::', field, key);
+              }, null, true)
+            }
+          });
       });
     }
 
@@ -564,13 +585,8 @@
                 }
                 else if(adjustment.math) {
                   //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
-                  //console.log('_.%s(%s, %s):', adjustment.operator, from.get(), adjustment.adjuster.get(), result);
                   //let result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
                   let result = $parse(from.get() + adjustment.math[1] + adjustment.adjuster.get())();
-                  //console.log('eval(%s %s %s):', from.get(), adjustment.math[1], adjustment.adjuster.get(), result);
-                  //console.log('result:', result, from.get() + adjustment.math[1] + adjustment.adjuster.get(), resolution);
-                  //console.log('adjustment.math:', adjustment, from.get(), adjustment.adjuster.get(), result);
-                  //console.log('schema.format:', schema.format);
                   schema = schema || field.items && (field.items[0].schema || (field.items[0].items && field.items[0].items[0].schema));
                   if(field.type === 'cn-currency') {
                     let p = schema && schema.format === 'currency-dollars' ? 2 : 0;
@@ -654,7 +670,7 @@
 
     function registerHandler(key, handler, updateSchema, runHandler) {
       var service = this;
-
+      
       // if field is passed instead of key
       if(_.isObject(key) && !_.isArray(key)) {
         if(!key.key && key.items) {
@@ -668,8 +684,9 @@
         }
       }
 
-      key = service.getKey(key);
-      var arrMatch = key.match(/([^[\]]*)\[]\.?(.+)/);
+      key = service.getKey(key).replace(/arrayIndex/g, '');
+
+      var arrMatch = key.match(/([^[\]]*)\[]\.?(.*)/);
 
       if(arrMatch) {
         service.registerArrayHandlers(arrMatch[1], arrMatch[2], handler, updateSchema, runHandler);
@@ -719,9 +736,19 @@
         }
         else if(cur > (prev || 0)) {
           for(i = prev | 0, l = cur; i < l; i++) {
-            key = arrKey + '[' + i + ']' + '.' + fieldKey;
-            service.registerHandler(key, handler, updateSchema, runHandler);
-            //if(runHandler) handler(null, null, key);
+            if(!fieldKey) {
+              const localKey = `${arrKey}[${i}]`;
+              const val = service.parseExpression(localKey, service.model).get();
+              console.log(':: localKey ::', localKey);
+              console.log(':: val ::', val);
+
+              handler(val, undefined, localKey);
+            } 
+            else {
+              key = arrKey + '[' + i + ']' + '.' + fieldKey;
+              service.registerHandler(key, handler, updateSchema, runHandler);
+              //if(runHandler) handler(null, null, key);
+            }
           }
         }
       };
@@ -747,29 +774,30 @@
       var service = this;
 
       key = service.getKey(key);
-      var arrMatch = key.match(/([^[\]]*)\[]\.?(.+)/);
+      var arrMatch = key.match(/([^[\]]*)\[]\.?(.*)/);
 
       if(arrMatch) {
         service.deregisterArrayHandlers(arrMatch[1], arrMatch[2]);
         return;
       }
 
-      //console.log('deregisterHandlers:', key);
       if(service.listeners[key]) service.listeners[key].handlers = [];
     }
 
     function deregisterArrayHandlers(arrKey, fieldKey) {
       var service = this;
 
-      //console.log('deregisterArrayHandlers:', arrKey, fieldKey);
-
-      service.parseExpression(arrKey, service.model).get().forEach((item, i) => {
-        service.deregisterHandlers(`${arrKey}[${i}].${fieldKey}`);
-      });
+      if (!fieldKey) {
+        service.deregisterHandlers(`${arrKey}[${i}]`);
+      }
+      else {
+        service.parseExpression(arrKey, service.model).get().forEach((item, i) => {
+          service.deregisterHandlers(`${arrKey}[${i}].${fieldKey}`);
+        });
+      }
     }
 
     function initModelWatch() {
-      //console.log('initModelWatch:', initModelWatch);
       var service = this;
       if(service.watching) return;
       if(service.modelWatch) service.modelWatch();
@@ -798,7 +826,6 @@
 
         _.each(service.arrayListeners, (listener, key) => {
           let val = service.parseExpression(key, service.model).get();
-          // console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
           if(!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(handler => handler(val, listener.prev));
             listener.prev = angular.copy(val);
@@ -808,7 +835,6 @@
         _.each(service.listeners, (listener, key) => {
           if(listener) {
             let val = service.parseExpression(key, service.model).get();
-            //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
             if(!angular.equals(val, listener.prev)) {
               listener.handlers.forEach(handler => {
                 handler(val, listener.prev, key, listener.trigger);
@@ -846,7 +872,6 @@
     }
 
     function initArrayCopyWatch() {
-      console.log('initArrayCopyWatch: how many times does this event get registered?');
       var service = this;
 
       service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
@@ -859,12 +884,11 @@
         if(!scope.form.condition) scope.form.condition = 'true';
 
         service.addArrayCopy(scope, key, index);
-        //console.log('service.arrayCopies:', service.arrayCopies);
         scope.$emit('flexFormArrayCopyAdded', key);
+        scope.$emit(`flexFormArrayCopyAdded:${key}`, scope);
       }));
 
       service.events.push($rootScope.$on('schemaFormDeleteScope', function(event, scope, index) {
-        console.log('schemaFormDeleteScope:', index, scope.form, scope);
         var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
         var copies = service.getArrayCopiesFor(key);
 
@@ -884,7 +908,6 @@
       if(!index || index < 0) index = 0;
       if(!service.arrayCopies[key]) service.arrayCopies[key] = [];
       service.arrayCopies[key][index] = form;
-      //service.arrayCopies[key].push(form);
     }
 
     function getArrayCopies(key) {
@@ -906,7 +929,7 @@
 
     function getArrayScopes(key) {
       var service = this;
-      return service.arrayCopies[key];
+      return service.arrayCopies[service.getKey(key)];
     }
 
     function addToFormCache(field, key) {
@@ -1166,7 +1189,6 @@
       titleMap = titleMap || select.getTitleMap();
       let valProp = getSelectValProp(select);
       if(!valProp) return;
-      console.log('valProp:', valProp);
 
       if(select.getSchemaType() === 'array') {
         if(!val || !_.isArray(val)) return;
@@ -1175,10 +1197,8 @@
         // val.forEach(x => {
         //   loopVal.push(_.find(titleMap, {[valProp]: x}));
         // });
-        // console.log('loopVal:', val, loopVal, titleMap);
 
         let mapVal = val.map(x => _.find(titleMap, {[valProp]: x})).filter(x => x !== undefined);
-        // console.log('mapVal:', val, mapVal, titleMap);
 
         return mapVal;
       }
@@ -1199,10 +1219,8 @@
         select.onInit = function(val, form, event, setter) {
           // make sure we use correct value
           var modelValue = service.parseExpression(form.key, service.model);
-          //console.log('service.getKey(form.key), val:', service.getKey(form.key), val);
           if(event === 'tag-init') {
             let newVal = getAllowedSelectValue(select, modelValue.get());
-            console.log('onInit: key, newVal:', form.key, newVal);
             if(newVal !== undefined) setter(newVal);
           }
         };
@@ -1211,7 +1229,6 @@
       if(select.titleMapQuery) {
         var key = select.titleMapQuery.params.q;
         select.titleQuery = function(q) {
-          console.log('titleMap:', q);
           var params = {};
           if(key) {
             params[key] = q;
@@ -1226,7 +1243,6 @@
         if(!key) select.minLookup = '0';
 
         select.onInit = function(val, form, event, setter) {
-          //console.log('titleQuery:onInit:', val, form, event, setter);
           if(event === 'tag-init') {
             setter(val);
           }
@@ -1247,7 +1263,6 @@
           select.onAdd = function(val, form, event) {
             if(val.value && event === 'tag-added') {
               _.each(defaults, function(prop) {
-                //console.log('prop:', prop, val);
                 if(!val.value[prop.key]) val.value[prop.key] = prop.default;
               });
             }
@@ -1321,7 +1336,6 @@
 
     function processTemplate(tpl, parseScope) {
       var service = this;
-      //var processor = /<(\S+)[^>]*>.*<\/\1>/.test(tpl) ? $compile : $interpolate;
       var processor = $interpolate;
       return function(scope, arrayIndex) {
         if(parseScope) {
@@ -1516,7 +1530,6 @@
       var service = this;
       service.refreshSchema = _.debounce(function(updateSchema) {
         var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
-        // console.log('service.schema.params, params:', service.schema.params, params);
         var diff = cnUtil.diff(service.schema.params, params, true);
         var keys;
 
@@ -1529,10 +1542,6 @@
               diff = _.omit(diff, _.isNull);
               keys = _.keys(diff);
             }
-            //console.log('keys, diff:', keys, diff, {
-            //  cur: _.clone(params),
-            //  prev: _.clone(service.schema.params)
-            //});
 
             params.updateSchema = _.first(keys);
           }
@@ -1555,7 +1564,6 @@
       service.refreshData = _.debounce(function() {
         refresh(_.extend(service.schema.params, {updateSchema: 'refreshData'})).then(function(schema) {
           service.processUpdatedSchema(schema);
-          console.log('service.schema.params:', service.schema.params);
         });
       }, 100);
 
@@ -1596,21 +1604,26 @@
 
         if(schema.diff.form) {
           $rootScope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
-          _.each(schema.diff.form, function(form) {
-
+          _.each(schema.diff.form, (form, formKey) => {
+            // controlsApi will send schema.diffs.form indexed by the formKey.
+            // There are cases where the formKey will be different that form.key.
+            // For example, if a specific field in an array is updated, the formKey
+            // will be something like creative[1].startDate where as form.key will be creative[].startDate
+            const formKeysAreDifferent = !_.eq(form.key, formKey);
+            formKeysAreDifferent && _.assign(form, { altKey: formKey });
+             
             if(keys.indexOf(form.key) === -1) {
               keys.push(form.key);
             }
 
-            // don't want to override key when extending cached objects
-            //var key = form.key;
-            //delete form.key;
+            const cached = service.getFromFormCache(form.key);
 
-            var cached = service.getFromFormCache(form.key);
             if(cached) {
               service.reprocessField(cached, form);
             }
-            var copies = service.getArrayCopies(form.key);
+
+            const copies = service.getArrayCopies(form.key);
+
             if(copies) {
               copies.forEach(copy => copy && service.reprocessField(copy, form));
             }
@@ -1622,10 +1635,7 @@
             var form = service.getFromFormCache(key);
             if(form) service.processField(form);
             if(key.includes('[]')) {
-              var copies = service.getArrayCopies(key);
-              _.each(copies, function(copy) {
-                if(copy) service.processField(copy);
-              });
+              service.reprocessCopies(key);
             }
           });
         }
@@ -1637,6 +1647,14 @@
       }
     }
 
+    function reprocessCopies(key) {
+      const service = this;
+      const copies = service.getArrayCopies(key);
+      copies.forEach(copy => {
+        if(copy) service.processField(copy);
+      });
+    }
+
     function reprocessField(current, update, isChild) {
       var service = this;
 
@@ -1645,7 +1663,6 @@
       // before comparing
       if(!update.condition && current.condition) update.condition = 'true';
       let redraw = !isChild && current.condition !== update.condition;
-      console.log('redraw:', service.getKey(current.key), current);
 
       _.extend(current, _.omit(update, 'items', 'key'));
 
@@ -1656,7 +1673,7 @@
 
       service.deregisterHandlers(update.key);
 
-      $rootScope.$broadcast('cnFlexFormReprocessField', update.key);
+      $rootScope.$broadcast('cnFlexFormReprocessField', (update.altKey || update.key));
 
       // why do we redraw? If we're doing it to show error message
       // that has been addressed from the angular-schema-form library
@@ -1698,6 +1715,7 @@
     }
 
     function replaceArrayIndex(resolve, key) {
+      //if(!resolve.includes('arrayIndex') || !key.match(/\[\d\]/)) return resolve;
       if(!resolve.includes('arrayIndex')) return resolve;
       var arrayIndexKey = /([^.]*)\[arrayIndex\]/.exec(resolve);
       var re = new RegExp(arrayIndexKey[1] + '\\[(\\d+)\\]');
