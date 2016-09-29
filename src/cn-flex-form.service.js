@@ -479,6 +479,8 @@
     function processConditional(field) {
       var service = this;
       _.each(field.conditionals, (condition, key) => {
+
+
         let functionCondition = service.isConditionFunction(condition);
         let handler = (val, prev) => {
           let parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;

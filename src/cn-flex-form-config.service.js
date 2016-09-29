@@ -23,8 +23,8 @@
 
     function cnFlexFormConfig($stateParams) {
       return {
-        getStateParams: getStateParams,
-        ignoreParams: ignoreParams
+        getStateParams,
+        ignoreParams
       };
 
       ////////
