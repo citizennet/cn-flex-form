@@ -893,8 +893,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       // why do we do this? it's breaking stuff
       //if (_.last(key) === '') key.pop();
 
-      var first = undefined,
-          next = undefined;
+      var first = void 0,
+          next = void 0;
 
       while (key.length > 1) {
         first = key[0];
@@ -1006,7 +1006,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             var functionCondition = service.isConditionFunction(condition);
 
             var resolution = watch.resolution;
-            var handler = undefined;
+            var handler = void 0;
 
             if (_.isFunction(resolution)) {
               handler = function handler(cur, prev) {
@@ -1215,12 +1215,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
-            for (i = prev | 0, l = cur; i < l; i++) {
-              key = arrKey + '[' + i + ']' + '.' + fieldKey;
-              service.registerHandler(key, handler, updateSchema, runHandler);
-              //if(runHandler) handler(null, null, key);
-            }
+          for (i = prev | 0, l = cur; i < l; i++) {
+            key = arrKey + '[' + i + ']' + '.' + fieldKey;
+            service.registerHandler(key, handler, updateSchema, runHandler);
+            //if(runHandler) handler(null, null, key);
           }
+        }
       };
 
       var arrVal = service.parseExpression(arrKey, service.model).get();
@@ -1392,13 +1392,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
     function getArrayCopiesFor(keyStart) {
       var service = this;
-      var copiesList = [];
       keyStart += '[]';
 
-      _.each(service.arrayCopies, function (copies, key) {
-        if (key.includes(keyStart)) copiesList.push(copies.form);
+      return _.filter(service.arrayCopies, function (copy, key) {
+        return key.includes(keyStart);
       });
-
       return copiesList;
     }
 

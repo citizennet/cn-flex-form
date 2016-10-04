@@ -895,14 +895,10 @@
     }
 
     function getArrayCopiesFor(keyStart) {
-      var service = this;
-      var copiesList = [];
+      const service = this;
       keyStart += '[]';
 
-      _.each(service.arrayCopies, (copies, key) => {
-        if(key.includes(keyStart)) copiesList.push(copies.form);
-      });
-
+			return _.filter(service.arrayCopies, (copy, key) => key.includes(keyStart));
       return copiesList;
     }
 
