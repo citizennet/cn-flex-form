@@ -92,7 +92,6 @@
       initModelWatch,
       initSchemaParams,
       isCompiled,
-      isConditionFunction,
       onModelWatch,
       parseCondition,
       parseExpression,
@@ -479,12 +478,8 @@
     function processConditional(field) {
       var service = this;
       _.each(field.conditionals, (condition, key) => {
-
-
-        let functionCondition = service.isConditionFunction(condition);
         let handler = (val, prev) => {
-          let parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
-          field[key] = functionCondition ? service.parseCondition(functionCondition) : $parse(condition)(service);
+          field[key] = service.parseCondition(condition);
         };
         field
             .conditionals[key]
@@ -507,15 +502,12 @@
       _.each(field.watch, function(watch) {
         if(watch.resolution) {
           let condition = watch.condition;
-          let functionCondition = service.isConditionFunction(condition);
-
           let resolution = watch.resolution;
           let handler;
 
           if(_.isFunction(resolution)) {
             handler = function(cur, prev) {
-              var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
-              if(!parsedCondition || $parse(parsedCondition)(service)) {
+              if(!condition || service.parseCondition(condition)) {
                 resolution(cur, prev);
               }
             };
@@ -559,8 +551,7 @@
 
               let from = service.parseExpression(fromPath);
 
-              var parsedCondition = functionCondition ? service.parseCondition(functionCondition, curCondition) : curCondition;
-              if(!parsedCondition || $parse(parsedCondition)(service)) {
+              if(!condition || service.parseCondition(curCondition)) {
                 if(adjustment.date) {
                   update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
                 }
@@ -605,53 +596,24 @@
       });
     }
 
-    function isConditionFunction(condition) {
-      return condition && condition.match(/(\!?)(.+)\((.+)\)/);
+    function parseCondition(condition) {
+      let service = this;
+      if (condition.startsWith("_")) {
+        let exp = /^_\.(.*?)\((.*?),[\s(]*(.*?)\)?\s*=>[{\s]*(?:return)?(.*?)\}?\)$/;
+        let [, fn, list, predicateParams, predicateBody] = condition.match(exp);
+        return _[fn]($parse(list)(service), generatePredicate(predicateParams, predicateBody));
+      } else {
+        return $parse(condition)(service);
+      }
     }
 
-    function parseCondition(condition, original) {
-      var service = this,
-          invert = condition[1],
-          functionName = condition[2],
-          functionArgument = condition[3];
-
-      if(functionName.includes('.')) {
-        let pattern = functionName.match(/(.*)\.([^.]+)$/);
-        let path = pattern[1];
-        let method = pattern[2];
-        let scope = $parse(path)(service);
-        functionArgument = $parse(functionArgument)(service);
-
-        return invert ? !(scope && scope[method](functionArgument)) : (scope && scope[method](functionArgument));
-      }
-      if(functionName === 'any') {
-        var predicate = functionArgument.match(/(.+)\[\]\.*(.*)(===|>|<|>=|<=)(.+)/),
-            arr = service.parseExpression(predicate[1]).get(),
-            comparator = predicate[3],
-            comparisonValue = predicate[4].trim().replace(/'/g, ''),
-            key = predicate[2].trim(),
-            evaluation = false;
-
-        arr.forEach(function(value) {
-          var val = key ? value[key] : value;
-          if(evaluatePredicate(val, comparator, comparisonValue)) {
-            evaluation = true;
-          }
-        });
-
-        return invert ? (!evaluation).toString() : evaluation.toString();
-      }
-      return !!$parse(original)(service) + '';
-    }
-
-    function evaluatePredicate(val1, comparator, val2) {
-      switch(comparator) {
-        case '===': return val1 === val2;
-        case '>=': return val1 >= val2;
-        case '<=': return val1 <= val2;
-        case '>': return val1 > val2;
-        case '<': return val1 < val2;
-      }
+    function generatePredicate(params, body) {
+      return (...args) =>
+        $parse(body)(params
+                .replace(/\s/g, '')
+                .split(',')
+                .reduce((acc, cur, i) => { acc[cur] = args[i]; return acc; }, {})
+              );
     }
 
     function registerHandler(key, handler, updateSchema, runHandler) {
