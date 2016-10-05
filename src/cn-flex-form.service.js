@@ -644,7 +644,7 @@
       let defaultValue = service.getSchema(key).default;
 
       if(!service.listeners[key]) {
-        var prev = _.isUndefined(cur) ? defaultValue : angular.copy(cur);
+        var prev = _.isUndefined(cur) ? angular.copy(defaultValue) : angular.copy(cur);
         service.listeners[key] = {
           handlers: [],
           updateSchema: updateSchema,
