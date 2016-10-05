@@ -860,8 +860,7 @@
       const service = this;
       keyStart += '[]';
 
-			return _.filter(service.arrayCopies, (copy, key) => key.includes(keyStart));
-      return copiesList;
+      return _.filter(service.arrayCopies, (copy, key) => key.includes(keyStart));
     }
 
     function getArrayScopes(key) {
@@ -1126,7 +1125,6 @@
       titleMap = titleMap || select.getTitleMap();
       let valProp = getSelectValProp(select);
       if(!valProp) return;
-      console.log('valProp:', valProp);
 
       if(select.getSchemaType() === 'array') {
         if(!val || !_.isArray(val)) return;
@@ -1162,7 +1160,7 @@
           //console.log('service.getKey(form.key), val:', service.getKey(form.key), val);
           if(event === 'tag-init') {
             let newVal = getAllowedSelectValue(select, modelValue.get());
-            console.log('onInit: key, newVal:', form.key, newVal);
+            //console.log('onInit: key, newVal:', form.key, newVal);
             if(newVal !== undefined) setter(newVal);
           }
         };

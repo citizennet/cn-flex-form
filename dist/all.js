@@ -1369,7 +1369,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       return _.filter(service.arrayCopies, function (copy, key) {
         return key.includes(keyStart);
       });
-      return copiesList;
     }
 
     function getArrayScopes(key) {
@@ -1632,7 +1631,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       titleMap = titleMap || select.getTitleMap();
       var valProp = getSelectValProp(select);
       if (!valProp) return;
-      console.log('valProp:', valProp);
 
       if (select.getSchemaType() === 'array') {
         if (!val || !_.isArray(val)) return;
@@ -1671,7 +1669,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           //console.log('service.getKey(form.key), val:', service.getKey(form.key), val);
           if (event === 'tag-init') {
             var newVal = getAllowedSelectValue(select, modelValue.get());
-            console.log('onInit: key, newVal:', form.key, newVal);
+            //console.log('onInit: key, newVal:', form.key, newVal);
             if (newVal !== undefined) setter(newVal);
           }
         };
