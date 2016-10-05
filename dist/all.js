@@ -518,6 +518,8 @@
 })();
 'use strict';
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 (function () {
@@ -598,7 +600,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       initModelWatch: initModelWatch,
       initSchemaParams: initSchemaParams,
       isCompiled: isCompiled,
-      isConditionFunction: isConditionFunction,
       onModelWatch: onModelWatch,
       parseCondition: parseCondition,
       parseExpression: parseExpression,
@@ -975,11 +976,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     function processConditional(field) {
       var service = this;
       _.each(field.conditionals, function (condition, key) {
-
-        var functionCondition = service.isConditionFunction(condition);
         var handler = function handler(val, prev) {
-          var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
-          field[key] = functionCondition ? service.parseCondition(functionCondition) : $parse(condition)(service);
+          field[key] = service.parseCondition(condition);
         };
         field.conditionals[key].match(/model\.([^\s]+)/g).map(function (path) {
           return path.match(/model\.([^\s]+)/)[1];
@@ -1003,15 +1001,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
           (function () {
             var condition = watch.condition;
-            var functionCondition = service.isConditionFunction(condition);
-
             var resolution = watch.resolution;
             var handler = undefined;
 
             if (_.isFunction(resolution)) {
               handler = function handler(cur, prev) {
-                var parsedCondition = functionCondition ? service.parseCondition(functionCondition) : condition;
-                if (!parsedCondition || $parse(parsedCondition)(service)) {
+                if (!condition || service.parseCondition(condition)) {
                   resolution(cur, prev);
                 }
               };
@@ -1054,8 +1049,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
                 var from = service.parseExpression(fromPath);
 
-                var parsedCondition = functionCondition ? service.parseCondition(functionCondition, curCondition) : curCondition;
-                if (!parsedCondition || $parse(parsedCondition)(service)) {
+                if (!condition || service.parseCondition(curCondition)) {
                   if (adjustment.date) {
                     update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
                   } else if (adjustment.math) {
@@ -1097,58 +1091,36 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       });
     }
 
-    function isConditionFunction(condition) {
-      return condition && condition.match(/(\!?)(.+)\((.+)\)/);
+    function parseCondition(condition) {
+      var service = this;
+      if (condition.startsWith("_")) {
+        var exp = /^_\.(.*?)\((.*?),[\s(]*(.*?)\)?\s*=>[{\s]*(?:return)?(.*?)\}?\)$/;
+
+        var _condition$match = condition.match(exp);
+
+        var _condition$match2 = _slicedToArray(_condition$match, 5);
+
+        var fn = _condition$match2[1];
+        var list = _condition$match2[2];
+        var predicateParams = _condition$match2[3];
+        var predicateBody = _condition$match2[4];
+
+        return _[fn]($parse(list)(service), generatePredicate(predicateParams, predicateBody));
+      } else {
+        return $parse(condition)(service);
+      }
     }
 
-    function parseCondition(condition, original) {
-      var service = this,
-          invert = condition[1],
-          functionName = condition[2],
-          functionArgument = condition[3];
+    function generatePredicate(params, body) {
+      return function () {
+        for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
 
-      if (functionName.includes('.')) {
-        var pattern = functionName.match(/(.*)\.([^.]+)$/);
-        var path = pattern[1];
-        var method = pattern[2];
-        var scope = $parse(path)(service);
-        functionArgument = $parse(functionArgument)(service);
-
-        return invert ? !(scope && scope[method](functionArgument)) : scope && scope[method](functionArgument);
-      }
-      if (functionName === 'any') {
-        var predicate = functionArgument.match(/(.+)\[\]\.*(.*)(===|>|<|>=|<=)(.+)/),
-            arr = service.parseExpression(predicate[1]).get(),
-            comparator = predicate[3],
-            comparisonValue = predicate[4].trim().replace(/'/g, ''),
-            key = predicate[2].trim(),
-            evaluation = false;
-
-        arr && arr.forEach(function (value) {
-          var val = key ? value[key] : value;
-          if (evaluatePredicate(val, comparator, comparisonValue)) {
-            evaluation = true;
-          }
-        });
-
-        return invert ? (!evaluation).toString() : evaluation.toString();
-      }
-      return !!$parse(original)(service) + '';
-    }
-
-    function evaluatePredicate(val1, comparator, val2) {
-      switch (comparator) {
-        case '===':
-          return val1 === val2;
-        case '>=':
-          return val1 >= val2;
-        case '<=':
-          return val1 <= val2;
-        case '>':
-          return val1 > val2;
-        case '<':
-          return val1 < val2;
-      }
+        return $parse(body)(params.replace(/\s/g, '').split(',').reduce(function (acc, cur, i) {
+          acc[cur] = args[i];return acc;
+        }, {}));
+      };
     }
 
     function registerHandler(key, handler, updateSchema, runHandler) {
@@ -1392,14 +1364,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
     function getArrayCopiesFor(keyStart) {
       var service = this;
-      var copiesList = [];
       keyStart += '[]';
 
-      _.each(service.arrayCopies, function (copies, key) {
-        if (key.includes(keyStart)) copiesList.push(copies.form);
+      return _.filter(service.arrayCopies, function (copy, key) {
+        return key.includes(keyStart);
       });
-
-      return copiesList;
     }
 
     function getArrayScopes(key) {
