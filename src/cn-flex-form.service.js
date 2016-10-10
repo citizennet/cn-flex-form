@@ -308,6 +308,7 @@
           if(/*!field.immutable && */field.schema) {
             if(field.schema.description) field.description = field.schema.description;
             if(field.readonly && !field.schema.readonly) field.readonly = false;
+            if(field.schema.type === 'array' && !('showClearAll' in field)) field.showClearAll = true;
           }
         }
 
@@ -644,7 +645,7 @@
       let defaultValue = service.getSchema(key).default;
 
       if(!service.listeners[key]) {
-        var prev = _.isUndefined(cur) ? defaultValue : angular.copy(cur);
+        var prev = _.isUndefined(cur) ? angular.copy(defaultValue) : angular.copy(cur);
         service.listeners[key] = {
           handlers: [],
           updateSchema: updateSchema,

@@ -129,6 +129,7 @@
             allow-bulk="{{form.bulkAdd}}"
             bulk-delimiter="{{form.bulkDelimiter}}"
             bulk-placeholder="{{form.bulkPlaceholder}}"
+            show-clear-all="{{form.showClearAll}}"
             show-button="true">
             <auto-complete
               source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query)"
