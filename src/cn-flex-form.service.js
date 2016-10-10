@@ -308,6 +308,7 @@
           if(/*!field.immutable && */field.schema) {
             if(field.schema.description) field.description = field.schema.description;
             if(field.readonly && !field.schema.readonly) field.readonly = false;
+            if(field.schema.type === 'array' && !('showClearAll' in field)) field.showClearAll = true;
           }
         }
 
