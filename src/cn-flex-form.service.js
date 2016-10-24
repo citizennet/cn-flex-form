@@ -481,6 +481,9 @@
       _.each(field.conditionals, (condition, key) => {
         let handler = (val, prev) => {
           field[key] = service.parseCondition(condition);
+          if (key === 'required') {
+            $rootScope.$broadcast('schemaFormValidate');
+          }
         };
         field
             .conditionals[key]
