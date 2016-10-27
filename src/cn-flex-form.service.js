@@ -5,7 +5,7 @@
       .provider('cnFlexFormService', cnFlexFormServiceProvider);
 
   var fieldTypeHandlers = {
-    //'cn-radios': 'processRadios',
+    'cn-radios': 'processRadios',
     'cn-radiobuttons': 'processRadiobuttons',
     'cn-autocomplete': 'processSelect',
     'cn-datetimepicker': 'processDate',
@@ -107,7 +107,7 @@
       processPercentage,
       processDate,
       processHelp,
-      //processRadios,
+      processRadios,
       processRadiobuttons,
       processReusable,
       processSchema,
@@ -379,7 +379,6 @@
       var service = this;
       if(!key) return;
 
-      // console.log('key:', key);
       key = service.getKey(key);
 
       //key = key.split('.');
@@ -561,13 +560,8 @@
                 }
                 else if(adjustment.math) {
                   //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
-                  //console.log('_.%s(%s, %s):', adjustment.operator, from.get(), adjustment.adjuster.get(), result);
                   //let result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
                   let result = $parse(from.get() + adjustment.math[1] + adjustment.adjuster.get())();
-                  //console.log('eval(%s %s %s):', from.get(), adjustment.math[1], adjustment.adjuster.get(), result);
-                  //console.log('result:', result, from.get() + adjustment.math[1] + adjustment.adjuster.get(), resolution);
-                  //console.log('adjustment.math:', adjustment, from.get(), adjustment.adjuster.get(), result);
-                  //console.log('schema.format:', schema.format);
                   schema = schema || field.items && (field.items[0].schema || (field.items[0].items && field.items[0].items[0].schema));
                   if(field.type === 'cn-currency') {
                     let p = schema && schema.format === 'currency-dollars' ? 2 : 0;
@@ -722,14 +716,12 @@
         return;
       }
 
-      //console.log('deregisterHandlers:', key);
       if(service.listeners[key]) service.listeners[key].handlers = [];
     }
 
     function deregisterArrayHandlers(arrKey, fieldKey) {
       var service = this;
 
-      //console.log('deregisterArrayHandlers:', arrKey, fieldKey);
 
       service.parseExpression(arrKey, service.model).get().forEach((item, i) => {
         service.deregisterHandlers(`${arrKey}[${i}].${fieldKey}`);
@@ -737,7 +729,6 @@
     }
 
     function initModelWatch() {
-      //console.log('initModelWatch:', initModelWatch);
       var service = this;
       if(service.watching) return;
       if(service.modelWatch) service.modelWatch();
@@ -766,7 +757,6 @@
 
         _.each(service.arrayListeners, (listener, key) => {
           let val = service.parseExpression(key, service.model).get();
-          // console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
           if(!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(handler => handler(val, listener.prev));
             listener.prev = angular.copy(val);
@@ -776,7 +766,6 @@
         _.each(service.listeners, (listener, key) => {
           if(listener) {
             let val = service.parseExpression(key, service.model).get();
-            //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
             if(!angular.equals(val, listener.prev)) {
               listener.handlers.forEach(handler => {
                 handler(val, listener.prev, key, listener.trigger);
@@ -827,7 +816,6 @@
         if(!scope.form.condition) scope.form.condition = 'true';
 
         service.addArrayCopy(scope, key, index);
-        //console.log('service.arrayCopies:', service.arrayCopies);
         scope.$emit('flexFormArrayCopyAdded', key);
       }));
 
@@ -1058,9 +1046,10 @@
     function processCsvUpload(field) {
       var service = this;
       field.type = 'cn-csvupload';
-      // _.each(field.data, function(dataProp, key) {
-      //   field.data[key] = service.parseExpression(dataProp).get();
-      // });
+    }
+
+    function processRadios(field) {
+      field.type = 'cn-radios';
     }
 
     function processRadiobuttons(radios) {
