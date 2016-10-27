@@ -19,6 +19,7 @@
       'cn-autocomplete',
       'cn-autocomplete-detailed',
       'cn-currency',
+      'cn-radios',
       'cn-radiobuttons',
       'cn-percentage',
       'cn-display',
@@ -208,6 +209,33 @@
           </div>
           <span class="help-block" sf-message="form.description"></span>
         </div>`
+    );
+
+    $templateCache.put(
+        'app/components/cn-flex-form/forms/cn-radios.html',
+        `<div class="form-group {{form.htmlClass}}"
+              ng-class="{'has-error': hasError(), 'has-success': hasSuccess()}">
+           <label class="control-label" ng-show="showTitle()">{{form.title}}</label>
+           <div class="btn-group clearfix">
+             <label class="radio radio-block"
+                    ng-repeat="item in form.titleMap">
+               <input type="radio"
+                      sf-changed="form"
+                      ng-disabled="form.readonly"
+                      ng-model="$$value$$"
+                      ng-model-options="form.ngModelOptions"
+                      schema-validate="form"
+                      ff-validate="form"
+                      ng-value="item.value"
+                      name="{{form.key.join('.')}}">
+               <span class="radio-block-icon" ng-if="item.iconClass">
+                 <i class="fa fa-{{item.iconClass}} fa-lg"></i>
+               </span>
+               <span ng-bind-html="item.name"></span>
+             </label>
+           </div>
+           <span class="help-block" sf-message="form.description"></span>
+         </div>`
     );
 
     $templateCache.put(

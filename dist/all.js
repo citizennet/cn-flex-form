@@ -528,7 +528,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
   angular.module('cn.flex-form').provider('cnFlexFormService', cnFlexFormServiceProvider);
 
   var fieldTypeHandlers = {
-    //'cn-radios': 'processRadios',
+    'cn-radios': 'processRadios',
     'cn-radiobuttons': 'processRadiobuttons',
     'cn-autocomplete': 'processSelect',
     'cn-datetimepicker': 'processDate',
@@ -615,7 +615,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       processPercentage: processPercentage,
       processDate: processDate,
       processHelp: processHelp,
-      //processRadios,
+      processRadios: processRadios,
       processRadiobuttons: processRadiobuttons,
       processReusable: processReusable,
       processSchema: processSchema,
@@ -879,7 +879,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
       if (!key) return;
 
-      // console.log('key:', key);
       key = service.getKey(key);
 
       //key = key.split('.');
@@ -895,8 +894,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       // why do we do this? it's breaking stuff
       //if (_.last(key) === '') key.pop();
 
-      var first = undefined,
-          next = undefined;
+      var first = void 0,
+          next = void 0;
 
       while (key.length > 1) {
         first = key[0];
@@ -1006,7 +1005,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           (function () {
             var condition = watch.condition;
             var resolution = watch.resolution;
-            var handler = undefined;
+            var handler = void 0;
 
             if (_.isFunction(resolution)) {
               handler = function handler(cur, prev) {
@@ -1058,13 +1057,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
                     update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
                   } else if (adjustment.math) {
                     //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
-                    //console.log('_.%s(%s, %s):', adjustment.operator, from.get(), adjustment.adjuster.get(), result);
                     //let result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
                     var result = $parse(from.get() + adjustment.math[1] + adjustment.adjuster.get())();
-                    //console.log('eval(%s %s %s):', from.get(), adjustment.math[1], adjustment.adjuster.get(), result);
-                    //console.log('result:', result, from.get() + adjustment.math[1] + adjustment.adjuster.get(), resolution);
-                    //console.log('adjustment.math:', adjustment, from.get(), adjustment.adjuster.get(), result);
-                    //console.log('schema.format:', schema.format);
                     schema = schema || field.items && (field.items[0].schema || field.items[0].items && field.items[0].items[0].schema);
                     if (field.type === 'cn-currency') {
                       var p = schema && schema.format === 'currency-dollars' ? 2 : 0;
@@ -1191,12 +1185,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
-            for (i = prev | 0, l = cur; i < l; i++) {
-              key = arrKey + '[' + i + ']' + '.' + fieldKey;
-              service.registerHandler(key, handler, updateSchema, runHandler);
-              //if(runHandler) handler(null, null, key);
-            }
+          for (i = prev | 0, l = cur; i < l; i++) {
+            key = arrKey + '[' + i + ']' + '.' + fieldKey;
+            service.registerHandler(key, handler, updateSchema, runHandler);
+            //if(runHandler) handler(null, null, key);
           }
+        }
       };
 
       var arrVal = service.parseExpression(arrKey, service.model).get();
@@ -1227,14 +1221,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         return;
       }
 
-      //console.log('deregisterHandlers:', key);
       if (service.listeners[key]) service.listeners[key].handlers = [];
     }
 
     function deregisterArrayHandlers(arrKey, fieldKey) {
       var service = this;
-
-      //console.log('deregisterArrayHandlers:', arrKey, fieldKey);
 
       service.parseExpression(arrKey, service.model).get().forEach(function (item, i) {
         service.deregisterHandlers(arrKey + '[' + i + '].' + fieldKey);
@@ -1242,7 +1233,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     }
 
     function initModelWatch() {
-      //console.log('initModelWatch:', initModelWatch);
       var service = this;
       if (service.watching) return;
       if (service.modelWatch) service.modelWatch();
@@ -1269,7 +1259,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
         _.each(service.arrayListeners, function (listener, key) {
           var val = service.parseExpression(key, service.model).get();
-          // console.log('key, val, listener.prev:', key, val, listener.prev, angular.equals(val, listener.prev));
           if (!angular.equals(val, listener.prev)) {
             listener.handlers.forEach(function (handler) {
               return handler(val, listener.prev);
@@ -1282,7 +1271,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           if (listener) {
             (function () {
               var val = service.parseExpression(key, service.model).get();
-              //console.log('listener:', key, val, listener.prev, angular.equals(val, listener.prev));
               if (!angular.equals(val, listener.prev)) {
                 listener.handlers.forEach(function (handler) {
                   handler(val, listener.prev, key, listener.trigger);
@@ -1333,7 +1321,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         if (!scope.form.condition) scope.form.condition = 'true';
 
         service.addArrayCopy(scope, key, index);
-        //console.log('service.arrayCopies:', service.arrayCopies);
         scope.$emit('flexFormArrayCopyAdded', key);
       }));
 
@@ -1565,9 +1552,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     function processCsvUpload(field) {
       var service = this;
       field.type = 'cn-csvupload';
-      // _.each(field.data, function(dataProp, key) {
-      //   field.data[key] = service.parseExpression(dataProp).get();
-      // });
+    }
+
+    function processRadios(field) {
+      field.type = 'cn-radios';
     }
 
     function processRadiobuttons(radios) {
@@ -2264,7 +2252,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       }
     });
 
-    var extensions = ['cn-fieldset', 'cn-toggle', 'cn-datetimepicker', 'cn-autocomplete', 'cn-autocomplete-detailed', 'cn-currency', 'cn-radiobuttons', 'cn-percentage', 'cn-display', 'cn-mediaupload', 'cn-csvupload', 'cn-reusable', 'cn-table'];
+    var extensions = ['cn-fieldset', 'cn-toggle', 'cn-datetimepicker', 'cn-autocomplete', 'cn-autocomplete-detailed', 'cn-currency', 'cn-radios', 'cn-radiobuttons', 'cn-percentage', 'cn-display', 'cn-mediaupload', 'cn-csvupload', 'cn-reusable', 'cn-table'];
 
     _.each(extensions, function (extension) {
       cnFlexFormServiceProvider.registerField({
@@ -2288,6 +2276,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
     $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete-detailed.html', '\n        <div sf-array="form"\n             class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}-input"\n                 ng-show="showTitle()">{{form.title}}</label>\n          <ol class="list-group cn-autocomplete-list"\n              ng-show="modelArray.length"\n              ng-model="modelArray">\n            <li class="list-group-item {{form.fieldHtmlClass}}"\n                ng-repeat="item in modelArray track by $index">\n              <button ng-hide="form.readonly || form.remove === null"\n                      ng-click="deleteFromArray($index)"\n                      type="button" class="close pull-right">\n                <span aria-hidden="true">&times;</span>\n              </button>\n              <sf-decorator ng-init="arrayIndex = $index" form="copyWithIndex($index)"/>\n            </li>\n          </ol>\n          ' + sharedAutocompleteTpl + '\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-currency.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key.join(\'.\')}}">{{form.title}}</label>\n          <div class="{{form.fieldClass}} input-group">\n            <label class="input-group-addon"\n                   ng-disabled="form.readonly"\n                   for="{{form.key.join(\'.\')}}">$</label>\n            <input class="form-control"\n                   cn-currency-format="{{form.currencyFormat}}"\n                   cn-currency-placeholder="{{form.placeholder}}"\n                   ng-show="form.key"\n                   ng-model-options="form.ngModelOptions"\n                   ng-disabled="form.readonly"\n                   sf-changed="form"\n                   schema-validate="form"\n                   type="text"\n                   step="any"\n                   min="{{form.min}}"\n                   max="{{form.max}}"\n                   id="{{form.key.join(\'.\')}}"\n                   name="{{form.key.join(\'.\')}}"\n                   ng-model="$$value$$">\n          </div>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
+
+    $templateCache.put('app/components/cn-flex-form/forms/cn-radios.html', '<div class="form-group {{form.htmlClass}}"\n              ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n           <label class="control-label" ng-show="showTitle()">{{form.title}}</label>\n           <div class="btn-group clearfix">\n             <label class="radio radio-block"\n                    ng-repeat="item in form.titleMap">\n               <input type="radio"\n                      sf-changed="form"\n                      ng-disabled="form.readonly"\n                      ng-model="$$value$$"\n                      ng-model-options="form.ngModelOptions"\n                      schema-validate="form"\n                      ff-validate="form"\n                      ng-value="item.value"\n                      name="{{form.key.join(\'.\')}}">\n               <span class="radio-block-icon" ng-if="item.iconClass">\n                 <i class="fa fa-{{item.iconClass}} fa-lg"></i>\n               </span>\n               <span ng-bind-html="item.name"></span>\n             </label>\n           </div>\n           <span class="help-block" sf-message="form.description"></span>\n         </div>');
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-radiobuttons.html', '\n        <div class="form-group schema-form-radiobuttons cn-radiobuttons {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label" ng-show="showTitle()">{{form.title}}</label>\n          <div class="btn-group clearfix">\n            <label class="btn btn-{{item.value}} {{form.btnClass}} {{item.value === $$value$$ ? \'active\' : \'\'}}"\n                   ng-repeat="item in form.titleMap">\n              <input type="radio"\n                     class="{{form.fieldHtmlClass}} hide"\n                     sf-changed="form"\n                     ng-disabled="form.readonly"\n                     ng-model="$$value$$"\n                     ng-model-options="form.ngModelOptions"\n                     schema-validate="form"\n                     ff-validate="form"\n                     ng-value="item.value"\n                     name="{{form.key.join(\'.\')}}">\n              <i class="fa fa-{{item.value}} fa-lg"></i>\n              <span ng-bind-html="item.name"></span>\n            </label>\n          </div>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
