@@ -894,8 +894,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       // why do we do this? it's breaking stuff
       //if (_.last(key) === '') key.pop();
 
-      var first = void 0,
-          next = void 0;
+      var first = undefined,
+          next = undefined;
 
       while (key.length > 1) {
         first = key[0];
@@ -1005,7 +1005,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           (function () {
             var condition = watch.condition;
             var resolution = watch.resolution;
-            var handler = void 0;
+            var handler = undefined;
 
             if (_.isFunction(resolution)) {
               handler = function handler(cur, prev) {
@@ -1185,12 +1185,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
-          for (i = prev | 0, l = cur; i < l; i++) {
-            key = arrKey + '[' + i + ']' + '.' + fieldKey;
-            service.registerHandler(key, handler, updateSchema, runHandler);
-            //if(runHandler) handler(null, null, key);
+            for (i = prev | 0, l = cur; i < l; i++) {
+              key = arrKey + '[' + i + ']' + '.' + fieldKey;
+              service.registerHandler(key, handler, updateSchema, runHandler);
+              //if(runHandler) handler(null, null, key);
+            }
           }
-        }
       };
 
       var arrVal = service.parseExpression(arrKey, service.model).get();
@@ -1271,14 +1271,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           if (listener) {
             (function () {
               var val = service.parseExpression(key, service.model).get();
-              if (!angular.equals(val, listener.prev)) {
+              var isInitArray = angular.equals(val, []) && !listener.prev;
+              if (!angular.equals(val, listener.prev) && !isInitArray) {
+                console.log(':: val, prev ::', val, listener.prev);
                 listener.handlers.forEach(function (handler) {
                   handler(val, listener.prev, key, listener.trigger);
                 });
                 listener.trigger = null;
                 listener.prev = angular.copy(val);
               }
-              if (listener.updateSchema && !angular.isUndefined(val) && val !== null) {
+              if (listener.updateSchema && !angular.isUndefined(val) && !isInitArray && val !== null) {
                 service.params[key] = val;
               }
             })();
