@@ -766,14 +766,16 @@
         _.each(service.listeners, (listener, key) => {
           if(listener) {
             let val = service.parseExpression(key, service.model).get();
-            if(!angular.equals(val, listener.prev)) {
+            const isInitArray = angular.equals(val, []) && !listener.prev;
+            if(!angular.equals(val, listener.prev) && !isInitArray) {
+              console.log(':: val, prev ::', val, listener.prev);
               listener.handlers.forEach(handler => {
                 handler(val, listener.prev, key, listener.trigger);
               });
               listener.trigger = null;
               listener.prev = angular.copy(val);
             }
-            if(listener.updateSchema && !angular.isUndefined(val) && val !== null) {
+            if(listener.updateSchema && !angular.isUndefined(val) && !isInitArray && val !== null) {
               service.params[key] = val;
             }
           }

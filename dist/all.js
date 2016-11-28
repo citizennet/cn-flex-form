@@ -894,8 +894,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       // why do we do this? it's breaking stuff
       //if (_.last(key) === '') key.pop();
 
-      var first = void 0,
-          next = void 0;
+      var first = undefined,
+          next = undefined;
 
       while (key.length > 1) {
         first = key[0];
@@ -1005,7 +1005,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           (function () {
             var condition = watch.condition;
             var resolution = watch.resolution;
-            var handler = void 0;
+            var handler = undefined;
 
             if (_.isFunction(resolution)) {
               handler = function handler(cur, prev) {
@@ -1185,12 +1185,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
-          for (i = prev | 0, l = cur; i < l; i++) {
-            key = arrKey + '[' + i + ']' + '.' + fieldKey;
-            service.registerHandler(key, handler, updateSchema, runHandler);
-            //if(runHandler) handler(null, null, key);
+            for (i = prev | 0, l = cur; i < l; i++) {
+              key = arrKey + '[' + i + ']' + '.' + fieldKey;
+              service.registerHandler(key, handler, updateSchema, runHandler);
+              //if(runHandler) handler(null, null, key);
+            }
           }
-        }
       };
 
       var arrVal = service.parseExpression(arrKey, service.model).get();
@@ -1271,14 +1271,16 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           if (listener) {
             (function () {
               var val = service.parseExpression(key, service.model).get();
-              if (!angular.equals(val, listener.prev)) {
+              var isInitArray = angular.equals(val, []) && !listener.prev;
+              if (!angular.equals(val, listener.prev) && !isInitArray) {
+                console.log(':: val, prev ::', val, listener.prev);
                 listener.handlers.forEach(function (handler) {
                   handler(val, listener.prev, key, listener.trigger);
                 });
                 listener.trigger = null;
                 listener.prev = angular.copy(val);
               }
-              if (listener.updateSchema && !angular.isUndefined(val) && val !== null) {
+              if (listener.updateSchema && !angular.isUndefined(val) && !isInitArray && val !== null) {
                 service.params[key] = val;
               }
             })();
@@ -2269,7 +2271,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-datetimepicker.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}"\n                 ng-show="showTitle()">{{form.title}}</label>\n          <cn-datetimepicker\n            ng-show="form.key"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            is-disabled="form.readonly"\n            sf-changed="form"\n            schema-validate="form"\n            input-id="{{form.key.join(\'.\')}}"\n            min-date="form.minDate"\n            max-date="form.maxDate"\n            max-view="{{form.maxView}}"\n            cn-date-required="form.required"\n            placeholder="{{form.placeholder}}"\n            model-type="{{form.schema.type}}"\n            model-formatter="form.modelFormatter"\n            model-parser="form.modelParser"\n            view-formatter="form.viewFormatter"\n            view-parser="form.viewParser"\n            format-string={{form.dateFormat}}\n            icon-class={{form.iconClass}}>\n          </cn-datetimepicker>\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
-    var sharedAutocompleteTpl = '\n          <tags-input\n            ng-show="form.key"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            ng-disabled="form.readonly"\n            sf-changed="form"\n            schema-validate="form"\n            input-id="{{form.key.join(\'.\')}}"\n            display-property="{{form.displayProperty || \'name\'}}"\n            value-property="{{form.valueProperty}}"\n            placeholder="{{form.placeholder || \' \'}}"\n            add-on-blur="true"\n            add-on-comma="false"\n            add-from-autocomplete-only="{{!form.allowNew}}"\n            on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\n            on-init="form.onInit($tag, form, $event, $setter)"\n            model-type="{{form.getSchemaType()}}"\n            array-value-type="{{form.schema.items.type}}"\n            hide-tags="{{form.detailedList}}"\n            tags-style="{{form.selectionStyle}}"\n            required="{{form.required}}"\n            min-length="{{form.minLength}}"\n            allowed-tags-pattern=".*"\n            dropdown-icon="true"\n            item-formatter="form.itemFormatter"\n            min-tags="{{form.schema.minItems}}"\n            max-tags="{{form.schema.maxItems || form.getSchemaType() !== \'array\' ? 1 : 0}}"\n            allow-bulk="{{form.bulkAdd}}"\n            bulk-delimiter="{{form.bulkDelimiter}}"\n            bulk-placeholder="{{form.bulkPlaceholder}}"\n            show-clear-all="{{form.showClearAll}}"\n            show-button="true">\n            <auto-complete\n              source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query)"\n              skip-filtering="{{form.titleQuery ? true : false}}"\n              min-length="{{form.minLookup || (form.titleQuery && 3 || 0)}}">\n            </auto-complete>\n          </tags-input>';
+    var sharedAutocompleteTpl = '\n          <tags-input\n            ng-show="form.key"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            ng-disabled="form.readonly"\n            sf-changed="form"\n            schema-validate="form"\n            input-id="{{form.key.join(\'.\')}}"\n            display-property="{{form.displayProperty || \'name\'}}"\n            value-property="{{form.valueProperty}}"\n            placeholder="{{form.placeholder || \' \'}}"\n            clear-on-blur="true"\n            add-on-comma="false"\n            add-from-autocomplete-only="{{!form.allowNew}}"\n            on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\n            on-init="form.onInit($tag, form, $event, $setter)"\n            model-type="{{form.getSchemaType()}}"\n            array-value-type="{{form.schema.items.type}}"\n            hide-tags="{{form.detailedList}}"\n            tags-style="{{form.selectionStyle}}"\n            required="{{form.required}}"\n            min-length="{{form.minLength}}"\n            allowed-tags-pattern=".*"\n            dropdown-icon="true"\n            item-formatter="form.itemFormatter"\n            min-tags="{{form.schema.minItems}}"\n            max-tags="{{form.schema.maxItems || form.getSchemaType() !== \'array\' ? 1 : 0}}"\n            allow-bulk="{{form.bulkAdd}}"\n            bulk-delimiter="{{form.bulkDelimiter}}"\n            bulk-placeholder="{{form.bulkPlaceholder}}"\n            show-clear-all="{{form.showClearAll}}"\n            show-button="true">\n            <auto-complete\n              source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query)"\n              skip-filtering="{{form.titleQuery ? true : false}}"\n              min-length="{{form.minLookup || (form.titleQuery && 3 || 0)}}">\n            </auto-complete>\n          </tags-input>';
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}-input"\n                 ng-show="showTitle()">{{form.title}}</label>\n          ' + sharedAutocompleteTpl + '\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
