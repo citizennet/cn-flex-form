@@ -845,6 +845,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           if (field.updateSchema) {
             service.registerHandler(field, null, field.updateSchema);
           }
+
+          // TODO: Determine if this fix has a negative performance impact
+          service.errors = _.reject(service.errors, { key: key });
+          $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
+          $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+
           if (field.error) {
             service.errors.push(service.buildError(field));
             if (_.isEmpty(field.ngModelOptions)) {
@@ -854,11 +860,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             } else {
               field.ngModelOptions.allowInvalid = true;
             }
-          } else if (_.find(service.errors, { key: key })) {
-            service.errors = _.reject(service.errors, { key: key });
-            $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
-            $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
           }
+          //else if(_.find(service.errors, {key: key})) {
+          //service.errors = _.reject(service.errors, {key: key});
+          //$rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
+          //$rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+          //}
         }
       }
     }
@@ -894,8 +901,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       // why do we do this? it's breaking stuff
       //if (_.last(key) === '') key.pop();
 
-      var first = undefined,
-          next = undefined;
+      var first = void 0,
+          next = void 0;
 
       while (key.length > 1) {
         first = key[0];
@@ -1005,7 +1012,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           (function () {
             var condition = watch.condition;
             var resolution = watch.resolution;
-            var handler = undefined;
+            var handler = void 0;
 
             if (_.isFunction(resolution)) {
               handler = function handler(cur, prev) {
@@ -1185,12 +1192,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
-            for (i = prev | 0, l = cur; i < l; i++) {
-              key = arrKey + '[' + i + ']' + '.' + fieldKey;
-              service.registerHandler(key, handler, updateSchema, runHandler);
-              //if(runHandler) handler(null, null, key);
-            }
+          for (i = prev | 0, l = cur; i < l; i++) {
+            key = arrKey + '[' + i + ']' + '.' + fieldKey;
+            service.registerHandler(key, handler, updateSchema, runHandler);
+            //if(runHandler) handler(null, null, key);
           }
+        }
       };
 
       var arrVal = service.parseExpression(arrKey, service.model).get();
@@ -2273,7 +2280,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
     var sharedAutocompleteTpl = '\n          <tags-input\n            ng-show="form.key"\n            ng-model="$$value$$"\n            ng-model-options="form.ngModelOptions"\n            ng-disabled="form.readonly"\n            sf-changed="form"\n            schema-validate="form"\n            input-id="{{form.key.join(\'.\')}}"\n            display-property="{{form.displayProperty || \'name\'}}"\n            value-property="{{form.valueProperty}}"\n            placeholder="{{form.placeholder || \' \'}}"\n            clear-on-blur="true"\n            add-on-comma="false"\n            add-from-autocomplete-only="{{!form.allowNew}}"\n            on-before-tag-added="form.onAdd({value: $tag}, form, $event, $prev)"\n            on-init="form.onInit($tag, form, $event, $setter)"\n            model-type="{{form.getSchemaType()}}"\n            array-value-type="{{form.schema.items.type}}"\n            hide-tags="{{form.detailedList}}"\n            tags-style="{{form.selectionStyle}}"\n            required="{{form.required}}"\n            min-length="{{form.minLength}}"\n            allowed-tags-pattern=".*"\n            dropdown-icon="true"\n            item-formatter="form.itemFormatter"\n            min-tags="{{form.schema.minItems}}"\n            max-tags="{{form.schema.maxItems || form.getSchemaType() !== \'array\' ? 1 : 0}}"\n            allow-bulk="{{form.bulkAdd}}"\n            bulk-delimiter="{{form.bulkDelimiter}}"\n            bulk-placeholder="{{form.bulkPlaceholder}}"\n            show-clear-all="{{form.showClearAll}}"\n            show-button="true">\n            <auto-complete\n              source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query)"\n              skip-filtering="{{form.titleQuery ? true : false}}"\n              min-length="{{form.minLookup || (form.titleQuery && 3 || 0)}}">\n            </auto-complete>\n          </tags-input>';
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}-input"\n                 ng-show="showTitle()">{{form.title}}</label>\n          ' + sharedAutocompleteTpl + '\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}-input"\n                 ng-show="showTitle()">{{form.title}}</label>\n          ' + sharedAutocompleteTpl + '\n          <span class="help-block" style="white-space: pre-line" sf-message="form.description"></span>\n        </div>');
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-autocomplete-detailed.html', '\n        <div sf-array="form"\n             class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 for="{{form.key.join(\'.\')}}-input"\n                 ng-show="showTitle()">{{form.title}}</label>\n          <ol class="list-group cn-autocomplete-list"\n              ng-show="modelArray.length"\n              ng-model="modelArray">\n            <li class="list-group-item {{form.fieldHtmlClass}}"\n                ng-repeat="item in modelArray track by $index">\n              <button ng-hide="form.readonly || form.remove === null"\n                      ng-click="deleteFromArray($index)"\n                      type="button" class="close pull-right">\n                <span aria-hidden="true">&times;</span>\n              </button>\n              <sf-decorator ng-init="arrayIndex = $index" form="copyWithIndex($index)"/>\n            </li>\n          </ol>\n          ' + sharedAutocompleteTpl + '\n          <span class="help-block" sf-message="form.description"></span>\n        </div>');
 
