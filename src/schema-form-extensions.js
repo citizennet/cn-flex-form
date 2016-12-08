@@ -148,7 +148,7 @@
                  for="{{form.key.join('.')}}-input"
                  ng-show="showTitle()">{{form.title}}</label>
           ${sharedAutocompleteTpl}
-          <span class="help-block" style="white-space: pre-line" sf-message="form.description"></span>
+          <span class="help-block" sf-message="form.description"></span>
         </div>`
     );
 
