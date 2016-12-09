@@ -327,7 +327,6 @@
           service.processComponent(field);
         }
         else {
-
           var fieldType = cnFlexFormTypes.getFieldType(field);
           var handler = fieldTypeHandlers[fieldType];
           if(_.isString(handler)) {
@@ -344,12 +343,13 @@
             service.registerHandler(field, null, field.updateSchema);
           }
 
-          // TODO: Determine if this fix has a negative performance impact
-          service.errors = _.reject(service.errors, {key: key});
-          $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
-          $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
-
-          if(field.error) {
+          if (_.find(service.errors, { key })) {
+            service.errors = _.reject(service.errors, {key: key});
+            $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
+            $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+          }
+          
+          if (field.error) {
             service.errors.push(service.buildError(field));
             if (_.isEmpty(field.ngModelOptions)) {
               field.ngModelOptions = {
@@ -359,11 +359,6 @@
               field.ngModelOptions.allowInvalid = true;
             }
           }
-          //else if(_.find(service.errors, {key: key})) {
-            //service.errors = _.reject(service.errors, {key: key});
-            //$rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
-            //$rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
-          //}
         }
       }
     }
@@ -455,7 +450,6 @@
       if(!data && exp.indexOf('model.') === 0) {
         data = service.getSchema(exp.replace('model.', '')).default;
       }
-      console.log('handleResolve:', data, fieldProp, exp);
       if (data && data.cursor) {
         field.loadMore = function() {
           var dataProp = exp.match(/schema\.data\.(.+)/)[1];
@@ -495,7 +489,6 @@
             .match(/model\.([^\s]+)/g)
             .map(path => path.match(/model\.([^\s]+)/)[1])
             .forEach(key => {
-              console.log('registering conditional handler:', key);
               service.registerHandler(key, handler);
             });
         handler();
@@ -774,7 +767,6 @@
             let val = service.parseExpression(key, service.model).get();
             const isInitArray = angular.equals(val, []) && !listener.prev;
             if(!angular.equals(val, listener.prev) && !isInitArray) {
-              console.log(':: val, prev ::', val, listener.prev);
               listener.handlers.forEach(handler => {
                 handler(val, listener.prev, key, listener.trigger);
               });
@@ -811,7 +803,6 @@
     }
 
     function initArrayCopyWatch() {
-      console.log('initArrayCopyWatch: how many times does this event get registered?');
       var service = this;
 
       service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
@@ -828,7 +819,6 @@
       }));
 
       service.events.push($rootScope.$on('schemaFormDeleteScope', function(event, scope, index) {
-        console.log('schemaFormDeleteScope:', index, scope.form, scope);
         var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
         var copies = service.getArrayCopiesFor(key);
 
@@ -1130,14 +1120,7 @@
       if(select.getSchemaType() === 'array') {
         if(!val || !_.isArray(val)) return;
 
-        // let loopVal = [];
-        // val.forEach(x => {
-        //   loopVal.push(_.find(titleMap, {[valProp]: x}));
-        // });
-        // console.log('loopVal:', val, loopVal, titleMap);
-
         let mapVal = val.map(x => _.find(titleMap, {[valProp]: x})).filter(x => x !== undefined);
-        // console.log('mapVal:', val, mapVal, titleMap);
 
         return mapVal;
       }
@@ -1158,10 +1141,8 @@
         select.onInit = function(val, form, event, setter) {
           // make sure we use correct value
           var modelValue = service.parseExpression(form.key, service.model);
-          //console.log('service.getKey(form.key), val:', service.getKey(form.key), val);
           if(event === 'tag-init') {
             let newVal = getAllowedSelectValue(select, modelValue.get());
-            //console.log('onInit: key, newVal:', form.key, newVal);
             if(newVal !== undefined) setter(newVal);
           }
         };
@@ -1170,7 +1151,6 @@
       if(select.titleMapQuery) {
         var key = select.titleMapQuery.params.q;
         select.titleQuery = function(q) {
-          console.log('titleMap:', q);
           var params = {};
           if(key) {
             params[key] = q;
@@ -1185,7 +1165,6 @@
         if(!key) select.minLookup = '0';
 
         select.onInit = function(val, form, event, setter) {
-          //console.log('titleQuery:onInit:', val, form, event, setter);
           if(event === 'tag-init') {
             setter(val);
           }
@@ -1206,7 +1185,6 @@
           select.onAdd = function(val, form, event) {
             if(val.value && event === 'tag-added') {
               _.each(defaults, function(prop) {
-                //console.log('prop:', prop, val);
                 if(!val.value[prop.key]) val.value[prop.key] = prop.default;
               });
             }
@@ -1475,7 +1453,6 @@
       var service = this;
       service.refreshSchema = _.debounce(function(updateSchema) {
         var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
-        // console.log('service.schema.params, params:', service.schema.params, params);
         var diff = cnUtil.diff(service.schema.params, params, true);
         var keys;
 
@@ -1488,10 +1465,6 @@
               diff = _.omit(diff, _.isNull);
               keys = _.keys(diff);
             }
-            //console.log('keys, diff:', keys, diff, {
-            //  cur: _.clone(params),
-            //  prev: _.clone(service.schema.params)
-            //});
 
             params.updateSchema = _.first(keys);
           }
@@ -1514,7 +1487,6 @@
       service.refreshData = _.debounce(function() {
         refresh(_.extend(service.schema.params, {updateSchema: 'refreshData'})).then(function(schema) {
           service.processUpdatedSchema(schema);
-          console.log('service.schema.params:', service.schema.params);
         });
       }, 100);
 
@@ -1604,7 +1576,6 @@
       // before comparing
       if(!update.condition && current.condition) update.condition = 'true';
       let redraw = !isChild && current.condition !== update.condition;
-      console.log('redraw:', service.getKey(current.key), current);
 
       _.extend(current, _.omit(update, 'items', 'key'));
 
