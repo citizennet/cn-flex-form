@@ -1137,7 +1137,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       }
 
       key = service.getKey(key);
-      var arrMatch = key.match(/([^[\]]*)\[]\.?(.+)/);
+      var arrMatch = key.match(/([^[\]]*)\[]\.?(.*)/);
 
       if (arrMatch) {
         service.registerArrayHandlers(arrMatch[1], arrMatch[2], handler, updateSchema, runHandler);
@@ -1145,7 +1145,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       }
 
       var cur = service.parseExpression(key, service.model).get();
-      var defaultValue = service.getSchema(key).default;
+      var defaultValue = _.get(service.getSchema(key), 'default');
 
       if (!service.listeners[key]) {
         var prev = _.isUndefined(cur) ? angular.copy(defaultValue) : angular.copy(cur);
@@ -1170,23 +1170,27 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         var i, l, key;
 
         if (prev > cur || reorder) {
-          var lastKey = arrKey + '[' + (prev - 1) + ']' + '.' + fieldKey;
+          var lastKey = fieldKey ? arrKey + '[' + (prev - 1) + ']' + '.' + fieldKey : arrKey + '[' + (prev - 1) + ']';
+
           // only deregister handlers once each time an element is removed
           if (service.listeners[lastKey]) {
             for (i = 0, l = prev; i < l; i++) {
-              key = arrKey + '[' + i + ']' + '.' + fieldKey;
+              key = fieldKey ? arrKey + '[' + i + ']' + '.' + fieldKey : arrKey + '[' + i + ']';
+
               service.deregisterHandlers(key);
             }
           }
           for (i = 0, l = cur; i < l; i++) {
-            key = arrKey + '[' + i + ']' + '.' + fieldKey;
+            key = fieldKey ? arrKey + '[' + i + ']' + '.' + fieldKey : arrKey + '[' + i + ']';
+
             service.registerHandler(key, handler, updateSchema);
             //no need to call if just reregisering handlers
             //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
           for (i = prev | 0, l = cur; i < l; i++) {
-            key = arrKey + '[' + i + ']' + '.' + fieldKey;
+            key = fieldKey ? arrKey + '[' + i + ']' + '.' + fieldKey : arrKey + '[' + i + ']';
+
             service.registerHandler(key, handler, updateSchema, runHandler);
             //if(runHandler) handler(null, null, key);
           }
@@ -1195,7 +1199,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
       var arrVal = service.parseExpression(arrKey, service.model).get();
       _.each(arrVal, function (field, i) {
-        var key = arrKey + '[' + i + ']' + '.' + fieldKey;
+        var key = fieldKey ? arrKey + '[' + i + ']' + '.' + fieldKey : arrKey + '[' + i + ']';
+
         service.registerHandler(key, handler, updateSchema);
         if (runHandler) handler(null, null, key);
       });
@@ -1214,7 +1219,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
 
       key = service.getKey(key);
-      var arrMatch = key.match(/([^[\]]*)\[]\.?(.+)/);
+
+      var arrMatch = key.match(/([^[\]]*)\[]\.?(.*)/);
 
       if (arrMatch) {
         service.deregisterArrayHandlers(arrMatch[1], arrMatch[2]);
@@ -1228,7 +1234,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var service = this;
 
       service.parseExpression(arrKey, service.model).get().forEach(function (item, i) {
-        service.deregisterHandlers(arrKey + '[' + i + '].' + fieldKey);
+        fieldKey ? service.deregisterHandlers(arrKey + '[' + i + '].' + fieldKey) : service.deregisterHandlers(arrKey + '[' + i + ']');
       });
     }
 
