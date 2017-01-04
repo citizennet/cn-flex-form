@@ -896,8 +896,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       // why do we do this? it's breaking stuff
       //if (_.last(key) === '') key.pop();
 
-      var first = void 0,
-          next = void 0;
+      var first = undefined,
+          next = undefined;
 
       while (key.length > 1) {
         first = key[0];
@@ -1005,7 +1005,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           (function () {
             var condition = watch.condition;
             var resolution = watch.resolution;
-            var handler = void 0;
+            var handler = undefined;
 
             if (_.isFunction(resolution)) {
               handler = function handler(cur, prev) {
@@ -1188,13 +1188,13 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
-          for (i = prev | 0, l = cur; i < l; i++) {
-            key = fieldKey ? arrKey + '[' + i + ']' + '.' + fieldKey : arrKey + '[' + i + ']';
+            for (i = prev | 0, l = cur; i < l; i++) {
+              key = fieldKey ? arrKey + '[' + i + ']' + '.' + fieldKey : arrKey + '[' + i + ']';
 
-            service.registerHandler(key, handler, updateSchema, runHandler);
-            //if(runHandler) handler(null, null, key);
+              service.registerHandler(key, handler, updateSchema, runHandler);
+              //if(runHandler) handler(null, null, key);
+            }
           }
-        }
       };
 
       var arrVal = service.parseExpression(arrKey, service.model).get();
@@ -1261,7 +1261,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         cnUtil.cleanModel(service.model);
 
         service.prevParams = angular.copy(service.params);
-        service.params = cnFlexFormConfig.getStateParams();
 
         _.each(service.arrayListeners, function (listener, key) {
           var val = service.parseExpression(key, service.model).get();
@@ -1287,6 +1286,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
               }
               if (listener.updateSchema && !angular.isUndefined(val) && !isInitArray && val !== null) {
                 service.params[key] = val;
+              } else {
+                delete service.params[key];
               }
             })();
           }
