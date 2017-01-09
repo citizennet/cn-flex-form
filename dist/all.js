@@ -63,7 +63,7 @@
       controller: FlexFormHeader,
       bindToController: true,
       controllerAs: 'vm',
-      template: '\n          <div class="col-md-6">\n            <h5 ng-if="vm.config.title.lead">{{::vm.config.title.lead}}</h5>\n            <h1>{{vm.config.title.main}}</h1>\n            <h5 ng-if="vm.config.title.sub">{{::vm.config.title.sub}}</h5>\n          </div>\n          <div class="{{vm.config.buttonContainerClass || \'page-action-btns\'}}">\n            <div class="btn-options"\n                 ng-mouseover="vm.loadOffscreen()">\n              <a class="btn"\n                 ng-if="vm.config.actionConfig.returnState"\n                 ui-sref="{{vm.config.actionConfig.returnState}}">\n                {{vm.config.actionConfig.returnText || \'Cancel\'}}\n              </a>\n              <a class="btn"\n                 ng-if="vm.config.actionConfig.closeButton"\n                 ng-click="vm.config.actionConfig.closeButton.handler()">\n                 Cancel\n              </a>\n              <span ng-repeat="button in vm.config.actionConfig.actions">\n                <span ng-class="{\'btn-group\': button.options}">\n                  <a class="btn {{button.style && \'btn-\'+button.style}}"\n                     ng-disabled="vm.isDisabled(button)"\n                     ng-class="{\'btn-primary\': $index === vm.config.actionConfig.actions.length - 1}"\n                     ng-click="vm.submit({handler: button.handler})"\n                     tooltip="{{button.helptext}}"\n                     tooltip-placement="bottom"\n                     ng-bind-html="button.text || \'Save\'">\n                  </a>\n                  <a class="btn {{button.style && \'btn-\'+button.style}} dropdown-toggle"\n                          ng-disabled="vm.isDisabled(button)"\n                          ng-class="{\'btn-primary\': $index === vm.config.actionConfig.actions.length - 1}"\n                          ng-show="button.options"\n                          data-toggle="dropdown">\n                    <span class="caret"></span>\n                  </a>\n                  <ul class="dropdown-menu" ng-if="button.options">\n                    <li ng-repeat="option in button.options"\n                        ng-disabled="vm.isDisabled(option)">\n                      <a ng-click="vm.submit({handler: option.handler})"\n                         ng-bind-html="option.text">\n                      </a>\n                    </li>\n                  </ul>\n                </span>\n              </span>\n            </div>\n            <p class="data-updated-at text-right"\n               id="data-updated-at"\n               ng-hide="vm.config.noData">\n              <a ng-click="vm.updateData()">Update Data</a>\n            </p>\n          </div>'
+      template: '\n          <div class="col-md-6">\n            <h5 ng-if="vm.config.title.lead">{{::vm.config.title.lead}}</h5>\n            <h1>\n              <i ng-show="vm.config.title.icon" class="{{vm.config.title.icon}}"/>\n              {{vm.config.title.main}}\n            </h1>\n            <h5 ng-if="vm.config.title.sub">{{::vm.config.title.sub}}</h5>\n          </div>\n          <div class="{{vm.config.buttonContainerClass || \'page-action-btns\'}}">\n            <div class="btn-options"\n                 ng-mouseover="vm.loadOffscreen()">\n              <a class="btn btn-default-dark"\n                 ng-if="vm.config.actionConfig.returnState"\n                 ui-sref="{{vm.config.actionConfig.returnState}}">\n                {{vm.config.actionConfig.returnText || \'Cancel\'}}\n              </a>\n              <a class="btn btn-default-dark"\n                 ng-if="vm.config.actionConfig.closeButton"\n                 ng-click="vm.config.actionConfig.closeButton.handler()">\n                 Cancel\n              </a>\n              <span ng-repeat="button in vm.config.actionConfig.actions">\n                <span ng-class="{\'btn-group\': button.options}">\n                  <a class="btn {{button.style ? \'btn-\'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? \'btn-primary\' : \'btn-default-dark\')}}"\n                     ng-disabled="vm.isDisabled(button)"\n                     ng-click="vm.submit({handler: button.handler})"\n                     tooltip="{{button.helptext}}"\n                     tooltip-placement="bottom"\n                     ng-bind-html="button.text || \'Save\'">\n                  </a>\n                  <a class="btn {{button.style ? \'btn-\'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? \'btn-primary\' : \'btn-default-dark\')}} dropdown-toggle"\n                          ng-disabled="vm.isDisabled(button)"\n                          ng-show="button.options"\n                          data-toggle="dropdown">\n                    <span class="caret"></span>\n                  </a>\n                  <ul class="dropdown-menu" ng-if="button.options">\n                    <li ng-repeat="option in button.options"\n                        ng-disabled="vm.isDisabled(option)">\n                      <a ng-click="vm.submit({handler: option.handler})"\n                         ng-bind-html="option.text">\n                      </a>\n                    </li>\n                  </ul>\n                </span>\n              </span>\n            </div>\n            <p class="data-updated-at text-right"\n               id="data-updated-at"\n               ng-hide="vm.config.noData">\n              <a ng-click="vm.updateData()">Update Data</a>\n            </p>\n          </div>'
     };
   }
 
@@ -98,7 +98,7 @@
   function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
 
     var vm = this;
-    console.log('FlexFormModalLoader:', $stateParams.modal);
+    console.log('FlexFormModalLoader:', $stateParams);
 
     activate();
 
@@ -171,15 +171,7 @@
     return promise;
   }
 
-  function getPromiseForResolve(state, id, $q) {
-    var promises = getPromises(state);
-    var promise = $q.defer();
-    promises[id] = promise;
-    return promise;
-  }
-
   function cnFlexFormModalLoaderServiceProvider() {
-
     var provider = {
       addMapping: addMapping,
       $get: cnFlexFormModalLoaderService
@@ -199,6 +191,7 @@
     }
 
     function parent($stateParams, $q) {
+      console.log('resolve parent:', $stateParams, $q, getPromise($stateParams.modal, $stateParams.modalId, $q));
       return getPromise($stateParams.modal, $stateParams.modalId, $q).promise;
     }
   }
@@ -215,8 +208,14 @@
 
     /////////////
 
-    function resolveMapping(state, id, parent) {
-      var d = getPromiseForResolve(state, id, $q);
+    function resolveMapping(state, id, parent, scope) {
+      if (scope) {
+        scope.options = scope.options || {};
+        scope.options.destroyStrategy = 'retain';
+        modalMap[state].scope = scope;
+        console.log('resolveMapping:', modalMap[state]);
+      }
+      var d = getPromise(state, id, $q);
       d.resolve(parent);
       return d.promise;
     }
@@ -477,6 +476,8 @@
 })();
 'use strict';
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 (function () {
   angular.module('cn.flex-form').provider('cnFlexFormRoutes', cnFlexFormRoutesProvider).config(cnFlexFormRoutes);
 
@@ -496,12 +497,16 @@
     }
 
     function addStates(options) {
-      $stateProvider.state(options.name + '.page.modal', {
-        url: '/~:modal/:modalId',
+      var shared = {
         controller: 'FlexFormModalLoader',
         controllerAs: 'vm',
         permissions: options.permissions
-      });
+      };
+      $stateProvider.state(options.name + '.page.modal', _extends({
+        url: '/~:modal/:modalId'
+      }, shared)).state(options.name + '.page.modalParams', _extends({
+        url: '/~:modal/:modalId/:restParams'
+      }, shared));
     }
   }
 
@@ -896,8 +901,8 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       // why do we do this? it's breaking stuff
       //if (_.last(key) === '') key.pop();
 
-      var first = void 0,
-          next = void 0;
+      var first = undefined,
+          next = undefined;
 
       while (key.length > 1) {
         first = key[0];
@@ -1005,7 +1010,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           (function () {
             var condition = watch.condition;
             var resolution = watch.resolution;
-            var handler = void 0;
+            var handler = undefined;
 
             if (_.isFunction(resolution)) {
               handler = function handler(cur, prev) {
@@ -1188,13 +1193,13 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             //if(runHandler) handler(null, null, key);
           }
         } else if (cur > (prev || 0)) {
-          for (i = prev | 0, l = cur; i < l; i++) {
-            key = fieldKey ? arrKey + '[' + i + ']' + '.' + fieldKey : arrKey + '[' + i + ']';
+            for (i = prev | 0, l = cur; i < l; i++) {
+              key = fieldKey ? arrKey + '[' + i + ']' + '.' + fieldKey : arrKey + '[' + i + ']';
 
-            service.registerHandler(key, handler, updateSchema, runHandler);
-            //if(runHandler) handler(null, null, key);
+              service.registerHandler(key, handler, updateSchema, runHandler);
+              //if(runHandler) handler(null, null, key);
+            }
           }
-        }
       };
 
       var arrVal = service.parseExpression(arrKey, service.model).get();

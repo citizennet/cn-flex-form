@@ -19,35 +19,36 @@
       template: `
           <div class="col-md-6">
             <h5 ng-if="vm.config.title.lead">{{::vm.config.title.lead}}</h5>
-            <h1>{{vm.config.title.main}}</h1>
+            <h1>
+              <i ng-show="vm.config.title.icon" class="{{vm.config.title.icon}}"/>
+              {{vm.config.title.main}}
+            </h1>
             <h5 ng-if="vm.config.title.sub">{{::vm.config.title.sub}}</h5>
           </div>
           <div class="{{vm.config.buttonContainerClass || 'page-action-btns'}}">
             <div class="btn-options"
                  ng-mouseover="vm.loadOffscreen()">
-              <a class="btn"
+              <a class="btn btn-default-dark"
                  ng-if="vm.config.actionConfig.returnState"
                  ui-sref="{{vm.config.actionConfig.returnState}}">
                 {{vm.config.actionConfig.returnText || 'Cancel'}}
               </a>
-              <a class="btn"
+              <a class="btn btn-default-dark"
                  ng-if="vm.config.actionConfig.closeButton"
                  ng-click="vm.config.actionConfig.closeButton.handler()">
                  Cancel
               </a>
               <span ng-repeat="button in vm.config.actionConfig.actions">
                 <span ng-class="{'btn-group': button.options}">
-                  <a class="btn {{button.style && 'btn-'+button.style}}"
+                  <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}}"
                      ng-disabled="vm.isDisabled(button)"
-                     ng-class="{'btn-primary': $index === vm.config.actionConfig.actions.length - 1}"
                      ng-click="vm.submit({handler: button.handler})"
                      tooltip="{{button.helptext}}"
                      tooltip-placement="bottom"
                      ng-bind-html="button.text || 'Save'">
                   </a>
-                  <a class="btn {{button.style && 'btn-'+button.style}} dropdown-toggle"
+                  <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}} dropdown-toggle"
                           ng-disabled="vm.isDisabled(button)"
-                          ng-class="{'btn-primary': $index === vm.config.actionConfig.actions.length - 1}"
                           ng-show="button.options"
                           data-toggle="dropdown">
                     <span class="caret"></span>

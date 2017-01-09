@@ -12,7 +12,7 @@
   function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
 
     var vm = this;
-    console.log('FlexFormModalLoader:', $stateParams.modal);
+    console.log('FlexFormModalLoader:', $stateParams);
 
     activate();
 

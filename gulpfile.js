@@ -2,7 +2,7 @@
 var gulp = require('gulp');
 
 // Include Our Plugins
-var jshint = require('gulp-jshint');
+var eslint = require('gulp-eslint');
 var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
@@ -13,13 +13,11 @@ var babel = require('gulp-babel');
 // Lint Task
 gulp.task('lint', function() {
   return gulp.src('src/*.js')
-      .pipe(jshint({
+      .pipe(eslint.format({
         multistr: true,
         validthis: true,
-        evil: true,
-        esnext: true
-      }))
-      .pipe(jshint.reporter('default'));
+        evil: true
+      }));
 });
 
 // Test
