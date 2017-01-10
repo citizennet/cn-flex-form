@@ -7,60 +7,52 @@
 
   const modalMap = {};
   const promiseMap = {};
-
+  
   function getPromises(state) {
-    let promises = promiseMap[state];
-    if(!promises) {
-      promises = {};
-      promiseMap[state] = promises;
-    }
-    return promises;
+    if(promiseMap[state]) return promiseMap[state];
+
+    const promise = {};
+    promiseMap[state] = promise;
+    return promise;
   }
 
   function getPromise(state, id, $q) {
-    let promises = getPromises(state);
-    let promise = promises[id];
-    if(!promise) {
-      promise = $q.defer();
-      promises[id] = promise;
-    }
+    const promises = getPromises(state);
+    if(promises[id]) return promises[id];
+
+    const promise = $q.defer();
+    promises[id] = promise;
     return promise;
   }
 
   function cnFlexFormModalLoaderServiceProvider() {
-    let provider = {
+    parent.$inject = ['$stateParams', '$q'];
+
+    return {
       addMapping,
       $get: cnFlexFormModalLoaderService
     };
 
-    parent.$inject = ['$stateParams', '$q'];
-
-    return provider;
-
     ////////////
 
     function addMapping(state, def) {
-      def.resolve = {
-        parent: parent
-      };
+      def.resolve = { parent };
       modalMap[state] = def;
     }
 
     function parent($stateParams, $q) {
-      console.log('resolve parent:', $stateParams, $q, getPromise($stateParams.modal, $stateParams.modalId, $q));
       return getPromise($stateParams.modal, $stateParams.modalId, $q).promise;
     }
   }
 
-  cnFlexFormModalLoaderService.$inject = ['$q'];
+  cnFlexFormModalLoaderService.$inject = ['$stateParams', '$q'];
 
-  function cnFlexFormModalLoaderService($q) {
-    const service = {
+  function cnFlexFormModalLoaderService($stateParams, $q) {
+
+    return {
       getMapping,
       resolveMapping
     };
-
-    return service;
 
     /////////////
 
@@ -69,7 +61,6 @@
         scope.options = scope.options || {};
         scope.options.destroyStrategy = 'retain';
         modalMap[state].scope = scope;
-        console.log('resolveMapping:', modalMap[state]);
       }
       const d = getPromise(state, id, $q);
       d.resolve(parent);
@@ -77,7 +68,14 @@
     }
 
     function getMapping(state) {
-      return modalMap[state];
+      const d = $q.defer();
+      getPromise($stateParams.modal, $stateParams.modalId, $q)
+        .promise
+        .then((parent) => {
+          d.resolve(modalMap[state]);
+          return parent;
+        });
+      return d.promise;
     }
   }
 

@@ -98,17 +98,17 @@
   function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
 
     var vm = this;
-    console.log('FlexFormModalLoader:', $stateParams);
 
     activate();
 
     //////////
 
     function activate() {
-      vm.modal = FlexFormModal.open(vm);
-      vm.modal.result.finally(goBack);
-
-      vm.dismiss = $rootScope.$on('$stateChangeStart', dismissModal);
+      FlexFormModal.open(vm).then(function (modal) {
+        vm.modal = modal;
+        vm.modal.result.finally(goBack);
+        vm.dismiss = $rootScope.$on('$stateChangeStart', dismissModal);
+      });
     }
 
     function goBack() {
@@ -127,18 +127,14 @@
   FlexFormModal.$inject = ['cnFlexFormModalLoaderService', '$modal', '$stateParams'];
   function FlexFormModal(cnFlexFormModalLoaderService, $modal, $stateParams) {
 
-    var instance = {
-      open: openModal
-    };
+    return { open: open };
 
-    return instance;
+    ////////////
 
-    function openModal() {
-      var currentModal = cnFlexFormModalLoaderService.getMapping($stateParams.modal);
-      console.log('currentModal:', currentModal);
-
-      this.modal = $modal.open(currentModal);
-      return this.modal;
+    function open() {
+      return cnFlexFormModalLoaderService.getMapping($stateParams.modal).then(function (currentModal) {
+        return $modal.open(currentModal);
+      });
     }
   }
 })();
@@ -153,58 +149,50 @@
   var promiseMap = {};
 
   function getPromises(state) {
-    var promises = promiseMap[state];
-    if (!promises) {
-      promises = {};
-      promiseMap[state] = promises;
-    }
-    return promises;
+    if (promiseMap[state]) return promiseMap[state];
+
+    var promise = {};
+    promiseMap[state] = promise;
+    return promise;
   }
 
   function getPromise(state, id, $q) {
     var promises = getPromises(state);
-    var promise = promises[id];
-    if (!promise) {
-      promise = $q.defer();
-      promises[id] = promise;
-    }
+    if (promises[id]) return promises[id];
+
+    var promise = $q.defer();
+    promises[id] = promise;
     return promise;
   }
 
   function cnFlexFormModalLoaderServiceProvider() {
-    var provider = {
+    parent.$inject = ['$stateParams', '$q'];
+
+    return {
       addMapping: addMapping,
       $get: cnFlexFormModalLoaderService
     };
 
-    parent.$inject = ['$stateParams', '$q'];
-
-    return provider;
-
     ////////////
 
     function addMapping(state, def) {
-      def.resolve = {
-        parent: parent
-      };
+      def.resolve = { parent: parent };
       modalMap[state] = def;
     }
 
     function parent($stateParams, $q) {
-      console.log('resolve parent:', $stateParams, $q, getPromise($stateParams.modal, $stateParams.modalId, $q));
       return getPromise($stateParams.modal, $stateParams.modalId, $q).promise;
     }
   }
 
-  cnFlexFormModalLoaderService.$inject = ['$q'];
+  cnFlexFormModalLoaderService.$inject = ['$stateParams', '$q'];
 
-  function cnFlexFormModalLoaderService($q) {
-    var service = {
+  function cnFlexFormModalLoaderService($stateParams, $q) {
+
+    return {
       getMapping: getMapping,
       resolveMapping: resolveMapping
     };
-
-    return service;
 
     /////////////
 
@@ -213,7 +201,6 @@
         scope.options = scope.options || {};
         scope.options.destroyStrategy = 'retain';
         modalMap[state].scope = scope;
-        console.log('resolveMapping:', modalMap[state]);
       }
       var d = getPromise(state, id, $q);
       d.resolve(parent);
@@ -221,7 +208,12 @@
     }
 
     function getMapping(state) {
-      return modalMap[state];
+      var d = $q.defer();
+      getPromise($stateParams.modal, $stateParams.modalId, $q).promise.then(function (parent) {
+        d.resolve(modalMap[state]);
+        return parent;
+      });
+      return d.promise;
     }
   }
 })();

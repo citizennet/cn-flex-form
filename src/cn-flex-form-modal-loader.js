@@ -11,22 +11,24 @@
   ];
   function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
 
-    var vm = this;
-    console.log('FlexFormModalLoader:', $stateParams);
+    const vm = this;
 
     activate();
 
     //////////
 
     function activate() {
-      vm.modal = FlexFormModal.open(vm);
-      vm.modal.result.finally(goBack);
-
-      vm.dismiss = $rootScope.$on('$stateChangeStart', dismissModal);
+      FlexFormModal
+        .open(vm)
+        .then((modal) => {
+          vm.modal = modal;
+          vm.modal.result.finally(goBack);
+          vm.dismiss = $rootScope.$on('$stateChangeStart', dismissModal);
+        });
     }
 
     function goBack() {
-      if (!$state.transition) {
+      if(!$state.transition) {
         $state.go('^');
       }
     }
@@ -41,18 +43,16 @@
   FlexFormModal.$inject = ['cnFlexFormModalLoaderService', '$modal', '$stateParams'];
   function FlexFormModal(cnFlexFormModalLoaderService, $modal, $stateParams) {
 
-    var instance = {
-      open: openModal
-    };
+    return { open };
 
-    return instance;
-
-    function openModal() {
-      var currentModal = cnFlexFormModalLoaderService.getMapping($stateParams.modal);
-      console.log('currentModal:', currentModal);
-
-      this.modal = $modal.open(currentModal);
-      return this.modal;
+    ////////////
+    
+    function open() {
+      return (
+        cnFlexFormModalLoaderService
+          .getMapping($stateParams.modal)
+          .then((currentModal) => $modal.open(currentModal))
+      );
     }
 
   }
