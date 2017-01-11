@@ -41,7 +41,11 @@
     }
 
     function parent($stateParams, $q) {
-      return getPromise($stateParams.modal, $stateParams.modalId, $q).promise;
+      return (
+        getPromise($stateParams.modal, $stateParams.modalId, $q)
+        .promise
+        .then(({ parent }) => parent)
+      );
     }
   }
 
@@ -56,14 +60,15 @@
 
     /////////////
 
-    function resolveMapping(state, id, parent, scope) {
+    function resolveMapping(state, id, parent, options = {}) {
+      const { scope } = options;
       if(scope) {
         scope.options = scope.options || {};
         scope.options.destroyStrategy = 'retain';
         modalMap[state].scope = scope;
       }
       const d = getPromise(state, id, $q);
-      d.resolve(parent);
+      d.resolve({ parent, options });
       return d.promise;
     }
 
@@ -71,8 +76,8 @@
       const d = $q.defer();
       getPromise($stateParams.modal, $stateParams.modalId, $q)
         .promise
-        .then((parent) => {
-          d.resolve(modalMap[state]);
+        .then(({ parent, options }) => {
+          d.resolve({ state: modalMap[state], options });
           return parent;
         });
       return d.promise;

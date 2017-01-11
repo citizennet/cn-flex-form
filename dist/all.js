@@ -104,10 +104,14 @@
     //////////
 
     function activate() {
-      FlexFormModal.open(vm).then(function (modal) {
+      FlexFormModal.open(vm).then(function (_ref) {
+        var modal = _ref.modal;
+        var onDismiss = _ref.options.onDismiss;
+
         vm.modal = modal;
         vm.modal.result.finally(goBack);
-        vm.dismiss = $rootScope.$on('$stateChangeStart', dismissModal);
+        vm.dismissEvent = $rootScope.$on('$stateChangeStart', dismissModal);
+        vm.onDismiss = onDismiss;
       });
     }
 
@@ -118,9 +122,10 @@
     }
 
     function dismissModal() {
-      console.log('dismissModal:', arguments);
-      vm.dismiss();
+      console.log('dismissModal');
+      vm.dismissEvent();
       vm.modal.dismiss();
+      if (vm.onDismiss) vm.onDismiss($stateParams.restParams);
     }
   }
 
@@ -132,8 +137,13 @@
     ////////////
 
     function open() {
-      return cnFlexFormModalLoaderService.getMapping($stateParams.modal).then(function (currentModal) {
-        return $modal.open(currentModal);
+      return cnFlexFormModalLoaderService.getMapping($stateParams.modal).then(function (_ref2) {
+        var state = _ref2.state;
+        var options = _ref2.options;
+        return {
+          modal: $modal.open(state),
+          options: options
+        };
       });
     }
   }
@@ -181,7 +191,10 @@
     }
 
     function parent($stateParams, $q) {
-      return getPromise($stateParams.modal, $stateParams.modalId, $q).promise;
+      return getPromise($stateParams.modal, $stateParams.modalId, $q).promise.then(function (_ref) {
+        var parent = _ref.parent;
+        return parent;
+      });
     }
   }
 
@@ -196,21 +209,27 @@
 
     /////////////
 
-    function resolveMapping(state, id, parent, scope) {
+    function resolveMapping(state, id, parent) {
+      var options = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
+      var scope = options.scope;
+
       if (scope) {
         scope.options = scope.options || {};
         scope.options.destroyStrategy = 'retain';
         modalMap[state].scope = scope;
       }
       var d = getPromise(state, id, $q);
-      d.resolve(parent);
+      d.resolve({ parent: parent, options: options });
       return d.promise;
     }
 
     function getMapping(state) {
       var d = $q.defer();
-      getPromise($stateParams.modal, $stateParams.modalId, $q).promise.then(function (parent) {
-        d.resolve(modalMap[state]);
+      getPromise($stateParams.modal, $stateParams.modalId, $q).promise.then(function (_ref2) {
+        var parent = _ref2.parent;
+        var options = _ref2.options;
+
+        d.resolve({ state: modalMap[state], options: options });
         return parent;
       });
       return d.promise;

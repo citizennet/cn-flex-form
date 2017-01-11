@@ -20,10 +20,11 @@
     function activate() {
       FlexFormModal
         .open(vm)
-        .then((modal) => {
+        .then(({ modal, options: { onDismiss } }) => {
           vm.modal = modal;
           vm.modal.result.finally(goBack);
-          vm.dismiss = $rootScope.$on('$stateChangeStart', dismissModal);
+          vm.dismissEvent = $rootScope.$on('$stateChangeStart', dismissModal);
+          vm.onDismiss = onDismiss;
         });
     }
 
@@ -34,9 +35,10 @@
     }
 
     function dismissModal() {
-      console.log('dismissModal:', arguments);
-      vm.dismiss();
+      console.log('dismissModal');
+      vm.dismissEvent();
       vm.modal.dismiss();
+      if(vm.onDismiss) vm.onDismiss($stateParams.restParams);
     }
   }
 
@@ -51,7 +53,10 @@
       return (
         cnFlexFormModalLoaderService
           .getMapping($stateParams.modal)
-          .then((currentModal) => $modal.open(currentModal))
+          .then(({ state, options }) => ({
+            modal: $modal.open(state),
+            options 
+          }))
       );
     }
 
