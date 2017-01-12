@@ -23,8 +23,8 @@
         .then(({ modal, options: { onDismiss } }) => {
           vm.modal = modal;
           vm.modal.result.finally(goBack);
+          if(onDismiss) vm.modal.result.catch(() => onDismiss($stateParams.restParams));
           vm.dismissEvent = $rootScope.$on('$stateChangeStart', dismissModal);
-          vm.onDismiss = onDismiss;
         });
     }
 
@@ -38,12 +38,11 @@
       console.log('dismissModal');
       vm.dismissEvent();
       vm.modal.dismiss();
-      if(vm.onDismiss) vm.onDismiss($stateParams.restParams);
     }
   }
 
-  FlexFormModal.$inject = ['cnFlexFormModalLoaderService', '$modal', '$stateParams'];
-  function FlexFormModal(cnFlexFormModalLoaderService, $modal, $stateParams) {
+  FlexFormModal.$inject = ['cnFlexFormModalLoaderService', '$uibModal', '$stateParams'];
+  function FlexFormModal(cnFlexFormModalLoaderService, $uibModal, $stateParams) {
 
     return { open };
 
@@ -54,7 +53,7 @@
         cnFlexFormModalLoaderService
           .getMapping($stateParams.modal)
           .then(({ state, options }) => ({
-            modal: $modal.open(state),
+            modal: $uibModal.open(state),
             options 
           }))
       );

@@ -43,8 +43,8 @@
                   <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}}"
                      ng-disabled="vm.isDisabled(button)"
                      ng-click="vm.submit({handler: button.handler})"
-                     tooltip="{{button.helptext}}"
-                     tooltip-placement="bottom"
+                     uib-tooltip="{{button.helptext}}"
+                     uib-tooltip-placement="bottom"
                      ng-bind-html="button.text || 'Save'">
                   </a>
                   <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}} dropdown-toggle"

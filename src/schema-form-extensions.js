@@ -321,7 +321,7 @@
             {{ form.title }}
           </legend>
           <div class="help-block" ng-show="form.description" ng-bind-html="form.description"></div>
-          <div collapse="form.collapsed">
+          <div uib-collapse="form.collapsed">
             <div ng-if="form.render">
               <sf-decorator ng-repeat="item in form.items" form="item"/>
             </div>

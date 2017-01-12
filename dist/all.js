@@ -63,7 +63,7 @@
       controller: FlexFormHeader,
       bindToController: true,
       controllerAs: 'vm',
-      template: '\n          <div class="col-md-6">\n            <h5 ng-if="vm.config.title.lead">{{::vm.config.title.lead}}</h5>\n            <h1>\n              <i ng-show="vm.config.title.icon" class="{{vm.config.title.icon}}"/>\n              {{vm.config.title.main}}\n            </h1>\n            <h5 ng-if="vm.config.title.sub">{{::vm.config.title.sub}}</h5>\n          </div>\n          <div class="{{vm.config.buttonContainerClass || \'page-action-btns\'}}">\n            <div class="btn-options"\n                 ng-mouseover="vm.loadOffscreen()">\n              <a class="btn btn-default-dark"\n                 ng-if="vm.config.actionConfig.returnState"\n                 ui-sref="{{vm.config.actionConfig.returnState}}">\n                {{vm.config.actionConfig.returnText || \'Cancel\'}}\n              </a>\n              <a class="btn btn-default-dark"\n                 ng-if="vm.config.actionConfig.closeButton"\n                 ng-click="vm.config.actionConfig.closeButton.handler()">\n                 Cancel\n              </a>\n              <span ng-repeat="button in vm.config.actionConfig.actions">\n                <span ng-class="{\'btn-group\': button.options}">\n                  <a class="btn {{button.style ? \'btn-\'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? \'btn-primary\' : \'btn-default-dark\')}}"\n                     ng-disabled="vm.isDisabled(button)"\n                     ng-click="vm.submit({handler: button.handler})"\n                     tooltip="{{button.helptext}}"\n                     tooltip-placement="bottom"\n                     ng-bind-html="button.text || \'Save\'">\n                  </a>\n                  <a class="btn {{button.style ? \'btn-\'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? \'btn-primary\' : \'btn-default-dark\')}} dropdown-toggle"\n                          ng-disabled="vm.isDisabled(button)"\n                          ng-show="button.options"\n                          data-toggle="dropdown">\n                    <span class="caret"></span>\n                  </a>\n                  <ul class="dropdown-menu" ng-if="button.options">\n                    <li ng-repeat="option in button.options"\n                        ng-disabled="vm.isDisabled(option)">\n                      <a ng-click="vm.submit({handler: option.handler})"\n                         ng-bind-html="option.text">\n                      </a>\n                    </li>\n                  </ul>\n                </span>\n              </span>\n            </div>\n            <p class="data-updated-at text-right"\n               id="data-updated-at"\n               ng-hide="vm.config.noData">\n              <a ng-click="vm.updateData()">Update Data</a>\n            </p>\n          </div>'
+      template: '\n          <div class="col-md-6">\n            <h5 ng-if="vm.config.title.lead">{{::vm.config.title.lead}}</h5>\n            <h1>\n              <i ng-show="vm.config.title.icon" class="{{vm.config.title.icon}}"/>\n              {{vm.config.title.main}}\n            </h1>\n            <h5 ng-if="vm.config.title.sub">{{::vm.config.title.sub}}</h5>\n          </div>\n          <div class="{{vm.config.buttonContainerClass || \'page-action-btns\'}}">\n            <div class="btn-options"\n                 ng-mouseover="vm.loadOffscreen()">\n              <a class="btn btn-default-dark"\n                 ng-if="vm.config.actionConfig.returnState"\n                 ui-sref="{{vm.config.actionConfig.returnState}}">\n                {{vm.config.actionConfig.returnText || \'Cancel\'}}\n              </a>\n              <a class="btn btn-default-dark"\n                 ng-if="vm.config.actionConfig.closeButton"\n                 ng-click="vm.config.actionConfig.closeButton.handler()">\n                 Cancel\n              </a>\n              <span ng-repeat="button in vm.config.actionConfig.actions">\n                <span ng-class="{\'btn-group\': button.options}">\n                  <a class="btn {{button.style ? \'btn-\'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? \'btn-primary\' : \'btn-default-dark\')}}"\n                     ng-disabled="vm.isDisabled(button)"\n                     ng-click="vm.submit({handler: button.handler})"\n                     uib-tooltip="{{button.helptext}}"\n                     uib-tooltip-placement="bottom"\n                     ng-bind-html="button.text || \'Save\'">\n                  </a>\n                  <a class="btn {{button.style ? \'btn-\'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? \'btn-primary\' : \'btn-default-dark\')}} dropdown-toggle"\n                          ng-disabled="vm.isDisabled(button)"\n                          ng-show="button.options"\n                          data-toggle="dropdown">\n                    <span class="caret"></span>\n                  </a>\n                  <ul class="dropdown-menu" ng-if="button.options">\n                    <li ng-repeat="option in button.options"\n                        ng-disabled="vm.isDisabled(option)">\n                      <a ng-click="vm.submit({handler: option.handler})"\n                         ng-bind-html="option.text">\n                      </a>\n                    </li>\n                  </ul>\n                </span>\n              </span>\n            </div>\n            <p class="data-updated-at text-right"\n               id="data-updated-at"\n               ng-hide="vm.config.noData">\n              <a ng-click="vm.updateData()">Update Data</a>\n            </p>\n          </div>'
     };
   }
 
@@ -110,8 +110,10 @@
 
         vm.modal = modal;
         vm.modal.result.finally(goBack);
+        if (onDismiss) vm.modal.result.catch(function () {
+          return onDismiss($stateParams.restParams);
+        });
         vm.dismissEvent = $rootScope.$on('$stateChangeStart', dismissModal);
-        vm.onDismiss = onDismiss;
       });
     }
 
@@ -125,12 +127,11 @@
       console.log('dismissModal');
       vm.dismissEvent();
       vm.modal.dismiss();
-      if (vm.onDismiss) vm.onDismiss($stateParams.restParams);
     }
   }
 
-  FlexFormModal.$inject = ['cnFlexFormModalLoaderService', '$modal', '$stateParams'];
-  function FlexFormModal(cnFlexFormModalLoaderService, $modal, $stateParams) {
+  FlexFormModal.$inject = ['cnFlexFormModalLoaderService', '$uibModal', '$stateParams'];
+  function FlexFormModal(cnFlexFormModalLoaderService, $uibModal, $stateParams) {
 
     return { open: open };
 
@@ -141,7 +142,7 @@
         var state = _ref2.state;
         var options = _ref2.options;
         return {
-          modal: $modal.open(state),
+          modal: $uibModal.open(state),
           options: options
         };
       });
@@ -507,15 +508,18 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
       // nothing to do here, but required
     }
 
-    function addStates(options) {
+    function addStates(_ref) {
+      var permissions = _ref.permissions;
+      var name = _ref.name;
+
       var shared = {
         controller: 'FlexFormModalLoader',
         controllerAs: 'vm',
-        permissions: options.permissions
+        permissions: permissions
       };
-      $stateProvider.state(options.name + '.page.modal', _extends({
+      $stateProvider.state(name + '.page.modal', _extends({
         url: '/~:modal/:modalId'
-      }, shared)).state(options.name + '.page.modalParams', _extends({
+      }, shared)).state(name + '.page.modalParams', _extends({
         url: '/~:modal/:modalId/:restParams'
       }, shared));
     }
@@ -2287,7 +2291,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-display.html', '\n        <div class="form-group cn-display{{form.htmlClass}}">\n          <input ng-show="form.key"\n                 class="form-control"\n                 id="{{form.key.join(\'.\')}}"\n                 name="{{form.key.join(\'.\')}}"\n                 ng-disabled="true"\n                 value="{{form.getDisplay(form.key, form.arrayIndex)}}">\n        </div>');
 
-    $templateCache.put('app/components/cn-flex-form/forms/cn-fieldset.html', '\n        <fieldset ng-disabled="form.readonly" class="schema-form-fieldset {{form.htmlClass}}">\n          <legend ng-click="form.toggleCollapse(form)"\n                  ng-class="{\'sr-only\': !showTitle(), collapsible: form.collapsible}"\n                  ng-mouseenter="form.render = true">\n            <i ng-show="form.collapsible"\n               class="fa fa-caret-{{form.collapsed ? \'right\' : \'down\'}}"></i>\n            {{ form.title }}\n          </legend>\n          <div class="help-block" ng-show="form.description" ng-bind-html="form.description"></div>\n          <div collapse="form.collapsed">\n            <div ng-if="form.render">\n              <sf-decorator ng-repeat="item in form.items" form="item"/>\n            </div>\n          </div>\n        </fieldset>');
+    $templateCache.put('app/components/cn-flex-form/forms/cn-fieldset.html', '\n        <fieldset ng-disabled="form.readonly" class="schema-form-fieldset {{form.htmlClass}}">\n          <legend ng-click="form.toggleCollapse(form)"\n                  ng-class="{\'sr-only\': !showTitle(), collapsible: form.collapsible}"\n                  ng-mouseenter="form.render = true">\n            <i ng-show="form.collapsible"\n               class="fa fa-caret-{{form.collapsed ? \'right\' : \'down\'}}"></i>\n            {{ form.title }}\n          </legend>\n          <div class="help-block" ng-show="form.description" ng-bind-html="form.description"></div>\n          <div uib-collapse="form.collapsed">\n            <div ng-if="form.render">\n              <sf-decorator ng-repeat="item in form.items" form="item"/>\n            </div>\n          </div>\n        </fieldset>');
 
     $templateCache.put('app/components/cn-flex-form/forms/cn-mediaupload.html', '\n        <div class="form-group {{form.htmlClass}}"\n             ng-class="{\'has-error\': hasError(), \'has-success\': hasSuccess()}">\n          <label class="control-label"\n                 ng-show="showTitle()"\n                 for="{{form.key && form.key[0]}}">{{form.title}}</label>\n          <media-upload ng-model="$$value$$"\n                        cn-file-type="form.fileType"\n                        cn-upload-path="form.uploadPath"\n                        cn-data="form.data"\n                        cn-preview-path="form.previewPath"\n                        cn-model-value-key="form.modelValueKey"\n                        ng-model-options="form.ngModelOptions"\n                        sf-changed="form"\n                        schema-validate="form"\n                        ff-form="form"\n                        class="clearfix">\n          </media-upload>\n          <span class="help-block" sf-message="form.description"></span>\n       </div>');
 

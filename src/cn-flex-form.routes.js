@@ -19,18 +19,18 @@
       // nothing to do here, but required
     }
 
-    function addStates(options) {
+    function addStates({ permissions, name }) {
       const shared = {
         controller: 'FlexFormModalLoader',
         controllerAs: 'vm',
-        permissions: options.permissions
+        permissions
       };
       $stateProvider
-          .state(`${options.name}.page.modal`, {
+          .state(`${name}.page.modal`, {
             url: '/~:modal/:modalId',
             ...shared
           })
-          .state(`${options.name}.page.modalParams`, {
+          .state(`${name}.page.modalParams`, {
             url: '/~:modal/:modalId/:restParams',
             ...shared
           });
