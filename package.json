@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "description": "Flex Form library by CitizenNet",
   "main": "index.js",
+  "watch": {
+    "test": "dist/test.js",
+    "build": "{src,test}/*.js"
+  },
   "scripts": {
-    "test": "test"
+    "test": "tape dist/test.js | faucet",
+    "build": "webpack --bail --progress --profile --color",
+    "watch": "npm-watch"
   },
   "repository": {
     "type": "git",
@@ -17,23 +23,35 @@
   },
   "homepage": "https://github.com/citizennet/cn-flex-form#readme",
   "devDependencies": {
+    "angular": "^1.6.1",
+    "angular-mocks": "^1.6.1",
+    "angular-schema-form": "https://github.com/citizennet/angular-schema-form.git#master",
+    "angular-ui-router": "https://github.com/citizennet/ui-router.git#^0.2.20",
+    "angular-ui-sortable": "^0.16.1",
+    "babel-core": "^6.21.0",
+    "babel-loader": "^6.2.10",
     "babel-plugin-transform-object-rest-spread": "^6.20.2",
-    "babel-preset-es2015": "^6.5.0",
+    "babel-preset-es2015": "^6.9.0",
+    "cn-datetimepicker": "https://github.com/citizennet/cn-datetimepicker.git#master",
+    "cn-tags-input": "https://github.com/citizennet/cn-tags-input.git#master",
+    "cn-util": "https://github.com/citizennet/cn-util.git#master",
+    "eslint": "^3.13.1",
+    "eslint-loader": "^1.6.1",
+    "faucet": "^0.0.1",
     "gulp": "^3.9.0",
     "gulp-babel": "^6.1.2",
     "gulp-concat": "^2.6.0",
     "gulp-eslint": "^3.0.1",
-    "gulp-jasmine": "^2.3.0",
-    "gulp-karma": "0.0.5",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^1.6.0",
     "gulp-uglify": "^1.4.2",
-    "jasmine-core": "^2.4.1",
-    "karma": "^0.13.21",
-    "karma-jasmine": "^0.3.7",
-    "karma-phantomjs-launcher": "^1.0.0",
-    "karma-spec-reporter": "0.0.24",
-    "ng-describe": "^1.6.0",
-    "phantomjs-prebuilt": "^2.1.4"
-  }
+    "lodash": "^4.17.4",
+    "npm-watch": "^0.1.7",
+    "objectpath": "^1.2.1",
+    "tape": "^4.6.3",
+    "webpack": "^1.14.0",
+    "webpack-dev-server": "^1.16.2",
+    "webpack-node-externals": "^1.5.4"
+  },
+  "dependencies": {}
 }

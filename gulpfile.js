@@ -7,7 +7,7 @@ var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
 var sourcemaps = require('gulp-sourcemaps');
-var karma = require('gulp-karma');
+var karma = require('karma').Server;
 var babel = require('gulp-babel');
 
 // Lint Task
@@ -21,21 +21,11 @@ gulp.task('lint', function() {
 });
 
 // Test
-gulp.task('test', function() {
-  // Be sure to return the stream
-  // NOTE: Using the fake './foobar' so as to run the files
-  // listed in karma.conf.js INSTEAD of what was passed to
-  // gulp.src !
-  return gulp.src('./foobar')
-      .pipe(karma({
-        configFile: 'karma.conf.js',
-        action: 'run'
-      }))
-      .on('error', function(err) {
-        // Make sure failed tests cause gulp to exit non-zero
-        console.log(err);
-        this.emit('end'); //instead of erroring the stream, end it
-      });
+gulp.task('test', function(done) {
+  new karma({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: true
+  }, done).start();
 });
 
 // Concatenate & Transpile JS
