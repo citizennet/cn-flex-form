@@ -50,13 +50,9 @@ const fieldPropHandlers = [{
   handler: (field, service) => service.registerHandler(field, null, field.updateSchema)
 }];
 
-cnFlexFormServiceProvider.$inject = [
-  'schemaFormDecoratorsProvider',
-  'cnFlexFormTypesProvider'
-];
+function cnFlexFormServiceProvider(schemaFormDecoratorsProvider, cnFlexFormTypesProvider) {
+  'ngInject';
 
-function cnFlexFormServiceProvider(schemaFormDecoratorsProvider,
-                                   cnFlexFormTypesProvider) {
   return {
     registerField,
     $get: CNFlexFormService
@@ -90,16 +86,22 @@ function cnFlexFormServiceProvider(schemaFormDecoratorsProvider,
   }
 }
 
-CNFlexFormService.$inject = [
-  'Api', '$parse', 'cnFlexFormConfig', 'cnFlexFormTypes', 'sfPath',
-  '$interpolate', '$rootScope', '$timeout', 'cnUtil', '$stateParams'
-];
+function CNFlexFormService(
+  Api,
+  $parse,
+  cnFlexFormConfig,
+  cnFlexFormTypes,
+  sfPath,
+  $interpolate,
+  $rootScope,
+  $timeout,
+  cnUtil,
+  $stateParams
+) {
+  'ngInject';
 
-function CNFlexFormService(Api, $parse, cnFlexFormConfig, cnFlexFormTypes, sfPath,
-                           $interpolate, $rootScope, $timeout, cnUtil, $stateParams) {
-
-  var services = [];
-  var prototype = {
+  const services = [];
+  const prototype = {
     compile,
     addArrayCopy,
     addToDataCache,

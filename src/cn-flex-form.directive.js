@@ -25,8 +25,9 @@ function cnFlexForm() {
   };
 }
 
-FlexForm.$inject = ['cnFlexFormService', '$scope', '$location'];
 function FlexForm(cnFlexFormService, $scope, $location) {
+  'ngInject';
+
   var vm = this;
   vm.service = undefined;
   vm.events = [];

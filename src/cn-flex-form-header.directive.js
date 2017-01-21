@@ -66,9 +66,10 @@ function cnFlexFormHeader() {
   };
 }
 
-FlexFormHeader.$inject = ['$scope'];
 function FlexFormHeader($scope) {
-  var vm = this;
+  'ngInject';
+
+  const vm = this;
 
   vm.updateData = updateData;
   vm.isDisabled = isDisabled;

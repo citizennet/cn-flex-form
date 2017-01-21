@@ -1,12 +1,10 @@
-cnFlexFormRoutesProvider.$inject = ['$stateProvider'];
-
 function cnFlexFormRoutesProvider($stateProvider) {
-  var provider = {
-    addStates: addStates,
+  'ngInject';
+
+  return {
+    addStates,
     $get
   };
-
-  return provider;
 
   ////////////
 
@@ -32,8 +30,8 @@ function cnFlexFormRoutesProvider($stateProvider) {
   }
 }
 
-cnFlexFormRoutes.$inject = ['$stateProvider'];
 function cnFlexFormRoutes($stateProvider) {
+  'ngInject';
 
   $stateProvider
       .state('flex-form-sandbox', {

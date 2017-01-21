@@ -1,11 +1,9 @@
 function cnFlexFormConfigProvider() {
 
-  cnFlexFormConfig.$inject = ['$stateParams'];
-
-  var ignoreParams = ['page', 'debug', 'sandbox', 'modal', 'modalId'];
+  const ignoreParams = ['page', 'debug', 'sandbox', 'modal', 'modalId'];
 
   return {
-    addIgnoreParam: addIgnoreParam,
+    addIgnoreParam,
     $get: cnFlexFormConfig
   };
 
@@ -16,6 +14,8 @@ function cnFlexFormConfigProvider() {
   }
 
   function cnFlexFormConfig($stateParams) {
+    'ngInject';
+
     return {
       getStateParams,
       ignoreParams

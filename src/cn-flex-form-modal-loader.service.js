@@ -19,7 +19,6 @@ function getPromise(state, id, $q) {
 }
 
 function cnFlexFormModalLoaderServiceProvider() {
-  parent.$inject = ['$stateParams', '$q'];
 
   return {
     addMapping,
@@ -34,6 +33,8 @@ function cnFlexFormModalLoaderServiceProvider() {
   }
 
   function parent($stateParams, $q) {
+    'ngInject';
+
     return (
       getPromise($stateParams.modal, $stateParams.modalId, $q)
       .promise
@@ -42,9 +43,8 @@ function cnFlexFormModalLoaderServiceProvider() {
   }
 }
 
-cnFlexFormModalLoaderService.$inject = ['$stateParams', '$q'];
-
 function cnFlexFormModalLoaderService($stateParams, $q) {
+  'ngInject';
 
   return {
     getMapping,

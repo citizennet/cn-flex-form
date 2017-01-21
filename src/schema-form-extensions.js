@@ -2,9 +2,9 @@
     //.config(schemaFormConfig)
     //.run(addTemplates);
 
-schemaFormConfig.$inject = ['cnFlexFormServiceProvider'];
-
 function schemaFormConfig(cnFlexFormServiceProvider) {
+  'ngInject';
+
   tv4.addFormat({
     'url': data => _.isString(data) && !/^(https?:\/\/.{2}|$)/.test(data) && 'invalid url'
   });
@@ -34,9 +34,9 @@ function schemaFormConfig(cnFlexFormServiceProvider) {
   });
 }
 
-addTemplates.$inject = ['$templateCache'];
-
 function addTemplates($templateCache) {
+  'ngInject';
+
   $templateCache.put(
       'app/components/cn-flex-form/forms/cn-toggle.html',
       `

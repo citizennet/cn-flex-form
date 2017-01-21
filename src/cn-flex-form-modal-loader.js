@@ -1,8 +1,5 @@
-FlexFormModalLoader.$inject = [
-  'FlexFormModal', '$state', '$rootScope', '$stateParams'
-];
-
 function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
+  'ngInject';
 
   const vm = this;
 
@@ -34,8 +31,8 @@ function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
   }
 }
 
-FlexFormModal.$inject = ['cnFlexFormModalLoaderService', '$uibModal', '$stateParams'];
 function FlexFormModal(cnFlexFormModalLoaderService, $uibModal, $stateParams) {
+  'ngInject';
 
   return { open };
 

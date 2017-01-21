@@ -21,7 +21,7 @@ const base = () => ({
   module: {
     loaders: [{
       test: /\.js$/,
-      loader: 'babel-loader!eslint-loader',
+      loader: 'ng-annotate!babel!eslint',
       exclude: /node_modules/
     }]
   },
