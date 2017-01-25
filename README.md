@@ -1,6 +1,8 @@
 # cn-flex-form
 Flex Form library by CitizenNet
 
+Todo...update this with better instructions
+
 # Installation
 
 ## 1. bower
