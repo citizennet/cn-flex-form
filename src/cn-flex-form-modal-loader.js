@@ -1,60 +1,59 @@
-(function() {
-  'use strict';
+function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
+  'ngInject';
 
-  angular
-      .module('cn.flex-form')
-      .controller('FlexFormModalLoader', FlexFormModalLoader)
-      .factory('FlexFormModal', FlexFormModal);
+  const vm = this;
 
-  FlexFormModalLoader.$inject = [
-    'FlexFormModal', '$state', '$rootScope', '$stateParams'
-  ];
-  function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
+  activate();
 
-    var vm = this;
-    console.log('FlexFormModalLoader:', $stateParams.modal);
+  //////////
 
-    activate();
+  function activate() {
+    FlexFormModal
+      .open(vm)
+      .then(({ modal, options: { onDismiss } }) => {
+        vm.modal = modal;
+        vm.modal.result.finally(goBack);
+        if(onDismiss) vm.modal.result.catch(() => onDismiss($stateParams.restParams));
+        vm.dismissEvent = $rootScope.$on('$stateChangeStart', dismissModal);
+      });
+  }
 
-    //////////
-
-    function activate() {
-      vm.modal = FlexFormModal.open(vm);
-      vm.modal.result.finally(goBack);
-
-      vm.dismiss = $rootScope.$on('$stateChangeStart', dismissModal);
-    }
-
-    function goBack() {
-      if (!$state.transition) {
-        $state.go('^');
-      }
-    }
-
-    function dismissModal() {
-      console.log('dismissModal:', arguments);
-      vm.dismiss();
-      vm.modal.dismiss();
+  function goBack() {
+    if(!$state.transition) {
+      $state.go('^');
     }
   }
 
-  FlexFormModal.$inject = ['cnFlexFormModalLoaderService', '$modal', '$stateParams'];
-  function FlexFormModal(cnFlexFormModalLoaderService, $modal, $stateParams) {
+  function dismissModal() {
+    console.log('dismissModal');
+    vm.dismissEvent();
+    vm.modal.dismiss();
+  }
+}
 
-    var instance = {
-      open: openModal
-    };
+function FlexFormModal(cnFlexFormModalLoaderService, $uibModal, $stateParams) {
+  'ngInject';
 
-    return instance;
+  return { open };
 
-    function openModal() {
-      var currentModal = cnFlexFormModalLoaderService.getMapping($stateParams.modal);
-      console.log('currentModal:', currentModal);
-
-      this.modal = $modal.open(currentModal);
-      return this.modal;
-    }
-
+  ////////////
+  
+  function open() {
+    return (
+      cnFlexFormModalLoaderService
+        .getMapping($stateParams.modal)
+        .then(({ state, options }) => ({
+          modal: $uibModal.open(state),
+          options 
+        }))
+    );
   }
 
-})();
+}
+
+//angular
+    //.module('cn.flex-form')
+    //.controller('FlexFormModalLoader', FlexFormModalLoader)
+    //.factory('FlexFormModal', FlexFormModal);
+
+export { FlexFormModalLoader, FlexFormModal };
