@@ -33,7 +33,7 @@
                  ui-sref="{{vm.config.actionConfig.returnState}}">
                 {{vm.config.actionConfig.returnText || 'Cancel'}}
               </a>
-              <a class="btn btn-default-dark"
+              <a class="btn {{vm.config.actionConfig.closeButton.style ? 'btn-'+vm.config.actionConfig.closeButton.style : 'btn-default-dark'}}"
                  ng-if="vm.config.actionConfig.closeButton"
                  ng-click="vm.config.actionConfig.closeButton.handler()">
                  Cancel
