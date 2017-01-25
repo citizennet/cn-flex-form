@@ -1,16 +1,16 @@
 function cnFlexForm() {
   return {
     restrict: 'E',
-    template: '\
-      <div ng-if="vm.showForm()">\
-        <ng-form name="{{vm.formName}}"\
-              sf-schema="vm.config.schema.schema"\
-              sf-form="vm.form"\
-              sf-model="vm.model"></ng-form>\
-        <!-- debug panel to display model -->\
-        <section ng-if="vm.debug"><pre pretty-json="vm.model"></pre></section>\
-      </div>\
-    ',
+    template: `
+      <div ng-if="vm.showForm()">
+        <ng-form name="{{vm.formName}}"
+              sf-schema="vm.config.schema.schema"
+              sf-form="vm.form"
+              sf-model="vm.model"></ng-form>
+        <!-- debug panel to display model -->
+        <section ng-if="vm.debug"><pre pretty-json="vm.model"></pre></section>
+      </div>
+    `,
     scope: {
       config: '=ffConfig',
       model: '=ffModel',

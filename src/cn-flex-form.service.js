@@ -111,6 +111,7 @@ function CNFlexFormService(
     cleanup,
     deregisterHandlers,
     deregisterArrayHandlers,
+    getArrayCopy,
     getArrayCopies,
     getArrayCopiesFor,
     getArrayScopes,
@@ -386,7 +387,6 @@ function CNFlexFormService(
     return key;
   }
 
-
   function getSchema(key, depth) {
     var service = this;
     if(!key) return;
@@ -437,7 +437,7 @@ function CNFlexFormService(
     let replaceStr = '';
 
     while(nested) {
-      if(/^\d+$/.test(nested[1])) {
+      if(/^-?\d+$/.test(nested[1])) {
         replaceStr = nested[0];
         exp = exp.replace(nested[0], 'ff_replace_ff');
       }
@@ -458,21 +458,20 @@ function CNFlexFormService(
 
     _.each(field.resolve, function(dataProp, fieldProp) {
       dataProp = replaceArrayIndex(dataProp, key);
-      console.log(':::: dataProp ::::', dataProp, key);
       if(dataProp.includes('[arrayIndex]')) return;
 
       service.handleResolve(field, fieldProp, dataProp);
 
       getWatchables(dataProp).forEach((watchable) => {
-        const resolveType = watchable.match(/(schema\.data\.|model\.)(\w+)/);
+        const resolveType = watchable.match(/(schema\.data\.|model\.)(\S+)/);
 
         if(resolveType) {
           if(resolveType[1] === 'schema.data.') {
-            service.registerResolve(field, fieldProp, resolveType[2]);
+            service.registerResolve(field, fieldProp, resolveType[2], dataProp);
           }
           else if(resolveType[1] === 'model.') {
             service.registerHandler(resolveType[2], () => {
-              service.handleResolve(field, fieldProp, watchable);
+              service.handleResolve(field, fieldProp, dataProp);
             });
           }
         }
@@ -491,7 +490,7 @@ function CNFlexFormService(
       const cachedField = service.getFromFormCache(key);
       
       if(cachedField && cachedField.default) data = cachedField.default;
-      else data = service.getSchema(key).default;
+      else data = field.default || service.getSchema(key).default;
     }
     if(data && data.cursor) {
       field.loadMore = function() {
@@ -509,7 +508,7 @@ function CNFlexFormService(
     );
   }
 
-  function registerResolve(field, fieldProp, dataProp) {
+  function registerResolve(field, fieldProp, dataProp, exp) {
     var service = this;
 
     let fieldKey = service.getKey(field.key);
@@ -517,16 +516,14 @@ function CNFlexFormService(
 
     let register = service.resolveRegister[dataProp];
     register[fieldKey] = register[fieldKey] || [];
-    register[fieldKey].push({
-      field: field,
-      prop: fieldProp
-    });
+    register[fieldKey].push({ field, prop: fieldProp, exp });
   }
 
   function processConditional(field) {
-    var service = this;
+    const service = this;
+
     _.each(field.conditionals, (condition, key) => {
-      let handler = (val, prev) => {
+      const handler = (val, prev) => {
         field[key] = service.parseCondition(condition);
         if(key === 'required') {
           $rootScope.$broadcast('schemaFormValidate');
@@ -544,8 +541,8 @@ function CNFlexFormService(
   }
 
   function processFieldWatch(field) {
-    var service = this,
-        schema = field.schema;
+    const service = this;
+    let schema = field.schema;
 
     field.watch = _.isArray(field.watch) ? field.watch : [field.watch];
 
@@ -868,16 +865,19 @@ function CNFlexFormService(
   }
 
   function initArrayCopyWatch() {
-    var service = this;
+    const service = this;
 
     service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
-      var key = service.getKey(scope.form.key);
-      var index = key.match(/^.*\[(\d+)].*$/);
+      let key = service.getKey(scope.form.key);
+      let index = key.match(/^.*\[(\d+)].*$/);
 
       key = key.replace(/\[\d+]/g, '[]');
       index = index && parseInt(index[1]);
 
-      service.processFieldProps(scope.form);
+      if(!service.getArrayCopy(key, index)) {
+        service.processFieldProps(scope.form);
+      }
+
       if(!scope.form.condition) scope.form.condition = 'true';
 
       service.addArrayCopy(scope, key, index);
@@ -885,12 +885,14 @@ function CNFlexFormService(
     }));
 
     service.events.push($rootScope.$on('schemaFormDeleteScope', function(event, scope, index) {
-      var key = service.getKey(scope.form.key).replace(/\[\d+]/g, '[]');
-      var copies = service.getArrayCopiesFor(key);
+      const key = service.getKey(scope.form.key);
+      const listener = service.listeners[key];
+      if(listener) listener.handlers = [];
 
-      copies.forEach((list) => {
-        list.splice(index, 1);
-      });
+      const unindexedKey = key.replace(/\[\d+]/g, '[]');
+      const copies = service.getArrayCopiesFor(unindexedKey);
+
+      copies.forEach((list) => list.splice(index, 1));
 
       if(scope.form.link) {
         var list = service.parseExpression(scope.form.link, service.model).get();
@@ -905,6 +907,12 @@ function CNFlexFormService(
     if(!service.arrayCopies[key]) service.arrayCopies[key] = [];
     service.arrayCopies[key][index] = form;
     //service.arrayCopies[key].push(form);
+  }
+
+  function getArrayCopy(key, index) {
+    const service = this;
+    const copies = service.arrayCopies[key];
+    return copies && copies[index];
   }
 
   function getArrayCopies(key) {
@@ -1592,7 +1600,7 @@ function CNFlexFormService(
           if(service.resolveRegister[prop]) {
             _.each(service.resolveRegister[prop], (registers) => {
               registers.forEach(register => {
-                service.handleResolve(register.field, register.prop, `schema.data.${prop}`);
+                service.handleResolve(register.field, register.prop, register.exp);
               });
             });
           }
@@ -1676,7 +1684,10 @@ function CNFlexFormService(
     // that has been addressed from the angular-schema-form library
     // if there's another issue, try triggering the specific action required
     // instead of redrawing the whole form
-    if(redraw && current.redraw) current.redraw();
+    if(redraw && current.redraw) {
+      console.log('TODO: see if this can be removed'); 
+      current.redraw();
+    }
   }
 
   function reprocessSchema(schema, key, keys) {
@@ -1716,7 +1727,6 @@ function CNFlexFormService(
     const arrayIndexKey = /([^.[]*)\[arrayIndex\]/.exec(resolve);
     const re = new RegExp(arrayIndexKey[1] + '\\[(-?\\d+)\\]');
     const index = re.exec(key);
-    console.log('re, index:', re, index, key);
     if(!index) return resolve;
     return resolve.replace(new RegExp(arrayIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
   }

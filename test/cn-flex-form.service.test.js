@@ -39,9 +39,12 @@ test('getWatchables', (t) => {
   t.looseEqual(ff.getWatchables('schema.data[0].boz'), ['schema.data[0].boz'], 'array watchable');
   t.looseEqual(ff.getWatchables('schema.data[model.foo[0]].boz'), ['model.foo[0]', 'schema.data'],
     'nested array watchables');
-  t.looseEqual(ff.getWatchables('schema.data[model.foo[model.bar[0]]].boz'),
-    ['model.bar[0]', 'model.foo', 'schema.data'],
+  t.looseEqual(ff.getWatchables('schema.data[model.foo[model.bar[0].biz]].boz'),
+    ['model.bar[0].biz', 'model.foo', 'schema.data'],
     'deeply nested array watchables');
+  t.looseEqual(ff.getWatchables('schema.data[model.foo[model.bar[-1].biz]].boz'),
+    ['model.bar[-1].biz', 'model.foo', 'schema.data'],
+    'deeply nested array watchables with negative index');
   t.end();
 });
 
@@ -55,3 +58,14 @@ test('replaceArrayIndex', (t) => {
   t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 'foo[].fiz'), 'foo[arrayIndex].bar', 'no key index');
   t.end();
 });
+
+// don't need this
+//test('isInArray', (t) => {
+  //t.false(ff.isInArray({ key: 'foo' }), 'is not array item');
+  //t.true(ff.isInArray({ key: 'foo[]' }), 'is array item');
+  //t.true(ff.isInArray({ key: 'foo[].bar' }), 'is array item prop');
+  //t.false(ff.isInArray({ items: [{ key: 'foo' }] }), 'is not array nested item');
+  //t.true(ff.isInArray({ items: [{ key: 'foo[].bar' }] }), 'is array nested item');
+  //t.true(ff.isInArray({ items: [{ items: [] }, { key: 'foo[].bar' }] }), 'is array nested sibling item');
+  //t.true(ff.isInArray({ items: [{ items: [{ key: 'foo[].bar' }] }] }), 'is array deeply nested item');
+//});
