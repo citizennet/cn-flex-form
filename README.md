@@ -11,9 +11,9 @@ Add any test to the `/test` folder, it is recommended to write tests before addi
 
 You can use a watch script to automatically build and test your files when any are modified.
 
-    npm run watch
+    yarn run watch
 
-Alternatively you can individually run `npm run test` or `npm run build` to run either script independently, though it
+Alternatively you can individually run `yarn run test` or `yarn run build` to run either script independently, though it
 is not recommended to ever build without making sure all tests pass.
 
 ## Installation
