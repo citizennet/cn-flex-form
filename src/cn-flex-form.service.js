@@ -814,7 +814,6 @@ function CNFlexFormService(
       cnUtil.cleanModel(service.model);
 
       service.prevParams = angular.copy(service.params);
-      service.params = cnFlexFormConfig.getStateParams();
 
       _.each(service.arrayListeners, (listener, key) => {
         let val = service.parseExpression(key, service.model).get();
@@ -837,6 +836,9 @@ function CNFlexFormService(
           }
           if(listener.updateSchema && !angular.isUndefined(val) && !isInitArray && val !== null) {
             service.params[key] = val;
+          }
+          else {
+            delete service.params[key];
           }
         }
       });
