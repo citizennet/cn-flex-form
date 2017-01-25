@@ -1,12 +1,12 @@
 # cn-flex-form
 Flex Form library by CitizenNet
 
-# Contributing
+## Contributing
 To get started run to download all dependencies:
 
     yarn install
 
-## Testing & Development
+### Testing & Development
 Add any test to the `/test` folder, it is recommended to write tests before adding or modifying any methods.
 
 You can use a watch script to automatically build and test your files when any are modified.
@@ -16,9 +16,9 @@ You can use a watch script to automatically build and test your files when any a
 Alternatively you can individually run `npm run test` or `npm run build` to run either script independently, though it
 is not recommended to ever build without making sure all tests pass.
 
-# Installation
+## Installation
 
-## Dependencies
+### Dependencies
 This library depends on a few others that you'll have to import into your scripts or include in your build, they are:
 
     https://github.com/citizennet/cn-util.git
@@ -27,7 +27,7 @@ This library depends on a few others that you'll have to import into your script
     https://github.com/citizennet/angular-schema-form.git
 
 
-## Using
+### Using
 Add it as a dependency for your angular app:
 
     angular.module("yourapp", ["cn.flex-form"]);
