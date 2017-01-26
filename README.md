@@ -1,49 +1,38 @@
 # cn-flex-form
 Flex Form library by CitizenNet
 
-# Installation
+## Contributing
+To get started run to download all dependencies:
 
-## 1. bower
-To get started, install CitizenNet's `cn-util`, `cn-datetimepicker`, `cn-tags-input`, `angular-schema-form` fork
-and `cn-flex-form`:
+    yarn install
 
-    bower install https://github.com/citizennet/cn-util.git#master --save-dev
-    bower install https://github.com/citizennet/cn-datetimepicker.git#master --save-dev
-    bower install https://github.com/citizennet/cn-tags-input.git#master --save-dev
-    bower install https://github.com/citizennet/angular-schema-form.git#master --save-dev
-    bower install https://github.com/citizennet/cn-flex-form.git#master --save-dev
+### Testing & Development
+Add any test to the `/test` folder, it is recommended to write tests before adding or modifying any methods.
 
-## 2. grunt/gulp
-Make sure to add the necessary files to your `grunt` or `gulp` build.
-For `cn-util` you'll want:
+You can use a watch script to automatically build and test your files when any are modified.
 
-    "dist/all.min.js"
+    yarn run watch
 
-For `cn-datetimepicker` you'll want:
+Alternatively you can individually run `yarn run test` or `yarn run build` to run either script independently, though it
+is not recommended to ever build without making sure all tests pass.
 
-    "dist/all.min.js"
+## Installation
 
-For `cn-tags-input` you'll want:
+### Dependencies
+This library depends on a few others that you'll have to import into your scripts or include in your build, they are:
 
-    "dist/all.min.js"
-
-For `angular-schema-form`:
-
-    "dist/schema-form.min.js",
-    "dist/bootstrap-decorator.min.js"
+    https://github.com/citizennet/cn-util.git
+    https://github.com/citizennet/cn-datetimepicker.git
+    https://github.com/citizennet/cn-tags-input.git
+    https://github.com/citizennet/angular-schema-form.git
 
 
-And for `cn-flex-form`:
-
-    "dist/all.min.js"
-
-## 3. angular
-And last be sure to add it as a dependency for your angular app:
+### Using
+Add it as a dependency for your angular app:
 
     angular.module("yourapp", ["cn.flex-form"]);
 
-# Usage
-Controller:
+Define the form config in your controller:
 
     vm.config = {
         formCtrl: vm.ffForm,
@@ -51,7 +40,7 @@ Controller:
         getSchema: vm.getSchema
     };
 
-Template:
+Invoke the form in your template:
 
     <div name="{{vm.ffForm}}">
         <cn-flex-form

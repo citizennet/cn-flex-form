@@ -1,45 +1,43 @@
-(function() {
-  'use strict';
-  angular
-      .module('cn.flex-form')
-      .provider('cnFlexFormConfig', cnFlexFormConfigProvider);
+function cnFlexFormConfigProvider() {
 
-  function cnFlexFormConfigProvider() {
+  const ignoreParams = ['page', 'debug', 'sandbox', 'modal', 'modalId'];
 
-    cnFlexFormConfig.$inject = ['$stateParams'];
+  return {
+    addIgnoreParam,
+    $get: cnFlexFormConfig
+  };
 
-    var ignoreParams = ['page', 'debug', 'sandbox', 'modal', 'modalId'];
+  ////////
+
+  function addIgnoreParam(param) {
+    ignoreParams.push(param);
+  }
+
+  function cnFlexFormConfig($stateParams) {
+    'ngInject';
 
     return {
-      addIgnoreParam: addIgnoreParam,
-      $get: cnFlexFormConfig
+      getStateParams,
+      ignoreParams
     };
 
     ////////
 
-    function addIgnoreParam(param) {
-      ignoreParams.push(param);
+    function getStateParams() {
+      return _
+          .chain($stateParams)
+          .omit(ignoreParams)
+          .omit(function(v) {
+            return _.isUndefined(v) || _.isNull(v);
+          })
+          .value();
     }
-
-    function cnFlexFormConfig($stateParams) {
-      return {
-        getStateParams,
-        ignoreParams
-      };
-
-      ////////
-
-      function getStateParams() {
-        return _
-            .chain($stateParams)
-            .omit(ignoreParams)
-            .omit(function(v) {
-              return _.isUndefined(v) || _.isNull(v);
-            })
-            .value();
-      }
-    }
-
   }
 
-})();
+}
+
+//angular
+    //.module('cn.flex-form')
+    //.provider('cnFlexFormConfig', cnFlexFormConfigProvider);
+
+export default cnFlexFormConfigProvider;
