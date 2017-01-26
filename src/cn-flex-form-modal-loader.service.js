@@ -63,8 +63,8 @@
     function resolveMapping(state, id, parent, options = {}) {
       const { scope } = options;
       if(scope) {
-        scope.options = scope.options || {};
-        scope.options.destroyStrategy = 'retain';
+        //scope.options = scope.options || {};
+        //scope.options.destroyStrategy = 'retain';
         modalMap[state].scope = scope;
       }
       const d = getPromise(state, id, $q);
