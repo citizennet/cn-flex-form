@@ -278,8 +278,13 @@ function CNFlexFormService(
     const service = this;
     const { schema } = field;
     const curDefault = field.default || schema.default;
-
     const key = service.getKey(field.key);
+    
+    // if default is returned for new form, treat it as a previous param in order to not trigger unnecessary updateSchema
+    if(!service.updates && field.updateSchema && angular.isDefined(curDefault) && !service.schema.params[key]) {
+      service.schema.params[key] = curDefault;
+    }
+
     // if schemaUpdate hasn't been triggered, let schemaForm directive handle defaults
     if(service.updates || field.default) {
       if(key.includes && key.includes('[]')) return;
@@ -543,8 +548,9 @@ function CNFlexFormService(
 
   function processFieldWatch(field) {
     const service = this;
-    let schema = field.schema;
+    if(!field.watch) return;
 
+    let schema = field.schema;
     field.watch = _.isArray(field.watch) ? field.watch : [field.watch];
 
     _.each(field.watch, function(watch) {
