@@ -106,6 +106,7 @@ function CNFlexFormService(
     addArrayCopy,
     addToDataCache,
     addToFormCache,
+    addToScopeCache,
     broadcastErrors,
     buildError,
     cleanup,
@@ -115,8 +116,10 @@ function CNFlexFormService(
     getArrayCopies,
     getArrayCopiesFor,
     getArrayScopes,
+    getDefault,
     getFromDataCache,
     getFromFormCache,
+    getFromScopeCache,
     getKey,
     getSchema,
     getWatchables,
@@ -200,6 +203,7 @@ function CNFlexFormService(
     this.errors = [];
     this.events = [];
     this.formCache = {};
+    this.scopeCache = {};
     this.listeners = {};
     this.resolveRegister = {};
     this.model = model;
@@ -391,20 +395,8 @@ function CNFlexFormService(
     var service = this;
     if(!key) return;
 
-    key = service.getKey(key);
-
-    //key = key.split('.');
-    //key = key
-    //    .replace(/arrayIndex/g, '')
-    //    .replace(/(\[')([^.]+)\.([^.]+)('])/g, '.$2%ff_dt%$3')
-    //    .replace(/\./g, '%ff_sp%')
-    //    .replace(/%ff_dt%/g, '.')
-    //    .split('%ff_sp%');
-    key = ObjectPath.parse(key);
+    key = ObjectPath.parse(service.getKey(key));
     depth = depth || service.schema.schema.properties;
-
-    // why do we do this? it's breaking stuff
-    //if(_.last(key) === '') key.pop();
 
     let first, next;
 
@@ -429,6 +421,14 @@ function CNFlexFormService(
     first = key[0] || 'items';
 
     return depth[first];
+  }
+
+  function getDefault(field) {
+    const service = this;
+    console.log(':: getDefault ::', field);
+    field = field.key ? field : service.getFromFormCache(field);
+    console.log(':: getDefault ::', field);
+    return field && (angular.isDefined(field.default) ? field.default : field.schema && field.schema.default);
   }
 
   function getWatchables(exp) {
@@ -525,7 +525,8 @@ function CNFlexFormService(
     _.each(field.conditionals, (condition, key) => {
       const handler = (val, prev) => {
         field[key] = service.parseCondition(condition);
-        if(key === 'required') {
+        const scope = service.getFromScopeCache(service.getKey(field.key));
+        if(key === 'required' && scope) {
           $rootScope.$broadcast('schemaFormValidate');
         }
       };
@@ -834,7 +835,11 @@ function CNFlexFormService(
             listener.trigger = null;
             listener.prev = angular.copy(val);
           }
-          if(listener.updateSchema && !angular.isUndefined(val) && !isInitArray && val !== null) {
+          if(listener.updateSchema && 
+            !angular.isUndefined(val) &&
+            !isInitArray &&
+            val !== null/* &&
+            !angular.equals(val, service.getDefault(key))*/) {
             service.params[key] = val;
           }
           else {
@@ -873,17 +878,22 @@ function CNFlexFormService(
       let key = service.getKey(scope.form.key);
       let index = key.match(/^.*\[(\d+)].*$/);
 
-      key = key.replace(/\[\d+]/g, '[]');
-      index = index && parseInt(index[1]);
+      if(index) {
+        key = key.replace(/\[\d+]/g, '[]');
+        index = index && parseInt(index[1]);
 
-      if(!service.getArrayCopy(key, index)) {
-        service.processFieldProps(scope.form);
+        if(!service.getArrayCopy(key, index)) {
+          service.processFieldProps(scope.form);
+        }
+
+        if(!scope.form.condition) scope.form.condition = 'true';
+
+        service.addArrayCopy(scope, key, index);
+        scope.$emit('flexFormArrayCopyAdded', key);
       }
-
-      if(!scope.form.condition) scope.form.condition = 'true';
-
-      service.addArrayCopy(scope, key, index);
-      scope.$emit('flexFormArrayCopyAdded', key);
+      else {
+        service.addToScopeCache(scope, key);
+      }
     }));
 
     service.events.push($rootScope.$on('schemaFormDeleteScope', function(event, scope, index) {
@@ -932,6 +942,19 @@ function CNFlexFormService(
   function getArrayScopes(key) {
     var service = this;
     return service.arrayCopies[key];
+  }
+
+  function addToScopeCache(scope, key) {
+    const service = this;
+    if(service.scopeCache[key]) {
+      console.warn('caching duplicate scope for', key);
+    }
+    return service.scopeCache[key] = scope;
+  }
+
+  function getFromScopeCache(key) {
+    const service = this;
+    return service.scopeCache[key];
   }
 
   function addToFormCache(field, key) {
