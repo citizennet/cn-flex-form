@@ -26,7 +26,7 @@ function cnFlexFormHeader() {
                ui-sref="{{vm.config.actionConfig.returnState}}">
               {{vm.config.actionConfig.returnText || 'Cancel'}}
             </a>
-            <a class="btn btn-default-dark"
+            <a class="btn btn-{{vm.config.actionConfig.closeButton.style ? vm.config.actionConfig.closeButton.style : 'default-dark'}}"
                ng-if="vm.config.actionConfig.closeButton"
                ng-click="vm.config.actionConfig.closeButton.handler()">
                Cancel
