@@ -19,6 +19,7 @@ test('parseExpression', (t) => {
   t.equal(parse('foo.bar', { foo: { bar: 'baz' } }), 'baz', 'simple expression');
   t.equal(parse('foo[0].bar', { foo: [{ bar: 'baz' }] }), 'baz', 'complex expression');
   t.equal(parse('foo.bar[1]', { foo: { bar: ['hello', 'world'] } }), 'world', 'complex expression 2');
+  t.equal(parse('foo.bar["baz"]', { foo: { bar: { baz: 'hello' } } }), 'hello', 'complex expression 3');
   t.equal(parse('foo.bar[fiz.baz]', { foo: { bar: { a: 'hello', b: 'world' } }, fiz: { baz: 'b' } }),
     'world', 'nested complex expresion');
   t.equal(parse('foo.bar[fiz.baz[0].foz].boz', 

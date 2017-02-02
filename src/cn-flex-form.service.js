@@ -31,7 +31,7 @@ const fieldPropHandlers = [{
   handler: (field, service) => service.processResolve(field)
 }, {
   prop: 'watch',
-  handler: (field, service) => service.processFieldWatch(field)
+  handler: (field, service) => field.watch && service.processFieldWatch(field)
 }, {
   prop: 'type',
   handler: (field, service) => service.processFieldType(field)
@@ -1014,16 +1014,17 @@ function CNFlexFormService(
   function parseExpression(exp, depth) {
     const service = this;
     // if expression is specific value
-    if(!exp || /^(null|false|true|undefined|''|-?[0-9.]+|\[]|\{})$/.test(exp)) {
+    if(!exp || /^(null|false|true|undefined|'[^\']*'|"[^\"]*"|-?[0-9.]+|\[]|\{})$/.test(exp)) {
       return {
         "get": function() {
           if(!exp) return exp;
+          const isStr = exp.match(/"([^\"]*)"/) || exp.match(/'([^\']*)'/);
+          if(isStr) return isStr[1];
           switch(exp) {
             case 'null': return null;
             case 'false': return false;
             case 'true': return true;
             case 'undefined': return;
-            case '\'\'': return '';
             case '[]': return [];
             case '{}': return {};
             default: return parseFloat(exp);
