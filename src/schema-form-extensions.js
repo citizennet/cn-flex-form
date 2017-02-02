@@ -309,7 +309,10 @@ function addTemplates($templateCache) {
   $templateCache.put(
       'app/components/cn-flex-form/forms/cn-fieldset.html',
       `
-      <fieldset ng-disabled="form.readonly" class="schema-form-fieldset {{form.htmlClass}}">
+      <fieldset 
+        ng-disabled="form.readonly"
+        class="schema-form-fieldset {{form.htmlClass}}"
+        ng-class="{'borderless': form.pos === 0}">
         <legend ng-click="form.toggleCollapse(form)"
                 ng-class="{'sr-only': !showTitle(), collapsible: form.collapsible}"
                 ng-mouseenter="form.render = true">

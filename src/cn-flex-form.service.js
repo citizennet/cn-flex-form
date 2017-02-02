@@ -310,6 +310,9 @@ function CNFlexFormService(
     fieldset.type = 'cn-fieldset';
     fieldset.items.forEach(service.processField.bind(service));
 
+    if(_.has(fieldset, 'pos') && fieldset.pos === 0) {
+      fieldset.htmlClass = 'borderless';
+    }
     if(fieldset.collapsible) {
       fieldset.toggleCollapse = (fieldset) => {
         if(fieldset.collapsible) {
@@ -336,8 +339,12 @@ function CNFlexFormService(
     }
   }
 
-  function processField(field) {
+  function processField(field, pos) {
     const service = this;
+
+    if(angular.isDefined(pos)) {
+      field.pos = pos;
+    }
 
     if(!field._ogKeys) {
       field._ogKeys = _.without(_.keys(field), 'key', 'htmlClass');
