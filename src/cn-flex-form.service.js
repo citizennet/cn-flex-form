@@ -31,7 +31,7 @@ const fieldPropHandlers = [{
   handler: (field, service) => service.processResolve(field)
 }, {
   prop: 'watch',
-  handler: (field, service) => service.processFieldWatch(field)
+  handler: (field, service) => field.watch && service.processFieldWatch(field)
 }, {
   prop: 'type',
   handler: (field, service) => service.processFieldType(field)
