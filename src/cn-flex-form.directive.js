@@ -8,7 +8,7 @@ function cnFlexForm() {
               sf-form="vm.form"
               sf-model="vm.model"></ng-form>
         <!-- debug panel to display model -->
-        <section ng-if="vm.debug">
+        <section ng-if="vm.debug && vm.model">
           <json-explorer json-data="vm.model" collapsed="true"/>
           <!--pre pretty-json="vm.model"></pre-->
         </section>
