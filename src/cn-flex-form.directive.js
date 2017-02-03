@@ -3,12 +3,16 @@ function cnFlexForm() {
     restrict: 'E',
     template: `
       <div ng-if="vm.showForm()">
-        <ng-form name="{{vm.formName}}"
-              sf-schema="vm.config.schema.schema"
-              sf-form="vm.form"
-              sf-model="vm.model"></ng-form>
+        <ng-form 
+          class="clearfix"
+          name="{{vm.formName}}"
+          sf-schema="vm.config.schema.schema"
+          sf-form="vm.form"
+          sf-model="vm.model"/>
         <!-- debug panel to display model -->
-        <section ng-if="vm.debug"><pre pretty-json="vm.model"></pre></section>
+        <section ng-if="vm.debug">
+          <json-explorer json-data="vm.model || '...model not loaded yet'"/>
+        </section>
       </div>
     `,
     scope: {

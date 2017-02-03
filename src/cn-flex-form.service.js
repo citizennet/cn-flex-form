@@ -1069,7 +1069,12 @@ function CNFlexFormService(
         let resolved = service.resolveNestedExpressions(exp, depth);
         let path = ObjectPath.parse(resolved);
         let assignable = this.getAssignable();
-        assignable.obj[assignable.key] = val;
+        if(val === 'remove') {
+          delete assignable.obj[assignable.key];
+        }
+        else {
+          assignable.obj[assignable.key] = val;
+        }
         return val;
       },
 
