@@ -11,36 +11,36 @@ function cnFlexFormHeader() {
     controllerAs: 'vm',
     template: `
         <div class="col-md-6">
-          <h5 ng-if="vm.config.title.lead">{{::vm.config.title.lead}}</h5>
+          <h5 ng-if="vm.title.lead">{{::vm.title.lead}}</h5>
           <h1>
-            <i ng-show="vm.config.title.icon" class="{{vm.config.title.icon}}"/>
-            {{vm.config.title.main}}
+            <i ng-show="vm.title.icon" class="{{vm.title.icon}}"/>
+            {{vm.title.main}}
           </h1>
-          <h5 ng-if="vm.config.title.sub">{{::vm.config.title.sub}}</h5>
+          <h5 ng-if="vm.title.sub">{{::vm.title.sub}}</h5>
         </div>
-        <div class="{{vm.config.buttonContainerClass || 'page-action-btns'}}">
+        <div class="{{vm.buttonContainerClass || 'page-action-btns'}}">
           <div class="btn-options"
                ng-mouseover="vm.loadOffscreen()">
-            <a class="btn btn-default-dark"
-               ng-if="vm.config.actionConfig.returnState"
-               ui-sref="{{vm.config.actionConfig.returnState}}">
-              {{vm.config.actionConfig.returnText || 'Cancel'}}
+            <a class="btn btn-{{vm.returnStyle ? vm.returnStyle : 'default-dark'"
+               ng-if="vm.returnState"
+               ui-sref="{{vm.returnState}}">
+              {{vm.returnText || 'Cancel'}}
             </a>
-            <a class="btn btn-{{vm.config.actionConfig.closeButton.style ? vm.config.actionConfig.closeButton.style : 'default-dark'}}"
-               ng-if="vm.config.actionConfig.closeButton"
-               ng-click="vm.config.actionConfig.closeButton.handler()">
+            <a class="btn btn-{{vm.closeButton.style ? vm.closeButton.style : 'default-dark'}}"
+               ng-if="vm.closeButton"
+               ng-click="vm.closeButton.handler()">
                Cancel
             </a>
-            <span ng-repeat="button in vm.config.actionConfig.actions">
+            <span ng-repeat="button in vm.actions">
               <span ng-class="{'btn-group': button.options}">
-                <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}}"
+                <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}}"
                    ng-disabled="vm.isDisabled(button)"
                    ng-click="vm.submit({handler: button.handler})"
                    uib-tooltip="{{button.helptext}}"
                    uib-tooltip-placement="bottom"
                    ng-bind-html="button.text || 'Save'">
                 </a>
-                <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.config.actionConfig.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}} dropdown-toggle"
+                <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}} dropdown-toggle"
                         ng-disabled="vm.isDisabled(button)"
                         ng-show="button.options"
                         data-toggle="dropdown">
@@ -74,7 +74,20 @@ function FlexFormHeader($scope) {
   vm.updateData = updateData;
   vm.isDisabled = isDisabled;
 
+  activate();
+
   ///////////
+  
+  function activate() {
+    ({ title: vm.title } = vm.config);
+    ({
+      returnState: vm.returnState,
+      returnStyle: vm.returnStyle,
+      returnText: vm.returnText,
+      closeButton: vm.closeButton,
+      actions: vm.actions
+    } = vm.config.actionConfig);
+  }
 
   function updateData() {
     console.log('updateData:', updateData);
