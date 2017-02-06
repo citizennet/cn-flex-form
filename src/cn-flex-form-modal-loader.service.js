@@ -1,85 +1,84 @@
-(function() {
-  'use strict';
+const modalMap = {};
+const promiseMap = {};
 
-  angular
-      .module('cn.flex-form')
-      .provider('cnFlexFormModalLoaderService', cnFlexFormModalLoaderServiceProvider);
+function getPromises(state) {
+  if(promiseMap[state]) return promiseMap[state];
 
-  var modalMap = {};
-  var promiseMap = {};
+  const promise = {};
+  promiseMap[state] = promise;
+  return promise;
+}
 
-  function getPromises(state) {
-    var promises = promiseMap[state];
-    if(!promises) {
-      promises = {};
-      promiseMap[state] = promises;
-    }
-    return promises;
+function getPromise(state, id, $q) {
+  const promises = getPromises(state);
+  if(promises[id]) return promises[id];
+
+  const promise = $q.defer();
+  promises[id] = promise;
+  return promise;
+}
+
+function cnFlexFormModalLoaderServiceProvider() {
+
+  return {
+    addMapping,
+    $get: cnFlexFormModalLoaderService
+  };
+
+  ////////////
+
+  function addMapping(state, def) {
+    def.resolve = { parent };
+    modalMap[state] = def;
   }
 
-  function getPromise(state, id, $q) {
-    var promises = getPromises(state);
-    var promise = promises[id];
-    if(!promise) {
-      promise = $q.defer();
-      promises[id] = promise;
+  function parent($stateParams, $q) {
+    'ngInject';
+
+    return (
+      getPromise($stateParams.modal, $stateParams.modalId, $q)
+      .promise
+      .then(({ parent }) => parent)
+    );
+  }
+}
+
+function cnFlexFormModalLoaderService($stateParams, $q) {
+  'ngInject';
+
+  return {
+    getMapping,
+    resolveMapping
+  };
+
+  /////////////
+
+  function resolveMapping(state, id, parent, options = {}) {
+    const { scope } = options;
+    if(scope) {
+      //scope.options = scope.options || {};
+      //scope.options.destroyStrategy = 'retain';
+      modalMap[state].scope = scope;
     }
-    return promise;
+    const d = getPromise(state, id, $q);
+    d.resolve({ parent, options });
+    return d.promise;
   }
 
-  function getPromiseForResolve(state, id, $q) {
-    var promises = getPromises(state);
-    var promise = $q.defer();
-    promises[id] = promise;
-    return promise;
+  function getMapping(state) {
+    const d = $q.defer();
+    getPromise($stateParams.modal, $stateParams.modalId, $q)
+      .promise
+      .then(({ parent, options }) => {
+        d.resolve({ state: modalMap[state], options });
+        return parent;
+      });
+    return d.promise;
   }
+}
 
-  function cnFlexFormModalLoaderServiceProvider() {
+//angular
+    //.module('cn.flex-form')
+    //.provider('cnFlexFormModalLoaderService', cnFlexFormModalLoaderServiceProvider);
 
-    var provider = {
-      addMapping,
-      $get: cnFlexFormModalLoaderService
-    };
-
-    parent.$inject = ['$stateParams', '$q'];
-
-    return provider;
-
-    ////////////
-
-    function addMapping(state, def) {
-      def.resolve = {
-        parent: parent
-      };
-      modalMap[state] = def;
-    }
-
-    function parent($stateParams, $q) {
-      return getPromise($stateParams.modal, $stateParams.modalId, $q).promise;
-    }
-  }
-
-  cnFlexFormModalLoaderService.$inject = ['$q'];
-
-  function cnFlexFormModalLoaderService($q) {
-    var service = {
-      getMapping: getMapping,
-      resolveMapping: resolveMapping
-    };
-
-    return service;
-
-    /////////////
-
-    function resolveMapping(state, id, parent) {
-      var d = getPromiseForResolve(state, id, $q);
-      d.resolve(parent);
-      return d.promise;
-    }
-
-    function getMapping(state) {
-      return modalMap[state];
-    }
-  }
-
-})();
+export default cnFlexFormModalLoaderServiceProvider;
