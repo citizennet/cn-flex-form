@@ -475,14 +475,14 @@ function CNFlexFormService(
       service.handleResolve(field, fieldProp, dataProp);
 
       getWatchables(dataProp).forEach((watchable) => {
-        const resolveType = watchable.match(/(schema\.data\.|model\.)(\S+)/);
+        const [, base, exp] = watchable.match(/(schema\.data\.|model\.)(\S+)/) || [];
 
-        if(resolveType) {
-          if(resolveType[1] === 'schema.data.') {
-            service.registerResolve(field, fieldProp, resolveType[2], dataProp);
+        if(base) {
+          if(base === 'schema.data.') {
+            service.registerResolve(field, fieldProp, exp, dataProp);
           }
-          else if(resolveType[1] === 'model.') {
-            service.registerHandler(resolveType[2], () => {
+          else if(base === 'model.') {
+            service.registerHandler(exp, () => {
               service.handleResolve(field, fieldProp, dataProp);
             });
           }
@@ -888,21 +888,24 @@ function CNFlexFormService(
     const service = this;
 
     service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
-      let key = service.getKey(scope.form.key);
-      let index = key.match(/^.*\[(\d+)].*$/);
+      const { form } = scope;
+      if(!form.key) {
+        form.cacheKey = `${form.type}-${_.uniqueId()}`;
+      }
+      const key = form.cacheKey || service.getKey(form.key);
 
-      if(index) {
-        key = key.replace(/\[\d+]/g, '[]');
-        index = index && parseInt(index[1]);
+      if(scope.arrayIndex) {
+        const genericKey = key.replace(/\[\d+]/g, '[]');
+        const index = scope.arrayIndex;
 
-        if(!service.getArrayCopy(key, index)) {
-          service.processFieldProps(scope.form);
+        if(!service.getArrayCopy(genericKey, index)) {
+          service.processFieldProps(form);
         }
 
-        if(!scope.form.condition) scope.form.condition = 'true';
+        if(!form.condition) form.condition = 'true';
 
-        service.addArrayCopy(scope, key, index);
-        scope.$emit('flexFormArrayCopyAdded', key);
+        service.addArrayCopy(scope, genericKey, index);
+        scope.$emit('flexFormArrayCopyAdded', genericKey);
       }
       else {
         service.addToScopeCache(scope, key);
