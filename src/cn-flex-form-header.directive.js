@@ -86,7 +86,7 @@ function FlexFormHeader($scope) {
       returnText: vm.returnText,
       closeButton: vm.closeButton,
       actions: vm.actions
-    } = vm.config.actionConfig);
+    } = vm.config.actionConfig || {});
   }
 
   function updateData() {
