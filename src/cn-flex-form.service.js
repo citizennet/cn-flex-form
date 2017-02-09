@@ -440,9 +440,7 @@ function CNFlexFormService(
 
   function getDefault(field) {
     const service = this;
-    console.log(':: getDefault ::', field);
     field = field.key ? field : service.getFromFormCache(field);
-    console.log(':: getDefault ::', field);
     return field && (angular.isDefined(field.default) ? field.default : field.schema && field.schema.default);
   }
 
@@ -549,7 +547,6 @@ function CNFlexFormService(
     else {
       delete field.loadMore;
     }
-    console.log('::: resolve :::', exp, data);
     field[fieldProp] = (data && data.data) ? data.data : data;
 
     fieldPropHandlers.forEach(({ prop, handler }) => 
