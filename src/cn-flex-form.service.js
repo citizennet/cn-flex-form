@@ -24,6 +24,9 @@ const fieldTypeHandlers = {
 };
 
 const fieldPropHandlers = [{
+  prop: 'titleMap',
+  handler: (field, service) => service.processSelect(field)
+}, {
   prop: 'selectDisplay',
   handler: (field, service) => service.processSelectDisplay(field)
 }, {
@@ -495,7 +498,33 @@ function CNFlexFormService(
 
   function handleResolve(field, fieldProp, exp) {
     const service = this;
-    let data = service.parseExpression(exp).get();
+    let data;
+    // does declarative/functional outweigh performance?
+    if(exp.includes(' || ')) {
+      let eithers = exp.split(' || ');
+      for(let i = 0, l = eithers.length; i < l; i++) {
+        const x = service.parseExpression(eithers[i]).get();
+        if(angular.isDefined(x)) {
+          data = x;
+          break;
+        }
+      }
+    }
+    else if(exp.includes(' && ')) {
+      let all = exp.split(' && ');
+      for(let i = 0, l = all.length; i < l; i++) {
+        const x = service.parseExpression(all[i]).get();
+        if(angular.isDefined(x)) data = x;
+        else {
+          data = undefined;
+          break;
+        }
+      }
+    }
+    else {
+      data = service.parseExpression(exp).get();
+    }
+
     // if we're resolving from model but defaults haven't been applied yet, resolve from default itself
     if(!data && exp.indexOf('model.') === 0) {
       const key = exp.replace('model.', '');
@@ -520,6 +549,7 @@ function CNFlexFormService(
     else {
       delete field.loadMore;
     }
+    console.log('::: resolve :::', exp, data);
     field[fieldProp] = (data && data.data) ? data.data : data;
 
     fieldPropHandlers.forEach(({ prop, handler }) => 
@@ -1284,18 +1314,19 @@ function CNFlexFormService(
         schema = select.schema;
 
     if(select.titleMapResolve || select.titleMap) {
-      select.getTitleMap = function() {
-        return select.titleMap || service.schema.data[select.titleMapResolve];
-      };
+      select.getTitleMap = () =>
+        select.titleMap || service.schema.data[select.titleMapResolve];
 
-      select.onInit = function(val, form, event, setter) {
-        // make sure we use correct value
-        var modelValue = service.parseExpression(form.key, service.model);
-        if(event === 'tag-init') {
-          let newVal = getAllowedSelectValue(select, modelValue.get());
-          if(newVal !== undefined) setter(newVal);
-        }
-      };
+      if(!select.onInit) {
+        select.onInit = function(val, form, event, setter) {
+          // make sure we use correct value
+          var modelValue = service.parseExpression(form.key, service.model);
+          if(event === 'tag-init') {
+            let newVal = getAllowedSelectValue(select, modelValue.get());
+            if(newVal !== undefined) setter(newVal);
+          }
+        };
+      }
     }
 
     if(select.titleMapQuery) {
@@ -1342,6 +1373,10 @@ function CNFlexFormService(
       }
     }
 
+    if(select.displayFormat) {
+      select.itemFormatter = service.processTemplate(select.displayFormat);
+    }
+
     if(!select.type.includes('cn-autocomplete')) {
       if(select.items) {
         select.detailedList = true;
@@ -1380,16 +1415,12 @@ function CNFlexFormService(
           }
         });
       }
-    }
 
-    if(select.displayFormat) {
-      select.itemFormatter = service.processTemplate(select.displayFormat);
+      service.registerHandler(select.key, function(val) {
+        var form = service.formCtrl && service.formCtrl[service.getKey(select.key)];
+        if(form && form.$setDirty) form.$setDirty();
+      }, select.updateSchema);
     }
-
-    service.registerHandler(select.key, function(val) {
-      var form = service.formCtrl && service.formCtrl[service.getKey(select.key)];
-      if(form && form.$setDirty) form.$setDirty();
-    }, select.updateSchema);
   }
 
   function processToggle(toggle) {
