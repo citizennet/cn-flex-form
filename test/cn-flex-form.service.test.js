@@ -51,6 +51,8 @@ test('getWatchables', (t) => {
 
 test('replaceArrayIndex', (t) => {
   t.equal(ff.replaceArrayIndex('foo.bar', 'foo.fiz'), 'foo.bar', 'no arrayIndex');
+  t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 0), 'foo[0].bar', 'pass index 0');
+  t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 1), 'foo[1].bar', 'pass index 1');
   t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 'foo[1].fiz'), 'foo[1].bar', 'standard index');
   t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 'foo[-1].fiz'), 'foo[-1].bar', 'negative index');
   t.equal(ff.replaceArrayIndex('fiz.baz[foo[arrayIndex]].bar', 'foo[1].fiz'), 'fiz.baz[foo[1]].bar',

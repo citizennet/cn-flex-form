@@ -469,7 +469,7 @@ function CNFlexFormService(
     const key = service.getKey(field.key);
 
     _.each(field.resolve, function(dataProp, fieldProp) {
-      dataProp = replaceArrayIndex(dataProp, key);
+      dataProp = replaceArrayIndex(dataProp, key || field.arrayIndex);
       if(dataProp.includes('[arrayIndex]')) return;
 
       service.handleResolve(field, fieldProp, dataProp);
@@ -499,10 +499,17 @@ function CNFlexFormService(
     // if we're resolving from model but defaults haven't been applied yet, resolve from default itself
     if(!data && exp.indexOf('model.') === 0) {
       const key = exp.replace('model.', '');
-      const cachedField = service.getFromFormCache(key);
-      
-      if(cachedField && cachedField.default) data = cachedField.default;
-      else data = field.default || service.getSchema(key).default;
+      const genericKey = stripIndexes(key);
+      const cachedField = service.getFromFormCache(key) || service.getFromFormCache(genericKey);
+
+      data = (() => {
+        if(cachedField && cachedField.default)
+          return cachedField.default;
+        if(angular.isDefined(field.default))
+          return field.default;
+        const schema = service.getSchema(genericKey);
+        if(schema) return schema.default;
+      })();
     }
     if(data && data.cursor) {
       field.loadMore = function() {
@@ -884,19 +891,24 @@ function CNFlexFormService(
     });
   }
 
+  function stripIndexes(key) {
+    return key.replace(/\[\d+]/g, '[]');
+  }
+
   function initArrayCopyWatch() {
     const service = this;
 
-    service.events.push($rootScope.$on('schemaFormPropagateScope', function(event, scope) {
+    service.events.push($rootScope.$on('schemaFormPropagateScope', (event, scope) => {
       const { form } = scope;
       if(!form.key) {
         form.cacheKey = `${form.type}-${_.uniqueId()}`;
       }
       const key = form.cacheKey || service.getKey(form.key);
 
-      if(scope.arrayIndex) {
-        const genericKey = key.replace(/\[\d+]/g, '[]');
+      if(_.isNumber(scope.arrayIndex)) {
+        const genericKey = stripIndexes(key);
         const index = scope.arrayIndex;
+        form.arrayIndex = index;
 
         if(!service.getArrayCopy(genericKey, index)) {
           service.processFieldProps(form);
@@ -912,7 +924,7 @@ function CNFlexFormService(
       }
     }));
 
-    service.events.push($rootScope.$on('schemaFormDeleteScope', function(event, scope, index) {
+    service.events.push($rootScope.$on('schemaFormDeleteScope', (event, scope, index) => {
       const key = service.getKey(scope.form.key);
       const listener = service.listeners[key];
       if(listener) listener.handlers = [];
@@ -1624,9 +1636,10 @@ function CNFlexFormService(
     }, 100);
 
     service.refreshData = _.debounce(function() {
-      refresh(_.extend(service.schema.params, {updateSchema: 'refreshData'})).then(function(schema) {
-        service.processUpdatedSchema(schema);
-      });
+      refresh(_.extend(service.schema.params, {updateSchema: 'refreshData'}))
+        .then(function(schema) {
+          service.processUpdatedSchema(schema);
+        });
     }, 100);
 
     service.events.push($rootScope.$on('ffRefreshData', service.refreshData));
@@ -1771,6 +1784,7 @@ function CNFlexFormService(
 
   function replaceArrayIndex(resolve, key) {
     if(!resolve.includes('arrayIndex')) return resolve;
+    if(_.isNumber(key)) return resolve.replace(/arrayIndex/g, key);
     const arrayIndexKey = /([^.[]*)\[arrayIndex\]/.exec(resolve);
     const re = new RegExp(arrayIndexKey[1] + '\\[(-?\\d+)\\]');
     const index = re.exec(key);
