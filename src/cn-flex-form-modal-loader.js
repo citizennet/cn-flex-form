@@ -10,9 +10,10 @@ function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
   function activate() {
     FlexFormModal
       .open(vm)
-      .then(({ modal, options: { onDismiss } }) => {
+      .then(({ modal, options: { onDismiss, onAfterDismiss } }) => {
         vm.modal = modal;
         vm.modal.result.finally(goBack);
+
         if(onDismiss) vm.modal.result.catch(() => onDismiss($stateParams.restParams));
         vm.dismissEvent = $rootScope.$on('$stateChangeStart', dismissModal);
       });
@@ -26,6 +27,7 @@ function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
 
   function dismissModal() {
     console.log('dismissModal');
+    // unbind event
     vm.dismissEvent();
     vm.modal.dismiss();
   }
