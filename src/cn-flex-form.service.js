@@ -24,8 +24,8 @@ const fieldTypeHandlers = {
 };
 
 const fieldPropHandlers = [{
-  prop: 'titleMap',
-  handler: (field, service) => service.processSelect(field)
+  prop: 'titleMap', // if titleMap changes, we reprocess
+  handler: (field, service) => field.type === 'cn-autocomplete' && service.processSelect(field)
 }, {
   prop: 'selectDisplay',
   handler: (field, service) => service.processSelectDisplay(field)
@@ -450,7 +450,6 @@ function CNFlexFormService(
     let replaceStr = '';
 
     while(nested) {
-      console.log(':: nested ::', nested);
       if(/^-?\d+$/.test(nested[1]) || /^("|').*("|')$/.test(nested[1])) {
         replaceStr = nested[0];
         exp = exp.replace(nested[0], 'ff_replace_ff');
@@ -926,7 +925,7 @@ function CNFlexFormService(
   function initArrayCopyWatch() {
     const service = this;
 
-    service.events.push($rootScope.$on('schemaFormPropagateScope', (event, scope) => {
+    service.events.push($rootScope.$on('schemaFormPropagateFormController', (event, scope) => {
       const { form } = scope;
       if(!form.key) {
         form.cacheKey = `${form.type}-${_.uniqueId()}`;
@@ -952,7 +951,7 @@ function CNFlexFormService(
       }
     }));
 
-    service.events.push($rootScope.$on('schemaFormDeleteScope', (event, scope, index) => {
+    service.events.push($rootScope.$on('schemaFormDeleteFormController', (event, scope, index) => {
       const key = service.getKey(scope.form.key);
       const listener = service.listeners[key];
       if(listener) listener.handlers = [];
@@ -1048,14 +1047,12 @@ function CNFlexFormService(
 
     while(toReplace) {
       replaced.push(toReplace);
-      console.log(':: toReplace ::', toReplace, exp);
       exp = exp.replace(toReplace, `ff_r${replaced.length - 1}_ff`);
       [toReplace] = matchIntStrIndex(exp) || [];
     }
 
     const match = exp.match(/\[([^[\]]+)]([^[\]]*)/);
 
-    console.log(':: match ::', exp, match, replaced);
     return match &&
       replaced.length ?
       match.map((exp) => {
@@ -1081,7 +1078,6 @@ function CNFlexFormService(
           `"${parsed}"` :
           parsed;
       exp = exp.replace(`[${nested}]`, `[${keyVal}]`);
-      console.log(':: nested, exp ::', nested, exp);
       [, nested] = matchNestedExpression(exp) || [];
     }
 
@@ -1117,7 +1113,6 @@ function CNFlexFormService(
     const modelValue = {
       get() {
         let resolved = service.resolveNestedExpressions(exp, depth);
-        console.log('// resolved //', resolved);
         let path = ObjectPath.parse(resolved);
         let start = depth || service;
 
