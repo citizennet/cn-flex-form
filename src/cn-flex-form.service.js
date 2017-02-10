@@ -24,9 +24,6 @@ const fieldTypeHandlers = {
 };
 
 const fieldPropHandlers = [{
-  prop: 'titleMap', // if titleMap changes, we reprocess
-  handler: (field, service) => field.type === 'cn-autocomplete' && service.processSelect(field)
-}, {
   prop: 'selectDisplay',
   handler: (field, service) => service.processSelectDisplay(field)
 }, {
@@ -548,6 +545,7 @@ function CNFlexFormService(
       delete field.loadMore;
     }
     field[fieldProp] = (data && data.data) ? data.data : data;
+    console.log(':: resolve ::', fieldProp, data);
 
     fieldPropHandlers.forEach(({ prop, handler }) => 
         prop === fieldProp && handler(field, service)
@@ -1086,8 +1084,13 @@ function CNFlexFormService(
 
   function parseExpression(exp, depth) {
     const service = this;
+    
+    if(!_.isString(exp)) {
+      return { get: () => exp };
+    }
+
     // if expression is specific value
-    if(!exp || /^(null|false|true|undefined|'[^\']*'|"[^\"]*"|-?[0-9.]+|\[]|\{})$/.test(exp)) {
+    if(/^(null|false|true|undefined|'[^\']*'|"[^\"]*"|-?[0-9.]+|\[]|\{})$/.test(exp)) {
       return {
         "get": function() {
           if(!exp) return exp;
