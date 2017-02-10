@@ -450,7 +450,8 @@ function CNFlexFormService(
     let replaceStr = '';
 
     while(nested) {
-      if(/^-?\d+$/.test(nested[1])) {
+      console.log(':: nested ::', nested);
+      if(/^-?\d+$/.test(nested[1]) || /^("|').*("|')$/.test(nested[1])) {
         replaceStr = nested[0];
         exp = exp.replace(nested[0], 'ff_replace_ff');
       }
@@ -1037,17 +1038,51 @@ function CNFlexFormService(
     return service.dataCache[key];
   }
 
+  function matchIntStrIndex(exp) {
+    return exp.match(/\[(-?\d+|".*"|'.*')]/);
+  }
+
   function matchNestedExpression(exp) {
-    return exp.match(/\[([^[\]]+)]([^[\]]*)/);
+    let [toReplace] = matchIntStrIndex(exp) || [];
+    const replaced = [];
+
+    while(toReplace) {
+      replaced.push(toReplace);
+      console.log(':: toReplace ::', toReplace, exp);
+      exp = exp.replace(toReplace, `ff_r${replaced.length - 1}_ff`);
+      [toReplace] = matchIntStrIndex(exp) || [];
+    }
+
+    const match = exp.match(/\[([^[\]]+)]([^[\]]*)/);
+
+    console.log(':: match ::', exp, match, replaced);
+    return match &&
+      replaced.length ?
+      match.map((exp) => {
+        let [toReplace, index] = exp.match(/ff_r(\d+)_ff/) || [];
+        while(toReplace) {
+          exp = exp.replace(toReplace, replaced[index]);
+          [toReplace, index] = exp.match(/ff_r(\d+)_ff/) || [];
+        }
+        return exp;
+      }) :
+      match;
   }
 
   function resolveNestedExpressions(exp, depth) {
     const service = this;
-    let nested = matchNestedExpression(exp);
+    let [, nested] = matchNestedExpression(exp) || [];
 
     while(nested) {
-      exp = exp.replace(`[${nested[1]}]`, `.${service.parseExpression(nested[1], depth).get()}`);
-      nested = matchNestedExpression(exp);
+      const parsed = service.parseExpression(nested, depth).get();
+      const keyVal = _.isUndefined(parsed) ?
+        '' :
+        _.isString(parsed) ?
+          `"${parsed}"` :
+          parsed;
+      exp = exp.replace(`[${nested}]`, `[${keyVal}]`);
+      console.log(':: nested, exp ::', nested, exp);
+      [, nested] = matchNestedExpression(exp) || [];
     }
 
     return exp;
@@ -1082,6 +1117,7 @@ function CNFlexFormService(
     const modelValue = {
       get() {
         let resolved = service.resolveNestedExpressions(exp, depth);
+        console.log('// resolved //', resolved);
         let path = ObjectPath.parse(resolved);
         let start = depth || service;
 
