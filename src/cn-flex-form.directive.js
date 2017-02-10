@@ -8,7 +8,8 @@ function cnFlexForm() {
           name="{{vm.formName}}"
           sf-schema="vm.config.schema.schema"
           sf-form="vm.form"
-          sf-model="vm.model"/>
+          sf-model="vm.model">
+        </ng-form>
         <!-- debug panel to display model -->
         <section ng-if="vm.debug">
           <json-explorer json-data="vm.model || '...model not loaded yet'"/>
@@ -50,7 +51,6 @@ function FlexForm(cnFlexFormService, $scope, $location) {
   //////////
 
   function activate() {
-    //console.log('vm.formName:', vm.formName);
     if(angular.isNumber(vm.formIndex)) {
       vm.form = vm.config.schema.forms[vm.formIndex].form;
     }
@@ -65,7 +65,6 @@ function FlexForm(cnFlexFormService, $scope, $location) {
   }
 
   function process(cur, prev) {
-    //console.log('process:', cur, prev);
     if(vm.form) {
       if(!vm.service) {
         vm.service = cnFlexFormService(vm.config.schema, vm.model, {
@@ -83,7 +82,6 @@ function FlexForm(cnFlexFormService, $scope, $location) {
   }
 
   function showForm() {
-    //console.log('showForm:', vm.delayForm, vm.formName);
     return !vm.delayForm && vm.service && vm.service.isCompiled();
   }
 
@@ -100,9 +98,5 @@ function FlexForm(cnFlexFormService, $scope, $location) {
   }
 
 }
-
-//angular
-    //.module('cn.flex-form')
-    //.directive('cnFlexForm', cnFlexForm);
 
 export default cnFlexForm;
