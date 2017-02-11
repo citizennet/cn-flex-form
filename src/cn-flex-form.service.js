@@ -292,6 +292,7 @@ function CNFlexFormService(
       const modelValue = model.get();
       // if there's an existing default and it's the same as the current value
       // update the current value to the new default
+      console.log(':: proDef ::', modelValue, key);
       if(_.isTrulyEmpty(modelValue) || (_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))) {
         model.set(curDefault);
       }
@@ -545,7 +546,6 @@ function CNFlexFormService(
       delete field.loadMore;
     }
     field[fieldProp] = (data && data.data) ? data.data : data;
-    console.log(':: resolve ::', fieldProp, data);
 
     fieldPropHandlers.forEach(({ prop, handler }) => 
         prop === fieldProp && handler(field, service)
@@ -1085,7 +1085,7 @@ function CNFlexFormService(
   function parseExpression(exp, depth) {
     const service = this;
     
-    if(!_.isString(exp)) {
+    if(!_.isString(exp) && !_.isArray(exp)) {
       return { get: () => exp };
     }
 
@@ -1158,6 +1158,7 @@ function CNFlexFormService(
         let resolved = service.resolveNestedExpressions(exp, depth);
         let path = ObjectPath.parse(resolved);
         let assignable = this.getAssignable();
+        console.log(':: set ::', resolved, val);
         if(val === 'remove') {
           delete assignable.obj[assignable.key];
         }
@@ -1348,16 +1349,14 @@ function CNFlexFormService(
       select.getTitleMap = () =>
         select.titleMap || service.schema.data[select.titleMapResolve];
 
-      if(!select.onInit) {
-        select.onInit = function(val, form, event, setter) {
-          // make sure we use correct value
-          var modelValue = service.parseExpression(form.key, service.model);
-          if(event === 'tag-init') {
-            let newVal = getAllowedSelectValue(select, modelValue.get());
-            if(newVal !== undefined) setter(newVal);
-          }
-        };
-      }
+      select.onInit = function(val, form, event, setter) {
+        // make sure we use correct value
+        var modelValue = service.parseExpression(form.key, service.model);
+        if(event === 'tag-init') {
+          let newVal = getAllowedSelectValue(select, modelValue.get());
+          if(newVal !== undefined) setter(newVal);
+        }
+      };
     }
 
     if(select.titleMapQuery) {
