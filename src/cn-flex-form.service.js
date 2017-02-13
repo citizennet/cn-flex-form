@@ -312,7 +312,7 @@ function CNFlexFormService(
     fieldset.items.forEach(service.processField.bind(service));
 
     if(_.has(fieldset, 'pos') && fieldset.pos === 0) {
-      fieldset.htmlClass = 'borderless';
+      fieldset.htmlClass = (fieldset.htmlClass || '') + ' borderless';
     }
     if(fieldset.collapsible) {
       fieldset.toggleCollapse = (fieldset) => {
