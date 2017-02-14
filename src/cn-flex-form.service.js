@@ -286,7 +286,8 @@ function CNFlexFormService(
     }
 
     // if schemaUpdate hasn't been triggered, let schemaForm directive handle defaults
-    if(service.updates || field.default) {
+    //if(service.updates || field.default) {
+    if(!_.isUndefined(curDefault)) {
       if(key.includes && key.includes('[]')) return;
       const model = service.parseExpression(field.key, service.model);
       const modelValue = model.get();
@@ -1844,13 +1845,15 @@ function CNFlexFormService(
   }
 
   function replaceArrayIndex(resolve, key) {
-    if(!resolve.includes('arrayIndex')) return resolve;
-    if(_.isNumber(key)) return resolve.replace(/arrayIndex/g, key);
-    const arrayIndexKey = /([^.[]*)\[arrayIndex\]/.exec(resolve);
-    const re = new RegExp(arrayIndexKey[1] + '\\[(-?\\d+)\\]');
-    const index = re.exec(key);
-    if(!index) return resolve;
-    return resolve.replace(new RegExp(arrayIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
+    while(resolve.includes('arrayIndex')) {
+      if(_.isNumber(key)) return resolve.replace(/arrayIndex/g, key);
+      const arrayIndexKey = /([^.[]*)\[arrayIndex\]/.exec(resolve);
+      const re = new RegExp(arrayIndexKey[1] + '\\[(-?\\d+)\\]');
+      const index = re.exec(key);
+      if(!index) return resolve;
+      resolve = resolve.replace(new RegExp(arrayIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
+    }
+    return resolve;
   }
 
   function getArrayIndex(key) {

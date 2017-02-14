@@ -34,7 +34,6 @@ test('parseExpression', (t) => {
 });
 
 test('getWatchables', (t) => {
-  t.plan(9);
   t.looseEqual(ff.getWatchables('schema.data'), ['schema.data'], 'single watchable');
   t.looseEqual(ff.getWatchables('schema.data[model.foo]'), ['model.foo', 'schema.data'],
     'nested watchables');
@@ -54,10 +53,10 @@ test('getWatchables', (t) => {
   t.looseEqual(ff.getWatchables('schema.data[model.foo["model.bar[-1].biz"]].boz'),
     ['model.foo["model.bar[-1].biz"]', 'schema.data'],
     'deeply nested array watchables with negative index');
+  t.end();
 });
 
 test('replaceArrayIndex', (t) => {
-  t.plan(7);
   t.equal(ff.replaceArrayIndex('foo.bar', 'foo.fiz'), 'foo.bar', 'no arrayIndex');
   t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 0), 'foo[0].bar', 'pass index 0');
   t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 1), 'foo[1].bar', 'pass index 1');
@@ -65,6 +64,9 @@ test('replaceArrayIndex', (t) => {
   t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 'foo[-1].fiz'), 'foo[-1].bar', 'negative index');
   t.equal(ff.replaceArrayIndex('fiz.baz[foo[arrayIndex]].bar', 'foo[1].fiz'), 'fiz.baz[foo[1]].bar',
     'nested index');
+  t.equal(ff.replaceArrayIndex('fiz.baz[arrayIndex].foo[arrayIndex].bar', 'fiz.baz[2].foo[1].boo'),
+    'fiz.baz[2].foo[1].bar', 'multiple indices');
   // question: is this desired error behavior?
   t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 'foo[].fiz'), 'foo[arrayIndex].bar', 'no key index');
+  t.end();
 });
