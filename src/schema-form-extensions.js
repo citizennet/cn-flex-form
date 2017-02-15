@@ -152,23 +152,23 @@ function addTemplates($templateCache) {
   $templateCache.put(
       'app/components/cn-flex-form/forms/cn-autocomplete-detailed.html',
       `
-      <div sf-array="form"
-           class="form-group {{form.htmlClass}}"
+      <div class="form-group {{form.htmlClass}}"
            ng-class="{'has-error': hasError(), 'has-success': hasSuccess()}">
         <label class="control-label"
                for="{{form.key.join('.')}}-input"
                ng-show="showTitle()">{{form.title}}</label>
-        <ol class="list-group cn-autocomplete-list"
+        <ol sf-array="form"
+            class="list-group cn-autocomplete-list"
             ng-show="modelArray.length"
             ng-model="modelArray">
           <li class="list-group-item {{form.fieldHtmlClass}}"
-              ng-repeat="item in modelArray track by $index">
+              ng-repeat="item in modelArray">
             <button ng-hide="form.readonly || form.remove === null"
                     ng-click="deleteFromArray($index)"
                     type="button" class="close pull-right">
               <span aria-hidden="true">&times;</span>
             </button>
-            <sf-decorator ng-init="arrayIndex = $index" form="copyWithIndex($index)"/>
+            <sf-decorator form="copyWithIndex($index)"/>
           </li>
         </ol>
         ${sharedAutocompleteTpl}

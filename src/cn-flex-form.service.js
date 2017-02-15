@@ -34,7 +34,7 @@ const fieldPropHandlers = [{
   handler: (field, service) => field.watch && service.processFieldWatch(field)
 }, {
   prop: 'type',
-  handler: (field, service) => service.processFieldType(field)
+  handler: (field, service, secondPass) => service.processFieldType(field, secondPass)
 }, {
   prop: 'conditionals',
   handler: (field, service) => service.processConditional(field)
@@ -293,8 +293,10 @@ function CNFlexFormService(
       const modelValue = model.get();
       // if there's an existing default and it's the same as the current value
       // update the current value to the new default
-      console.log(':: proDef ::', modelValue, key);
-      if(_.isTrulyEmpty(modelValue) || (_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))) {
+      if((
+        _.isTrulyEmpty(modelValue) ||
+        (_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
+      ) && !angular.equals(modelValue, curDefault)) {
         model.set(curDefault);
       }
     }
@@ -329,15 +331,15 @@ function CNFlexFormService(
     }
   }
 
-  function processFieldType(field) {
+  function processFieldType(field, secondPass) {
     const service = this;
     const fieldType = cnFlexFormTypes.getFieldType(field);
     const handler = fieldTypeHandlers[fieldType];
     if(_.isString(handler)) {
-      service[handler](field);
+      service[handler](field, secondPass);
     }
     else if(_.isFunction(handler)) {
-      handler.call(service, field);
+      handler.call(service, field, secondPass);
     }
   }
 
@@ -390,10 +392,10 @@ function CNFlexFormService(
     }
   }
 
-  function processFieldProps(field) {
+  function processFieldProps(field, secondPass) {
     const service = this;
     fieldPropHandlers.forEach(({ prop, handler }) =>
-        _.has(field, prop) && handler(field, service)
+        _.has(field, prop) && handler(field, service, secondPass)
     );
   }
 
@@ -937,7 +939,7 @@ function CNFlexFormService(
         form.arrayIndex = index;
 
         if(!service.getArrayCopy(genericKey, index)) {
-          service.processFieldProps(form);
+          service.processFieldProps(form, true);
         }
 
         if(!form.condition) form.condition = 'true';
@@ -1159,7 +1161,6 @@ function CNFlexFormService(
         let resolved = service.resolveNestedExpressions(exp, depth);
         let path = ObjectPath.parse(resolved);
         let assignable = this.getAssignable();
-        console.log(':: set ::', resolved, val);
         if(val === 'remove') {
           delete assignable.obj[assignable.key];
         }
@@ -1197,8 +1198,11 @@ function CNFlexFormService(
     service.processSection(array);
   }
 
-  function processSection(section) {
+  function processSection(section, secondPass) {
     var service = this;
+    // if we're here because a parent's scope was emitted, 
+    // scope for this section will soon be emitted, so can skip
+    if(secondPass) return; 
     _.each(section.items, service.processField.bind(service));
   }
 

@@ -4,11 +4,11 @@ import cnFlexFormServiceProvider from '../src/cn-flex-form.service';
 const ff = cnFlexFormServiceProvider().$get();
 
 test('getKey', (t) => {
-  t.plan(4);
   t.equal(ff.getKey('foo.bar'), 'foo.bar', 'string arg');
   t.equal(ff.getKey(['foo', 'bar']), 'foo.bar', 'array arg');
   t.equal(ff.getKey(['foo', '0', 'bar']), 'foo[0].bar', 'complex array arg');
   t.equal(ff.getKey(['foo', '-1', 'bar']), 'foo[-1].bar', 'negative array arg');
+  t.end();
 });
 
 test('parseExpression', (t) => {
