@@ -169,25 +169,33 @@ function CNFlexFormService(
     setupConfig,
     setupArraySelectDisplay,
     setupSelectDisplay,
-    setupSchemaRefresh
+    setupSchemaRefresh,
+    silenceListeners
   };
 
-  function CNFlexFormConstructor(schema, model, config) {
-    var service;
-    if(services.length) {
-      for(var i = 0, l = services.length; i < l; i++) {
-        if(services[i].model === model) {
-          service = services[i];
-          service.compile(schema, model, config);
-          break;
-        }
+  function getService(fn) {
+    return _.find(services, fn);
+  }
+
+  function CNFlexFormConstructor(...args) {
+    if(args.length > 1) {
+      var [ schema, model, config ] = args;
+    }
+    else {
+      var { schema, model, config } = args[0];
+    }
+
+    const curService = getService((service) => service.model === model);
+    if(curService) {
+      if(schema) {
+        curService.compile(schema, model, config);
       }
+      return curService;
     }
-    if(!service) {
-      service = new CNFlexForm(schema, model, config);
-      services.push(service);
-    }
-    return service || new CNFlexForm(schema, model, config);
+
+    const newService = new CNFlexForm(schema, model, config);
+    services.push(newService);
+    return newService;
   }
 
   function CNFlexForm(schema, model, config) {
@@ -217,7 +225,7 @@ function CNFlexFormService(
   }
 
   _.extend(CNFlexForm.prototype, prototype);
-  _.extend(CNFlexFormConstructor, prototype);
+  _.extend(CNFlexFormConstructor, prototype, { getService });
 
   return CNFlexFormConstructor;
 
@@ -724,7 +732,7 @@ function CNFlexFormService(
     }
 
     key = service.getKey(key);
-    var arrMatch = key.match(/([^[\]]*)\[]\.?(.*)/);
+    var arrMatch = key.match(/(.*)\[]\.?(.*)/);
 
     if(arrMatch) {
       service.registerArrayHandlers(arrMatch[1], arrMatch[2], handler, updateSchema, runHandler);
@@ -750,31 +758,31 @@ function CNFlexFormService(
   }
 
   function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
-    var service = this;
-    var onArray = function(cur, prev, reorder) {
+    const service = this;
+    const onArray = (cur, prev, reorder) => {
 
       if(!prev && prev !== 0 && (cur | 0) < 1) return;
       var i, l, key;
 
       if(prev > cur || reorder) {
-        var lastKey = fieldKey ?
-          arrKey + '[' + (prev - 1) + ']' + '.' + fieldKey :
-          arrKey + '[' + (prev - 1) + ']';
+        const lastKey = fieldKey ?
+          `${arrKey}[${prev - 1}].${fieldKey}` :
+          `${arrKey}[${prev - 1}]`;
 
         // only deregister handlers once each time an element is removed
         if(service.listeners[lastKey]) {
           for(i = 0, l = prev; i < l; i++) {
             key = fieldKey ?
-              arrKey + '[' + i + ']' + '.' + fieldKey :
-              arrKey + '[' + i + ']';
+              `${arrKey}[${i}].${fieldKey}` :
+              `${arrKey}[${i}]`;
 
             service.deregisterHandlers(key);
           }
         }
         for(i = 0, l = cur; i < l; i++) {
           key = fieldKey ?
-            arrKey + '[' + i + ']' + '.' + fieldKey :
-            arrKey + '[' + i + ']';
+            `${arrKey}[${i}].${fieldKey}` :
+            `${arrKey}[${i}]`;
 
           service.registerHandler(key, handler, updateSchema);
           //no need to call if just reregisering handlers
@@ -784,8 +792,8 @@ function CNFlexFormService(
       else if(cur > (prev || 0)) {
         for(i = prev | 0, l = cur; i < l; i++) {
           key = fieldKey ?
-            arrKey + '[' + i + ']' + '.' + fieldKey :
-            arrKey + '[' + i + ']';
+            `${arrKey}[${i}].${fieldKey}` :
+            `${arrKey}[${i}]`;
 
           service.registerHandler(key, handler, updateSchema, runHandler);
           //if(runHandler) handler(null, null, key);
@@ -793,20 +801,22 @@ function CNFlexFormService(
       }
     };
 
-    var arrVal = service.parseExpression(arrKey, service.model).get();
-    _.each(arrVal, function(field, i) {
-      var key = fieldKey ?
-        arrKey + '[' + i + ']' + '.' + fieldKey :
-        arrKey + '[' + i + ']';
+    const arrVal = service.parseExpression(arrKey, service.model).get();
+    _.each(arrVal, (field, i) => {
+      const key = fieldKey ?
+        `${arrKey}[${i}].${fieldKey}` :
+        `${arrKey}[${i}]`;
 
       service.registerHandler(key, handler, updateSchema);
       if(runHandler) handler(null, null, key);
     });
 
-    if(service.arrayListeners[arrKey + '.length']) {
-      service.arrayListeners[arrKey + '.length'].handlers.push(onArray);
-    } else {
-      service.arrayListeners[arrKey + '.length'] = {
+    const listenerKey = `${arrKey}.length`;
+    if(service.arrayListeners[listenerKey]) {
+      service.arrayListeners[listenerKey].handlers.push(onArray);
+    }
+    else {
+      service.arrayListeners[listenerKey] = {
         handlers: [onArray],
         prev: arrVal ? arrVal.length : 0
       };
@@ -825,7 +835,8 @@ function CNFlexFormService(
       return;
     }
 
-    if(service.listeners[key]) service.listeners[key].handlers = [];
+    //if(service.listeners[key]) service.listeners[key].handlers = [];
+    if(service.listeners[key]) delete service.listeners[key];
   }
 
   function deregisterArrayHandlers(arrKey, fieldKey) {
@@ -1157,7 +1168,7 @@ function CNFlexFormService(
         };
       },
 
-      set(val) {
+      set(val, options = {}) {
         let resolved = service.resolveNestedExpressions(exp, depth);
         let path = ObjectPath.parse(resolved);
         let assignable = this.getAssignable();
@@ -1166,6 +1177,9 @@ function CNFlexFormService(
         }
         else {
           assignable.obj[assignable.key] = val;
+        }
+        if(options.silent) {
+          service.silenceListeners(resolved, depth);
         }
         return val;
       },
@@ -1180,6 +1194,15 @@ function CNFlexFormService(
     };
 
     return modelValue;
+  }
+
+  function silenceListeners(keyStart, depth) {
+    const service = this;
+    _.each(service.listeners, (listener, key) => {
+      if(key.indexOf(keyStart) === 0) {
+        listener.prev = angular.copy(service.parseExpression(key, depth).get());
+      }
+    });
   }
 
   function processArray(array) {
