@@ -170,7 +170,8 @@ function CNFlexFormService(
     setupArraySelectDisplay,
     setupSelectDisplay,
     setupSchemaRefresh,
-    silenceListeners
+    silenceListeners,
+    skipDefaults
   };
 
   function getService(fn) {
@@ -216,6 +217,7 @@ function CNFlexFormService(
     this.resolveRegister = {};
     this.model = model;
     this.updates = 0;
+    this.skipDefault = {};
 
     this.params = cnFlexFormConfig.getStateParams();
 
@@ -288,6 +290,10 @@ function CNFlexFormService(
     const curDefault = field.default || schema.default;
     const key = service.getKey(field.key);
     
+    if (service.skipDefault[key]) {
+      delete service.skipDefault[key];
+      return;
+    }
     // if default is returned for new form, treat it as a previous param in order to not trigger unnecessary updateSchema
     if(!service.updates && field.updateSchema && angular.isDefined(curDefault) && !service.schema.params[key]) {
       service.schema.params[key] = curDefault;
@@ -1180,6 +1186,7 @@ function CNFlexFormService(
         }
         if(options.silent) {
           service.silenceListeners(resolved, depth);
+          service.skipDefaults(resolved);
         }
         return val;
       },
@@ -1201,6 +1208,18 @@ function CNFlexFormService(
     _.each(service.listeners, (listener, key) => {
       if(key.indexOf(keyStart) === 0) {
         listener.prev = angular.copy(service.parseExpression(key, depth).get());
+      }
+    });
+  }
+
+  function skipDefaults(keyStart) {
+    const service = this;
+    const index = getArrayIndex(keyStart);
+    const ks = stripIndexes(keyStart);
+    _.each(service.formCache, (form, key) => {
+      if (key.startsWith(ks)) {
+        const indexedKey = service.setArrayIndex(key, index); 
+        service.skipDefault[indexedKey] = true;
       }
     });
   }
