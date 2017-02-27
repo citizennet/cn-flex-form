@@ -1212,9 +1212,11 @@ function CNFlexFormService(
     });
   }
 
+  // TODO -- extend this to support nested array keys
+  // e.g. "creative[1].childAttachments[0].callToAction"
   function skipDefaults(keyStart) {
     const service = this;
-    const index = getArrayIndex(keyStart);
+    const index = keyStart.match(/\[\d*\]/) ? getArrayIndex(keyStart) : null;
     const ks = stripIndexes(keyStart);
     _.each(service.formCache, (form, key) => {
       if (key.startsWith(ks)) {
