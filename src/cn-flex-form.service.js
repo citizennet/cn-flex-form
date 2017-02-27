@@ -553,6 +553,7 @@ function CNFlexFormService(
         if(schema) return schema.default;
       })();
     }
+
     if(data && data.cursor) {
       field.loadMore = function() {
         const dataProp = exp.match(/schema\.data\.(.+)/)[1];
@@ -562,9 +563,11 @@ function CNFlexFormService(
     else {
       delete field.loadMore;
     }
-    field[fieldProp] = (data && data.data) ? data.data : data;
+ 
+    const newVal = (data && data.data) ? data.data : data;
+    if(!angular.equals(newVal, field[fieldProp])) {
+      field[fieldProp] = (data && data.data) ? data.data : data;
 
-    if (!angular.equals(field[fieldProp], service.parseExpression(exp).get())) {
       fieldPropHandlers.forEach(({ prop, handler }) => 
           prop === fieldProp && handler(field, service)
       );
