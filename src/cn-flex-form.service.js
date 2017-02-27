@@ -24,11 +24,11 @@ const fieldTypeHandlers = {
 };
 
 const fieldPropHandlers = [{
-  prop: 'selectDisplay',
-  handler: (field, service) => service.processSelectDisplay(field)
-}, {
   prop: 'resolve',
   handler: (field, service) => service.processResolve(field)
+}, {
+  prop: 'selectDisplay',
+  handler: (field, service) => service.processSelectDisplay(field)
 }, {
   prop: 'watch',
   handler: (field, service) => field.watch && service.processFieldWatch(field)
@@ -488,7 +488,7 @@ function CNFlexFormService(
       dataProp = replaceArrayIndex(dataProp, key || field.arrayIndex);
       if(dataProp.includes('[arrayIndex]')) return;
 
-      service.handleResolve(field, fieldProp, dataProp);
+      service.handleResolve(field, fieldProp, dataProp, true);
 
       getWatchables(dataProp).forEach((watchable) => {
         const [, base, exp] = watchable.match(/(schema\.data\.|model\.)(\S+)/) || [];
@@ -509,7 +509,7 @@ function CNFlexFormService(
     return field;
   }
 
-  function handleResolve(field, fieldProp, exp) {
+  function handleResolve(field, fieldProp, exp, skipPropHandlers) {
     const service = this;
     let data;
     // does declarative/functional outweigh performance?
@@ -564,10 +564,9 @@ function CNFlexFormService(
       delete field.loadMore;
     }
  
-    const newVal = (data && data.data) ? data.data : data;
-    if(!angular.equals(newVal, field[fieldProp])) {
-      field[fieldProp] = (data && data.data) ? data.data : data;
+    field[fieldProp] = (data && data.data) ? data.data : data;
 
+    if(!skipPropHandlers) {
       fieldPropHandlers.forEach(({ prop, handler }) => 
           prop === fieldProp && handler(field, service)
       );
