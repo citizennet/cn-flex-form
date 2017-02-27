@@ -855,9 +855,9 @@ function CNFlexFormService(
     if(service.modelWatch) service.modelWatch();
 
     service.modelWatch = $rootScope.$watch(
-        function() { return service.model; },
-        service.onModelWatch.bind(service),
-        true
+      () => service.model,
+      service.onModelWatch.bind(service),
+      true
     );
 
     service.initSchemaParams();
