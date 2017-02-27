@@ -564,9 +564,11 @@ function CNFlexFormService(
     }
     field[fieldProp] = (data && data.data) ? data.data : data;
 
-    fieldPropHandlers.forEach(({ prop, handler }) => 
-        prop === fieldProp && handler(field, service)
-    );
+    if (!angular.equals(field[fieldProp], service.parseExpression(exp).get())) {
+      fieldPropHandlers.forEach(({ prop, handler }) => 
+          prop === fieldProp && handler(field, service)
+      );
+    }
   }
 
   function registerResolve(field, fieldProp, dataProp, exp) {
