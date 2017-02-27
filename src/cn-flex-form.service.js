@@ -24,11 +24,11 @@ const fieldTypeHandlers = {
 };
 
 const fieldPropHandlers = [{
-  prop: 'selectDisplay',
-  handler: (field, service) => service.processSelectDisplay(field)
-}, {
   prop: 'resolve',
   handler: (field, service) => service.processResolve(field)
+}, {
+  prop: 'selectDisplay',
+  handler: (field, service) => service.processSelectDisplay(field)
 }, {
   prop: 'watch',
   handler: (field, service) => field.watch && service.processFieldWatch(field)
@@ -170,7 +170,8 @@ function CNFlexFormService(
     setupArraySelectDisplay,
     setupSelectDisplay,
     setupSchemaRefresh,
-    silenceListeners
+    silenceListeners,
+    skipDefaults
   };
 
   function getService(fn) {
@@ -216,6 +217,7 @@ function CNFlexFormService(
     this.resolveRegister = {};
     this.model = model;
     this.updates = 0;
+    this.skipDefault = {};
 
     this.params = cnFlexFormConfig.getStateParams();
 
@@ -288,6 +290,10 @@ function CNFlexFormService(
     const curDefault = field.default || schema.default;
     const key = service.getKey(field.key);
     
+    if (service.skipDefault[key]) {
+      delete service.skipDefault[key];
+      return;
+    }
     // if default is returned for new form, treat it as a previous param in order to not trigger unnecessary updateSchema
     if(!service.updates && field.updateSchema && angular.isDefined(curDefault) && !service.schema.params[key]) {
       service.schema.params[key] = curDefault;
@@ -482,7 +488,7 @@ function CNFlexFormService(
       dataProp = replaceArrayIndex(dataProp, key || field.arrayIndex);
       if(dataProp.includes('[arrayIndex]')) return;
 
-      service.handleResolve(field, fieldProp, dataProp);
+      service.handleResolve(field, fieldProp, dataProp, true);
 
       getWatchables(dataProp).forEach((watchable) => {
         const [, base, exp] = watchable.match(/(schema\.data\.|model\.)(\S+)/) || [];
@@ -503,7 +509,7 @@ function CNFlexFormService(
     return field;
   }
 
-  function handleResolve(field, fieldProp, exp) {
+  function handleResolve(field, fieldProp, exp, skipPropHandlers) {
     const service = this;
     let data;
     // does declarative/functional outweigh performance?
@@ -547,6 +553,7 @@ function CNFlexFormService(
         if(schema) return schema.default;
       })();
     }
+
     if(data && data.cursor) {
       field.loadMore = function() {
         const dataProp = exp.match(/schema\.data\.(.+)/)[1];
@@ -556,11 +563,14 @@ function CNFlexFormService(
     else {
       delete field.loadMore;
     }
+ 
     field[fieldProp] = (data && data.data) ? data.data : data;
 
-    fieldPropHandlers.forEach(({ prop, handler }) => 
-        prop === fieldProp && handler(field, service)
-    );
+    if(!skipPropHandlers) {
+      fieldPropHandlers.forEach(({ prop, handler }) => 
+          prop === fieldProp && handler(field, service)
+      );
+    }
   }
 
   function registerResolve(field, fieldProp, dataProp, exp) {
@@ -1180,6 +1190,7 @@ function CNFlexFormService(
         }
         if(options.silent) {
           service.silenceListeners(resolved, depth);
+          service.skipDefaults(resolved);
         }
         return val;
       },
@@ -1201,6 +1212,20 @@ function CNFlexFormService(
     _.each(service.listeners, (listener, key) => {
       if(key.indexOf(keyStart) === 0) {
         listener.prev = angular.copy(service.parseExpression(key, depth).get());
+      }
+    });
+  }
+
+  // TODO -- extend this to support nested array keys
+  // e.g. "creative[1].childAttachments[0].callToAction"
+  function skipDefaults(keyStart) {
+    const service = this;
+    const index = keyStart.match(/\[\d*\]/) ? getArrayIndex(keyStart) : null;
+    const ks = stripIndexes(keyStart);
+    _.each(service.formCache, (form, key) => {
+      if (key.startsWith(ks)) {
+        const indexedKey = service.setArrayIndex(key, index); 
+        service.skipDefault[indexedKey] = true;
       }
     });
   }
