@@ -120,6 +120,7 @@ function CNFlexFormService(
     getFromDataCache,
     getFromFormCache,
     getFromScopeCache,
+    getFormsToProcess,
     getKey,
     getSchema,
     getWatchables,
@@ -387,11 +388,13 @@ function CNFlexFormService(
     service.processFieldProps(field);
 
     if(key) {
-      if(_.find(service.errors, { key })) {
-        service.errors = _.reject(service.errors, {key: key});
-        $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
-        $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
-      }
+      ((key) => {
+        if(_.find(service.errors, { key })) {
+          service.errors = _.reject(service.errors, { key });
+          $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
+          $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+        }
+      })(getDotKey(key));
       
       if(field.error) {
         service.errors.push(service.buildError(field));
@@ -1781,7 +1784,7 @@ function CNFlexFormService(
         });
       }
 
-      var keys = [];
+      const keys = [];
 
       if(schema.diff.schema) {
         $rootScope.$broadcast('cnFlexFormDiff:schema', schema.diff.schema);
@@ -1793,37 +1796,29 @@ function CNFlexFormService(
 
       if(schema.diff.form) {
         $rootScope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
-        _.each(schema.diff.form, function(form) {
+        _.each(schema.diff.form, (form, key) => {
 
-          if(keys.indexOf(form.key) === -1) {
-            keys.push(form.key);
+          if(!keys.includes(key)) {
+            keys.push(key);
           }
 
           // don't want to override key when extending cached objects
           //var key = form.key;
           //delete form.key;
-
-          var cached = service.getFromFormCache(form.key);
-          if(cached) {
-            service.reprocessField(cached, form);
-          }
-          var copies = service.getArrayCopies(form.key);
-          if(copies) {
-            copies.forEach(copy => copy && service.reprocessField(copy, form));
-          }
+          
+          _.each(
+            service.getFormsToProcess(key),
+            (copy) => copy && service.reprocessField(copy, form)
+          );
         });
       }
 
       if(keys.length) {
-        _.each(keys, function(key) {
-          var form = service.getFromFormCache(key);
-          if(form) service.processField(form);
-          if(key.includes('[]')) {
-            var copies = service.getArrayCopies(key);
-            _.each(copies, function(copy) {
-              if(copy) service.processField(copy);
-            });
-          }
+        _.each(keys, (key) => {
+          _.each(
+            service.getFormsToProcess(key),
+            (copy) => copy && service.processField(copy)
+          );
         });
       }
 
@@ -1834,8 +1829,20 @@ function CNFlexFormService(
     }
   }
 
+  function getFormsToProcess(key) {
+    const service = this;
+    const [ , arrayIndex ] = key.match(/\[(\d)+]/) || [];
+    const copies = service.getArrayCopies(key.replace(/\[\d+]/g, '[]'));
+    if(_.isUndefined(arrayIndex)) {
+      const cached = service.getFromFormCache(key);
+      return [ cached, ...copies ];
+    }
+    return [ copies[arrayIndex] ];
+  }
+
   function reprocessField(current, update, isChild) {
-    var service = this;
+    const service = this;
+    const key = service.getKey(current.key);
 
     // other logic in the service will add conition = 'true' to force
     // condition to eval true, so we set the update condition to 'true'
@@ -1845,14 +1852,14 @@ function CNFlexFormService(
 
     _.extend(current, _.omit(update, 'items', 'key'));
 
-    current._ogKeys.forEach(key => {
-      if(!update[key]) delete current[key];
+    current._ogKeys.forEach((prop) => {
+      if(!update[prop]) delete current[prop];
     });
     current._ogKeys = _.keys(update);
 
-    service.deregisterHandlers(update.key);
+    service.deregisterHandlers(key);
 
-    $rootScope.$broadcast('cnFlexFormReprocessField', update.key);
+    $rootScope.$broadcast('cnFlexFormReprocessField', key);
 
     // why do we redraw? If we're doing it to show error message
     // that has been addressed from the angular-schema-form library
@@ -1878,11 +1885,13 @@ function CNFlexFormService(
     }
   }
 
+  function getDotKey(key) {
+    return (_.isString(key) ? ObjectPath.parse(key) : key).join('.');
+  }
+
   function buildError(field) {
-    var service = this;
-    var key = service.getKey(field.key);
     return {
-      key: key,
+      key: getDotKey(field.key),
       message: field.error
     };
   }
