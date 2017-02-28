@@ -964,6 +964,9 @@ function CNFlexFormService(
         }
 
         if(!form.condition) form.condition = 'true';
+        else if (form.condition.includes("arrayIndex")) {
+          form.condition = service.replaceArrayIndex(form.condition, key);
+        }
 
         service.addArrayCopy(scope, genericKey, index);
         scope.$emit('flexFormArrayCopyAdded', genericKey);
