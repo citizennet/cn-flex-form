@@ -985,9 +985,14 @@ function CNFlexFormService(
       if(listener) listener.handlers = [];
 
       const unindexedKey = key.replace(/\[\d+]/g, '[]');
-      const copies = service.getArrayCopiesFor(unindexedKey);
 
-      copies.forEach((list) => list.splice(index, 1));
+      // TODO -- not sure if getArrayCopiesFor is actually necessary
+      // we should look into where this function might be needed and
+      // potentially remove it
+      const copies = service.getArrayCopiesFor(unindexedKey);
+      if(!copies.length) copies.push(service.getArrayScopes(unindexedKey) || []);
+
+      copies.forEach((list) => list && list.splice(scope.arrayIndex, 1));
 
       if(scope.form.link) {
         var list = service.parseExpression(scope.form.link, service.model).get();
