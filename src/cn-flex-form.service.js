@@ -855,8 +855,8 @@ function CNFlexFormService(
       return;
     }
 
-    //if(service.listeners[key]) service.listeners[key].handlers = [];
-    if(service.listeners[key]) delete service.listeners[key];
+    if(service.listeners[key]) service.listeners[key].handlers = [];
+    //if(service.listeners[key]) delete service.listeners[key];
   }
 
   function deregisterArrayHandlers(arrKey, fieldKey) {
