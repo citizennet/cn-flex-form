@@ -358,6 +358,13 @@ function CNFlexFormService(
     }
   }
 
+  function getOgKeys(field) {
+    return _.reject(
+      _.keys(field),
+      (key) => /^key$|^htmlClass$|^_/.test(key)
+    );
+  }
+
   function processField(field, pos) {
     const service = this;
 
@@ -366,7 +373,7 @@ function CNFlexFormService(
     }
 
     if(!field._ogKeys) {
-      field._ogKeys = _.without(_.keys(field), 'key', 'htmlClass');
+      field._ogKeys = getOgKeys(field);
     }
 
     const key = service.getKey(field.key);
@@ -1194,11 +1201,13 @@ function CNFlexFormService(
         let path = ObjectPath.parse(resolved);
         let assignable = this.getAssignable();
         if(val === 'remove') {
+          console.log(':: removing ::', exp);
           delete assignable.obj[assignable.key];
         }
         else {
           assignable.obj[assignable.key] = val;
         }
+        console.log(':: set ::', exp, options.silent);
         if(options.silent) {
           service.silenceListeners(resolved, depth);
           service.skipDefaults(resolved);
@@ -1861,9 +1870,12 @@ function CNFlexFormService(
     _.extend(current, _.omit(update, 'items', 'key'));
 
     current._ogKeys.forEach((prop) => {
-      if(!update[prop]) delete current[prop];
+      if(!update[prop]) {
+        console.log('::: deleting prop :::', prop, key);
+        delete current[prop];
+      }
     });
-    current._ogKeys = _.keys(update);
+    current._ogKeys = getOgKeys(update);
 
     service.deregisterHandlers(key);
 
