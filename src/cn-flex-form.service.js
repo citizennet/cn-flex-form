@@ -309,10 +309,11 @@ function CNFlexFormService(
       // if there's an existing default and it's the same as the current value
       // update the current value to the new default
       if((
-        _.isTrulyEmpty(modelValue) ||
+        (_.isTrulyEmpty(modelValue) && !service.updates) ||
         (_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
       ) && !angular.equals(modelValue, curDefault)) {
-        model.set(curDefault);
+        //console.log(':: processDefault ::', key, angular.copy(curDefault), angular.copy(modelValue), angular.copy(service.defaults[key]));
+        model.set(angular.copy(curDefault));
       }
     }
     service.defaults[key] = angular.copy(curDefault);
@@ -1168,7 +1169,7 @@ function CNFlexFormService(
         return start && start[path[0]];
       },
 
-      getAssignable() {
+      getAssignable({ noConstruction } = {}) {
         let resolved = service.resolveNestedExpressions(exp, depth);
         let path = ObjectPath.parse(resolved);
         let progress = [];
@@ -1178,6 +1179,9 @@ function CNFlexFormService(
           let key = path.shift();
           progress.push(key);
           if(!start[key]) {
+            if(noConstruction) {
+              return null;
+            }
             if(/^\d?$/.test(path[0])) {
               start[key] = [];
             }
@@ -1199,15 +1203,16 @@ function CNFlexFormService(
       set(val, options = {}) {
         let resolved = service.resolveNestedExpressions(exp, depth);
         let path = ObjectPath.parse(resolved);
-        let assignable = this.getAssignable();
         if(val === 'remove') {
-          console.log(':: removing ::', exp);
-          delete assignable.obj[assignable.key];
+          let { obj, key } = this.getAssignable({ noConstruction: true }) || {};
+          if(obj) {
+            delete obj[key];
+          }
         }
         else {
-          assignable.obj[assignable.key] = val;
+          let { obj, key } = this.getAssignable();
+          obj[key] = val;
         }
-        console.log(':: set ::', exp, options.silent);
         if(options.silent) {
           service.silenceListeners(resolved, depth);
           service.skipDefaults(resolved);
@@ -1871,7 +1876,6 @@ function CNFlexFormService(
 
     current._ogKeys.forEach((prop) => {
       if(!update[prop]) {
-        console.log('::: deleting prop :::', prop, key);
         delete current[prop];
       }
     });
