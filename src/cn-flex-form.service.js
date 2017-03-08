@@ -309,10 +309,11 @@ function CNFlexFormService(
       // if there's an existing default and it's the same as the current value
       // update the current value to the new default
       if((
-        _.isTrulyEmpty(modelValue) ||
+        (_.isTrulyEmpty(modelValue) && !service.updates) ||
         (_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
       ) && !angular.equals(modelValue, curDefault)) {
-        model.set(curDefault);
+        //console.log(':: processDefault ::', key, angular.copy(curDefault), angular.copy(modelValue), angular.copy(service.defaults[key]));
+        model.set(angular.copy(curDefault));
       }
     }
     service.defaults[key] = angular.copy(curDefault);
@@ -358,6 +359,13 @@ function CNFlexFormService(
     }
   }
 
+  function getOgKeys(field) {
+    return _.reject(
+      _.keys(field),
+      (key) => /^key$|^htmlClass$|^_/.test(key)
+    );
+  }
+
   function processField(field, pos) {
     const service = this;
 
@@ -366,7 +374,7 @@ function CNFlexFormService(
     }
 
     if(!field._ogKeys) {
-      field._ogKeys = _.without(_.keys(field), 'key', 'htmlClass');
+      field._ogKeys = getOgKeys(field);
     }
 
     const key = service.getKey(field.key);
@@ -848,8 +856,8 @@ function CNFlexFormService(
       return;
     }
 
-    //if(service.listeners[key]) service.listeners[key].handlers = [];
-    if(service.listeners[key]) delete service.listeners[key];
+    if(service.listeners[key]) service.listeners[key].handlers = [];
+    //if(service.listeners[key]) delete service.listeners[key];
   }
 
   function deregisterArrayHandlers(arrKey, fieldKey) {
@@ -1161,7 +1169,7 @@ function CNFlexFormService(
         return start && start[path[0]];
       },
 
-      getAssignable() {
+      getAssignable({ noConstruction } = {}) {
         let resolved = service.resolveNestedExpressions(exp, depth);
         let path = ObjectPath.parse(resolved);
         let progress = [];
@@ -1171,6 +1179,9 @@ function CNFlexFormService(
           let key = path.shift();
           progress.push(key);
           if(!start[key]) {
+            if(noConstruction) {
+              return null;
+            }
             if(/^\d?$/.test(path[0])) {
               start[key] = [];
             }
@@ -1192,12 +1203,15 @@ function CNFlexFormService(
       set(val, options = {}) {
         let resolved = service.resolveNestedExpressions(exp, depth);
         let path = ObjectPath.parse(resolved);
-        let assignable = this.getAssignable();
         if(val === 'remove') {
-          delete assignable.obj[assignable.key];
+          let { obj, key } = this.getAssignable({ noConstruction: true }) || {};
+          if(obj) {
+            delete obj[key];
+          }
         }
         else {
-          assignable.obj[assignable.key] = val;
+          let { obj, key } = this.getAssignable();
+          obj[key] = val;
         }
         if(options.silent) {
           service.silenceListeners(resolved, depth);
@@ -1861,9 +1875,11 @@ function CNFlexFormService(
     _.extend(current, _.omit(update, 'items', 'key'));
 
     current._ogKeys.forEach((prop) => {
-      if(!update[prop]) delete current[prop];
+      if(!update[prop]) {
+        delete current[prop];
+      }
     });
-    current._ogKeys = _.keys(update);
+    current._ogKeys = getOgKeys(update);
 
     service.deregisterHandlers(key);
 
