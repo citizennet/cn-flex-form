@@ -1052,7 +1052,6 @@ function CNFlexFormService(
 
   function getFromScopeCache(key) {
     const service = this;
-    
     return service.scopeCache[key];
   }
 
@@ -1750,7 +1749,7 @@ function CNFlexFormService(
       var diff = _.omit(cnUtil.diff(service.schema.params, params, true), 'updates');
       var keys;
 
-      if(diff || updateSchema) {
+      if(!_.isEmpty(diff) || updateSchema) {
         if(updateSchema) params.updateSchema = updateSchema;
         else {
           keys = _.keys(diff);
