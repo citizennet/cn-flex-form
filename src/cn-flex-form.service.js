@@ -125,6 +125,7 @@ function CNFlexFormService(
     getSchema,
     getWatchables,
     handleResolve,
+    incrementUpdates,
     initArrayCopyWatch,
     initModelWatch,
     initSchemaParams,
@@ -308,11 +309,12 @@ function CNFlexFormService(
       const modelValue = model.get();
       // if there's an existing default and it's the same as the current value
       // update the current value to the new default
-      if((
-        (_.isTrulyEmpty(modelValue) && !service.updates) ||
-        (_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
-      ) && !angular.equals(modelValue, curDefault)) {
-        //console.log(':: processDefault ::', key, angular.copy(curDefault), angular.copy(modelValue), angular.copy(service.defaults[key]));
+      if((_.has(service.defaults, key) ? angular.equals(modelValue, service.defaults[key]) : _.isTrulyEmpty(modelValue)) &&
+        !angular.equals(modelValue, curDefault)) {
+      //if ((
+        //(!_.has(service.defaults, key) && _.isTrulyEmpty(modelValue)) ||
+        //(_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
+      //) && !angular.equals(modelValue, curDefault)) {
         model.set(angular.copy(curDefault));
       }
     }
@@ -930,7 +932,7 @@ function CNFlexFormService(
 
       if(!angular.equals(service.params, service.prevParams)) {
         if(service.model.id && !service.updates && _.isEmpty(service.prevParams)) {
-          ++service.updates;
+          service.incrementUpdates();
         }
         else {
           service.refreshSchema();
@@ -992,7 +994,7 @@ function CNFlexFormService(
       const listener = service.listeners[key];
       if(listener) listener.handlers = [];
 
-      const unindexedKey = key.replace(/\[\d+]/g, '[]');
+      const unindexedKey = stripIndexes(key);
 
       // TODO -- not sure if getArrayCopiesFor is actually necessary
       // we should look into where this function might be needed and
@@ -1050,6 +1052,7 @@ function CNFlexFormService(
 
   function getFromScopeCache(key) {
     const service = this;
+    
     return service.scopeCache[key];
   }
 
@@ -1205,6 +1208,7 @@ function CNFlexFormService(
         let path = ObjectPath.parse(resolved);
         if(val === 'remove') {
           let { obj, key } = this.getAssignable({ noConstruction: true }) || {};
+          delete service.defaults[resolved.replace('model.', '')];
           if(obj) {
             delete obj[key];
           }
@@ -1743,7 +1747,7 @@ function CNFlexFormService(
     var service = this;
     service.refreshSchema = _.debounce(function(updateSchema) {
       var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
-      var diff = cnUtil.diff(service.schema.params, params, true);
+      var diff = _.omit(cnUtil.diff(service.schema.params, params, true), 'updates');
       var keys;
 
       if(diff || updateSchema) {
@@ -1760,14 +1764,14 @@ function CNFlexFormService(
         }
 
         if(!params.updateSchema) {
-          diff = cnUtil.diff(params, _.omit(service.schema.params, 'updateSchema'));
+          diff = cnUtil.diff(params, _.omit(service.schema.params, ['updateSchema', 'updates']));
           keys = _.keys(diff);
 
           params.updateSchema = _.first(keys);
         }
 
         refresh(params).then(function(schema) {
-          ++service.updates;
+          service.incrementUpdates();
           //service.updateSchema(schema);
           service.processUpdatedSchema(schema);
         });
@@ -1974,6 +1978,12 @@ function CNFlexFormService(
     _.each(service.events, function(listener) {
       listener();
     });
+  }
+
+  function incrementUpdates() {
+    const service =  this;
+    ++service.updates;
+    service.params.updates = service.updates;
   }
 }
 
