@@ -1494,6 +1494,7 @@ function CNFlexFormService(
 
         if(select.items[0].type !== 'component') {
           if(select.items.length > 1) {
+            _.each(select.items, (i) => i.destroyStrategy = "retain");
             select.items = [{
               type: "component",
               items: select.items
@@ -1504,6 +1505,7 @@ function CNFlexFormService(
         }
 
         select.type = 'cn-autocomplete-detailed';
+        select.destroyStrategy = "retain";
       }
       else {
         if(!select.selectionStyle) {
