@@ -766,7 +766,7 @@ function CNFlexFormService(
     let defaultValue = _.get(service.getSchema(key), 'default');
 
     if(!service.listeners[key]) {
-      var prev = _.isUndefined(cur) ? angular.copy(defaultValue) : angular.copy(cur);
+      var prev = angular.copy(cur);
       service.listeners[key] = {
         handlers: [],
         updateSchema: updateSchema,
@@ -1244,15 +1244,25 @@ function CNFlexFormService(
     });
   }
 
-  // TODO -- extend this to support nested array keys
-  // e.g. "creative[1].childAttachments[0].callToAction"
   function skipDefaults(keyStart) {
     const service = this;
     const index = keyStart.match(/\[\d*\]/) ? getArrayIndex(keyStart) : null;
     const ks = stripIndexes(keyStart);
-    _.each(service.formCache, (form, key) => {
-      if (key.startsWith(ks)) {
-        const indexedKey = service.setArrayIndex(key, index); 
+    const keys = _.filter(_.keys(service.formCache), (k) => k.startsWith(ks));
+    let skipKeys = [];
+    _.each(keys, (key) => {
+      const indexedKey = service.setArrayIndex(key, index); 
+      const model = service.parseExpression(indexedKey, service.model).get();
+      if (_.isArray(model)) {
+        const childKeys = _.filter(_.keys(service.formCache), (k) => k.startsWith(key));
+        for (let i = 0; i < model.length; i++) {
+          _.each(childKeys, (k) => {
+            skipKeys.push(k);
+            const indexedChildKey = service.setArrayIndex(k, [index, i]);
+            service.skipDefault[indexedChildKey] = true;
+          });
+        }
+      } else if (!skipKeys.includes(key)) {
         service.skipDefault[indexedKey] = true;
       }
     });
@@ -1957,16 +1967,20 @@ function CNFlexFormService(
   }
 
   function setArrayIndex(key, index, asArray) {
-    var service = this;
-    var keyCopy;
+    const service = this;
+    let keyCopy;
+    if (!_.isArray(index)) {
+      index = [index];
+    }
     if(_.isString(key)) {
       keyCopy = ObjectPath.parse(key);
     } else {
       keyCopy = _.clone(key);
     }
-    var indexOfIndex = keyCopy.indexOf('');
-    keyCopy[indexOfIndex] = index;
-
+    while (index.length && keyCopy.indexOf('') > -1) {
+      let indexOfIndex = keyCopy.indexOf('');
+      keyCopy[indexOfIndex] = index.shift();
+    }
     if(asArray) {
       return keyCopy;
     } else {
