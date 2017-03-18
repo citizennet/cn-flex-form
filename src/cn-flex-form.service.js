@@ -1505,7 +1505,7 @@ function CNFlexFormService(
         }
 
         select.type = 'cn-autocomplete-detailed';
-        select.destroyStrategy = "retain";
+        select.destroyStrategy = 'retain';
       }
       else {
         if(!select.selectionStyle) {
