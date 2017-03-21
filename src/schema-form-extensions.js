@@ -338,6 +338,7 @@ function addTemplates($templateCache) {
                ng-show="showTitle()"
                for="{{form.key && form.key[0]}}">{{form.title}}</label>
         <media-upload ng-model="$$value$$"
+                      cn-disabled="form.readonly"
                       cn-file-type="form.fileType"
                       cn-upload-path="form.uploadPath"
                       cn-data="form.data"
