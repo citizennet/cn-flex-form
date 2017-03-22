@@ -125,6 +125,7 @@ function CNFlexFormService(
     getSchema,
     getWatchables,
     handleResolve,
+    incrementUpdates,
     initArrayCopyWatch,
     initModelWatch,
     initSchemaParams,
@@ -308,11 +309,12 @@ function CNFlexFormService(
       const modelValue = model.get();
       // if there's an existing default and it's the same as the current value
       // update the current value to the new default
-      if((
-        (_.isTrulyEmpty(modelValue) && !service.updates) ||
-        (_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
-      ) && !angular.equals(modelValue, curDefault)) {
-        //console.log(':: processDefault ::', key, angular.copy(curDefault), angular.copy(modelValue), angular.copy(service.defaults[key]));
+      if((_.has(service.defaults, key) ? angular.equals(modelValue, service.defaults[key]) : _.isTrulyEmpty(modelValue)) &&
+        !angular.equals(modelValue, curDefault)) {
+      //if ((
+        //(!_.has(service.defaults, key) && _.isTrulyEmpty(modelValue)) ||
+        //(_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
+      //) && !angular.equals(modelValue, curDefault)) {
         model.set(angular.copy(curDefault));
       }
     }
@@ -769,7 +771,7 @@ function CNFlexFormService(
     let defaultValue = _.get(service.getSchema(key), 'default');
 
     if(!service.listeners[key]) {
-      var prev = _.isUndefined(cur) ? angular.copy(defaultValue) : angular.copy(cur);
+      var prev = angular.copy(cur);
       service.listeners[key] = {
         handlers: [],
         updateSchema: updateSchema,
@@ -935,7 +937,7 @@ function CNFlexFormService(
 
       if(!angular.equals(service.params, service.prevParams)) {
         if(service.model.id && !service.updates && _.isEmpty(service.prevParams)) {
-          ++service.updates;
+          service.incrementUpdates();
         }
         else {
           service.refreshSchema();
@@ -997,7 +999,7 @@ function CNFlexFormService(
       const listener = service.listeners[key];
       if(listener) listener.handlers = [];
 
-      const unindexedKey = key.replace(/\[\d+]/g, '[]');
+      const unindexedKey = stripIndexes(key);
 
       // TODO -- not sure if getArrayCopiesFor is actually necessary
       // we should look into where this function might be needed and
@@ -1210,6 +1212,7 @@ function CNFlexFormService(
         let path = ObjectPath.parse(resolved);
         if(val === 'remove') {
           let { obj, key } = this.getAssignable({ noConstruction: true }) || {};
+          delete service.defaults[resolved.replace('model.', '')];
           if(obj) {
             delete obj[key];
           }
@@ -1246,15 +1249,25 @@ function CNFlexFormService(
     });
   }
 
-  // TODO -- extend this to support nested array keys
-  // e.g. "creative[1].childAttachments[0].callToAction"
   function skipDefaults(keyStart) {
     const service = this;
     const index = keyStart.match(/\[\d*\]/) ? getArrayIndex(keyStart) : null;
     const ks = stripIndexes(keyStart);
-    _.each(service.formCache, (form, key) => {
-      if (key.startsWith(ks)) {
-        const indexedKey = service.setArrayIndex(key, index); 
+    const keys = _.filter(_.keys(service.formCache), (k) => k.startsWith(ks));
+    let skipKeys = [];
+    _.each(keys, (key) => {
+      const indexedKey = service.setArrayIndex(key, index); 
+      const model = service.parseExpression(indexedKey, service.model).get();
+      if (_.isArray(model)) {
+        const childKeys = _.filter(_.keys(service.formCache), (k) => k.startsWith(key));
+        for (let i = 0; i < model.length; i++) {
+          _.each(childKeys, (k) => {
+            skipKeys.push(k);
+            const indexedChildKey = service.setArrayIndex(k, [index, i]);
+            service.skipDefault[indexedChildKey] = true;
+          });
+        }
+      } else if (!skipKeys.includes(key)) {
         service.skipDefault[indexedKey] = true;
       }
     });
@@ -1496,6 +1509,7 @@ function CNFlexFormService(
 
         if(select.items[0].type !== 'component') {
           if(select.items.length > 1) {
+            _.each(select.items, (i) => i.destroyStrategy = "retain");
             select.items = [{
               type: "component",
               items: select.items
@@ -1506,6 +1520,7 @@ function CNFlexFormService(
         }
 
         select.type = 'cn-autocomplete-detailed';
+        select.destroyStrategy = 'retain';
       }
       else {
         if(!select.selectionStyle) {
@@ -1748,10 +1763,10 @@ function CNFlexFormService(
     var service = this;
     service.refreshSchema = _.debounce(function(updateSchema) {
       var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
-      var diff = cnUtil.diff(service.schema.params, params, true);
+      var diff = _.omit(cnUtil.diff(service.schema.params, params, true), 'updates');
       var keys;
 
-      if(diff || updateSchema) {
+      if(!_.isEmpty(diff) || updateSchema) {
         if(updateSchema) params.updateSchema = updateSchema;
         else {
           keys = _.keys(diff);
@@ -1765,14 +1780,14 @@ function CNFlexFormService(
         }
 
         if(!params.updateSchema) {
-          diff = cnUtil.diff(params, _.omit(service.schema.params, 'updateSchema'));
+          diff = cnUtil.diff(params, _.omit(service.schema.params, ['updateSchema', 'updates']));
           keys = _.keys(diff);
 
           params.updateSchema = _.first(keys);
         }
 
         refresh(params).then(function(schema) {
-          ++service.updates;
+          service.incrementUpdates();
           //service.updateSchema(schema);
           service.processUpdatedSchema(schema);
         });
@@ -1957,16 +1972,20 @@ function CNFlexFormService(
   }
 
   function setArrayIndex(key, index, asArray) {
-    var service = this;
-    var keyCopy;
+    const service = this;
+    let keyCopy;
+    if (!_.isArray(index)) {
+      index = [index];
+    }
     if(_.isString(key)) {
       keyCopy = ObjectPath.parse(key);
     } else {
       keyCopy = _.clone(key);
     }
-    var indexOfIndex = keyCopy.indexOf('');
-    keyCopy[indexOfIndex] = index;
-
+    while (index.length && keyCopy.indexOf('') > -1) {
+      let indexOfIndex = keyCopy.indexOf('');
+      keyCopy[indexOfIndex] = index.shift();
+    }
     if(asArray) {
       return keyCopy;
     } else {
@@ -1979,6 +1998,12 @@ function CNFlexFormService(
     _.each(service.events, function(listener) {
       listener();
     });
+  }
+
+  function incrementUpdates() {
+    const service =  this;
+    ++service.updates;
+    service.params.updates = service.updates;
   }
 }
 

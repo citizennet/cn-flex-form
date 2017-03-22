@@ -162,7 +162,7 @@ function addTemplates($templateCache) {
             ng-show="modelArray.length"
             ng-model="modelArray">
           <li class="list-group-item {{form.fieldHtmlClass}}"
-              ng-repeat="item in modelArray">
+              ng-repeat="item in modelArray track by $index">
             <button ng-hide="form.readonly || form.remove === null"
                     ng-click="deleteFromArray($index)"
                     type="button" class="close pull-right">
@@ -338,6 +338,7 @@ function addTemplates($templateCache) {
                ng-show="showTitle()"
                for="{{form.key && form.key[0]}}">{{form.title}}</label>
         <media-upload ng-model="$$value$$"
+                      cn-disabled="form.readonly"
                       cn-file-type="form.fileType"
                       cn-upload-path="form.uploadPath"
                       cn-data="form.data"
