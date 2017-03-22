@@ -24,11 +24,11 @@ const fieldTypeHandlers = {
 };
 
 const fieldPropHandlers = [{
-  prop: 'selectDisplay',
-  handler: (field, service) => service.processSelectDisplay(field)
-}, {
   prop: 'resolve',
   handler: (field, service) => service.processResolve(field)
+}, {
+  prop: 'selectDisplay',
+  handler: (field, service) => service.processSelectDisplay(field)
 }, {
   prop: 'watch',
   handler: (field, service) => field.watch && service.processFieldWatch(field)
@@ -120,10 +120,12 @@ function CNFlexFormService(
     getFromDataCache,
     getFromFormCache,
     getFromScopeCache,
+    getFormsToProcess,
     getKey,
     getSchema,
     getWatchables,
     handleResolve,
+    incrementUpdates,
     initArrayCopyWatch,
     initModelWatch,
     initSchemaParams,
@@ -169,25 +171,34 @@ function CNFlexFormService(
     setupConfig,
     setupArraySelectDisplay,
     setupSelectDisplay,
-    setupSchemaRefresh
+    setupSchemaRefresh,
+    silenceListeners,
+    skipDefaults
   };
 
-  function CNFlexFormConstructor(schema, model, config) {
-    var service;
-    if(services.length) {
-      for(var i = 0, l = services.length; i < l; i++) {
-        if(services[i].model === model) {
-          service = services[i];
-          service.compile(schema, model, config);
-          break;
-        }
+  function getService(fn) {
+    return _.find(services, fn);
+  }
+
+  function CNFlexFormConstructor(...args) {
+    if(args.length > 1) {
+      var [ schema, model, config ] = args;
+    }
+    else {
+      var { schema, model, config } = args[0];
+    }
+
+    const curService = getService((service) => service.model === model);
+    if(curService) {
+      if(schema) {
+        curService.compile(schema, model, config);
       }
+      return curService;
     }
-    if(!service) {
-      service = new CNFlexForm(schema, model, config);
-      services.push(service);
-    }
-    return service || new CNFlexForm(schema, model, config);
+
+    const newService = new CNFlexForm(schema, model, config);
+    services.push(newService);
+    return newService;
   }
 
   function CNFlexForm(schema, model, config) {
@@ -208,6 +219,7 @@ function CNFlexFormService(
     this.resolveRegister = {};
     this.model = model;
     this.updates = 0;
+    this.skipDefault = {};
 
     this.params = cnFlexFormConfig.getStateParams();
 
@@ -217,7 +229,7 @@ function CNFlexFormService(
   }
 
   _.extend(CNFlexForm.prototype, prototype);
-  _.extend(CNFlexFormConstructor, prototype);
+  _.extend(CNFlexFormConstructor, prototype, { getService });
 
   return CNFlexFormConstructor;
 
@@ -280,6 +292,10 @@ function CNFlexFormService(
     const curDefault = field.default || schema.default;
     const key = service.getKey(field.key);
     
+    if (service.skipDefault[key]) {
+      delete service.skipDefault[key];
+      return;
+    }
     // if default is returned for new form, treat it as a previous param in order to not trigger unnecessary updateSchema
     if(!service.updates && field.updateSchema && angular.isDefined(curDefault) && !service.schema.params[key]) {
       service.schema.params[key] = curDefault;
@@ -293,11 +309,13 @@ function CNFlexFormService(
       const modelValue = model.get();
       // if there's an existing default and it's the same as the current value
       // update the current value to the new default
-      if((
-        _.isTrulyEmpty(modelValue) ||
-        (_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
-      ) && !angular.equals(modelValue, curDefault)) {
-        model.set(curDefault);
+      if((_.has(service.defaults, key) ? angular.equals(modelValue, service.defaults[key]) : _.isTrulyEmpty(modelValue)) &&
+        !angular.equals(modelValue, curDefault)) {
+      //if ((
+        //(!_.has(service.defaults, key) && _.isTrulyEmpty(modelValue)) ||
+        //(_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
+      //) && !angular.equals(modelValue, curDefault)) {
+        model.set(angular.copy(curDefault));
       }
     }
     service.defaults[key] = angular.copy(curDefault);
@@ -343,6 +361,13 @@ function CNFlexFormService(
     }
   }
 
+  function getOgKeys(field) {
+    return _.reject(
+      _.keys(field),
+      (key) => /^key$|^htmlClass$|^_/.test(key)
+    );
+  }
+
   function processField(field, pos) {
     const service = this;
 
@@ -351,7 +376,7 @@ function CNFlexFormService(
     }
 
     if(!field._ogKeys) {
-      field._ogKeys = _.without(_.keys(field), 'key', 'htmlClass');
+      field._ogKeys = getOgKeys(field);
     }
 
     const key = service.getKey(field.key);
@@ -373,11 +398,13 @@ function CNFlexFormService(
     service.processFieldProps(field);
 
     if(key) {
-      if(_.find(service.errors, { key })) {
-        service.errors = _.reject(service.errors, {key: key});
-        $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
-        $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
-      }
+      ((key) => {
+        if(_.find(service.errors, { key })) {
+          service.errors = _.reject(service.errors, { key });
+          $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
+          $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+        }
+      })(getDotKey(key));
       
       if(field.error) {
         service.errors.push(service.buildError(field));
@@ -474,7 +501,7 @@ function CNFlexFormService(
       dataProp = replaceArrayIndex(dataProp, key || field.arrayIndex);
       if(dataProp.includes('[arrayIndex]')) return;
 
-      service.handleResolve(field, fieldProp, dataProp);
+      service.handleResolve(field, fieldProp, dataProp, true);
 
       getWatchables(dataProp).forEach((watchable) => {
         const [, base, exp] = watchable.match(/(schema\.data\.|model\.)(\S+)/) || [];
@@ -495,7 +522,7 @@ function CNFlexFormService(
     return field;
   }
 
-  function handleResolve(field, fieldProp, exp) {
+  function handleResolve(field, fieldProp, exp, skipPropHandlers) {
     const service = this;
     let data;
     // does declarative/functional outweigh performance?
@@ -539,6 +566,7 @@ function CNFlexFormService(
         if(schema) return schema.default;
       })();
     }
+
     if(data && data.cursor) {
       field.loadMore = function() {
         const dataProp = exp.match(/schema\.data\.(.+)/)[1];
@@ -548,11 +576,14 @@ function CNFlexFormService(
     else {
       delete field.loadMore;
     }
+ 
     field[fieldProp] = (data && data.data) ? data.data : data;
 
-    fieldPropHandlers.forEach(({ prop, handler }) => 
-        prop === fieldProp && handler(field, service)
-    );
+    if(!skipPropHandlers) {
+      fieldPropHandlers.forEach(({ prop, handler }) => 
+          prop === fieldProp && handler(field, service)
+      );
+    }
   }
 
   function registerResolve(field, fieldProp, dataProp, exp) {
@@ -724,7 +755,7 @@ function CNFlexFormService(
     }
 
     key = service.getKey(key);
-    var arrMatch = key.match(/([^[\]]*)\[]\.?(.*)/);
+    var arrMatch = key.match(/(.*)\[]\.?(.*)/);
 
     if(arrMatch) {
       service.registerArrayHandlers(arrMatch[1], arrMatch[2], handler, updateSchema, runHandler);
@@ -735,7 +766,7 @@ function CNFlexFormService(
     let defaultValue = _.get(service.getSchema(key), 'default');
 
     if(!service.listeners[key]) {
-      var prev = _.isUndefined(cur) ? angular.copy(defaultValue) : angular.copy(cur);
+      var prev = angular.copy(cur);
       service.listeners[key] = {
         handlers: [],
         updateSchema: updateSchema,
@@ -750,31 +781,31 @@ function CNFlexFormService(
   }
 
   function registerArrayHandlers(arrKey, fieldKey, handler, updateSchema, runHandler) {
-    var service = this;
-    var onArray = function(cur, prev, reorder) {
+    const service = this;
+    const onArray = (cur, prev, reorder) => {
 
       if(!prev && prev !== 0 && (cur | 0) < 1) return;
       var i, l, key;
 
       if(prev > cur || reorder) {
-        var lastKey = fieldKey ?
-          arrKey + '[' + (prev - 1) + ']' + '.' + fieldKey :
-          arrKey + '[' + (prev - 1) + ']';
+        const lastKey = fieldKey ?
+          `${arrKey}[${prev - 1}].${fieldKey}` :
+          `${arrKey}[${prev - 1}]`;
 
         // only deregister handlers once each time an element is removed
         if(service.listeners[lastKey]) {
           for(i = 0, l = prev; i < l; i++) {
             key = fieldKey ?
-              arrKey + '[' + i + ']' + '.' + fieldKey :
-              arrKey + '[' + i + ']';
+              `${arrKey}[${i}].${fieldKey}` :
+              `${arrKey}[${i}]`;
 
             service.deregisterHandlers(key);
           }
         }
         for(i = 0, l = cur; i < l; i++) {
           key = fieldKey ?
-            arrKey + '[' + i + ']' + '.' + fieldKey :
-            arrKey + '[' + i + ']';
+            `${arrKey}[${i}].${fieldKey}` :
+            `${arrKey}[${i}]`;
 
           service.registerHandler(key, handler, updateSchema);
           //no need to call if just reregisering handlers
@@ -784,8 +815,8 @@ function CNFlexFormService(
       else if(cur > (prev || 0)) {
         for(i = prev | 0, l = cur; i < l; i++) {
           key = fieldKey ?
-            arrKey + '[' + i + ']' + '.' + fieldKey :
-            arrKey + '[' + i + ']';
+            `${arrKey}[${i}].${fieldKey}` :
+            `${arrKey}[${i}]`;
 
           service.registerHandler(key, handler, updateSchema, runHandler);
           //if(runHandler) handler(null, null, key);
@@ -793,20 +824,22 @@ function CNFlexFormService(
       }
     };
 
-    var arrVal = service.parseExpression(arrKey, service.model).get();
-    _.each(arrVal, function(field, i) {
-      var key = fieldKey ?
-        arrKey + '[' + i + ']' + '.' + fieldKey :
-        arrKey + '[' + i + ']';
+    const arrVal = service.parseExpression(arrKey, service.model).get();
+    _.each(arrVal, (field, i) => {
+      const key = fieldKey ?
+        `${arrKey}[${i}].${fieldKey}` :
+        `${arrKey}[${i}]`;
 
       service.registerHandler(key, handler, updateSchema);
       if(runHandler) handler(null, null, key);
     });
 
-    if(service.arrayListeners[arrKey + '.length']) {
-      service.arrayListeners[arrKey + '.length'].handlers.push(onArray);
-    } else {
-      service.arrayListeners[arrKey + '.length'] = {
+    const listenerKey = `${arrKey}.length`;
+    if(service.arrayListeners[listenerKey]) {
+      service.arrayListeners[listenerKey].handlers.push(onArray);
+    }
+    else {
+      service.arrayListeners[listenerKey] = {
         handlers: [onArray],
         prev: arrVal ? arrVal.length : 0
       };
@@ -826,6 +859,7 @@ function CNFlexFormService(
     }
 
     if(service.listeners[key]) service.listeners[key].handlers = [];
+    //if(service.listeners[key]) delete service.listeners[key];
   }
 
   function deregisterArrayHandlers(arrKey, fieldKey) {
@@ -844,9 +878,9 @@ function CNFlexFormService(
     if(service.modelWatch) service.modelWatch();
 
     service.modelWatch = $rootScope.$watch(
-        function() { return service.model; },
-        service.onModelWatch.bind(service),
-        true
+      () => service.model,
+      service.onModelWatch.bind(service),
+      true
     );
 
     service.initSchemaParams();
@@ -898,7 +932,7 @@ function CNFlexFormService(
 
       if(!angular.equals(service.params, service.prevParams)) {
         if(service.model.id && !service.updates && _.isEmpty(service.prevParams)) {
-          ++service.updates;
+          service.incrementUpdates();
         }
         else {
           service.refreshSchema();
@@ -943,6 +977,9 @@ function CNFlexFormService(
         }
 
         if(!form.condition) form.condition = 'true';
+        else if (form.condition.includes("arrayIndex")) {
+          form.condition = service.replaceArrayIndex(form.condition, key);
+        }
 
         service.addArrayCopy(scope, genericKey, index);
         scope.$emit('flexFormArrayCopyAdded', genericKey);
@@ -957,10 +994,15 @@ function CNFlexFormService(
       const listener = service.listeners[key];
       if(listener) listener.handlers = [];
 
-      const unindexedKey = key.replace(/\[\d+]/g, '[]');
-      const copies = service.getArrayCopiesFor(unindexedKey);
+      const unindexedKey = stripIndexes(key);
 
-      copies.forEach((list) => list.splice(index, 1));
+      // TODO -- not sure if getArrayCopiesFor is actually necessary
+      // we should look into where this function might be needed and
+      // potentially remove it
+      const copies = service.getArrayCopiesFor(unindexedKey);
+      if(!copies.length) copies.push(service.getArrayScopes(unindexedKey) || []);
+
+      copies.forEach((list) => list && list.splice(scope.arrayIndex, 1));
 
       if(scope.form.link) {
         var list = service.parseExpression(scope.form.link, service.model).get();
@@ -1129,7 +1171,7 @@ function CNFlexFormService(
         return start && start[path[0]];
       },
 
-      getAssignable() {
+      getAssignable({ noConstruction } = {}) {
         let resolved = service.resolveNestedExpressions(exp, depth);
         let path = ObjectPath.parse(resolved);
         let progress = [];
@@ -1139,6 +1181,9 @@ function CNFlexFormService(
           let key = path.shift();
           progress.push(key);
           if(!start[key]) {
+            if(noConstruction) {
+              return null;
+            }
             if(/^\d?$/.test(path[0])) {
               start[key] = [];
             }
@@ -1157,15 +1202,23 @@ function CNFlexFormService(
         };
       },
 
-      set(val) {
+      set(val, options = {}) {
         let resolved = service.resolveNestedExpressions(exp, depth);
         let path = ObjectPath.parse(resolved);
-        let assignable = this.getAssignable();
         if(val === 'remove') {
-          delete assignable.obj[assignable.key];
+          let { obj, key } = this.getAssignable({ noConstruction: true }) || {};
+          delete service.defaults[resolved.replace('model.', '')];
+          if(obj) {
+            delete obj[key];
+          }
         }
         else {
-          assignable.obj[assignable.key] = val;
+          let { obj, key } = this.getAssignable();
+          obj[key] = val;
+        }
+        if(options.silent) {
+          service.silenceListeners(resolved, depth);
+          service.skipDefaults(resolved);
         }
         return val;
       },
@@ -1180,6 +1233,39 @@ function CNFlexFormService(
     };
 
     return modelValue;
+  }
+
+  function silenceListeners(keyStart, depth) {
+    const service = this;
+    _.each(service.listeners, (listener, key) => {
+      if(key.indexOf(keyStart) === 0) {
+        listener.prev = angular.copy(service.parseExpression(key, depth).get());
+      }
+    });
+  }
+
+  function skipDefaults(keyStart) {
+    const service = this;
+    const index = keyStart.match(/\[\d*\]/) ? getArrayIndex(keyStart) : null;
+    const ks = stripIndexes(keyStart);
+    const keys = _.filter(_.keys(service.formCache), (k) => k.startsWith(ks));
+    let skipKeys = [];
+    _.each(keys, (key) => {
+      const indexedKey = service.setArrayIndex(key, index); 
+      const model = service.parseExpression(indexedKey, service.model).get();
+      if (_.isArray(model)) {
+        const childKeys = _.filter(_.keys(service.formCache), (k) => k.startsWith(key));
+        for (let i = 0; i < model.length; i++) {
+          _.each(childKeys, (k) => {
+            skipKeys.push(k);
+            const indexedChildKey = service.setArrayIndex(k, [index, i]);
+            service.skipDefault[indexedChildKey] = true;
+          });
+        }
+      } else if (!skipKeys.includes(key)) {
+        service.skipDefault[indexedKey] = true;
+      }
+    });
   }
 
   function processArray(array) {
@@ -1418,6 +1504,7 @@ function CNFlexFormService(
 
         if(select.items[0].type !== 'component') {
           if(select.items.length > 1) {
+            _.each(select.items, (i) => i.destroyStrategy = "retain");
             select.items = [{
               type: "component",
               items: select.items
@@ -1428,6 +1515,7 @@ function CNFlexFormService(
         }
 
         select.type = 'cn-autocomplete-detailed';
+        select.destroyStrategy = 'retain';
       }
       else {
         if(!select.selectionStyle) {
@@ -1670,10 +1758,10 @@ function CNFlexFormService(
     var service = this;
     service.refreshSchema = _.debounce(function(updateSchema) {
       var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
-      var diff = cnUtil.diff(service.schema.params, params, true);
+      var diff = _.omit(cnUtil.diff(service.schema.params, params, true), 'updates');
       var keys;
 
-      if(diff || updateSchema) {
+      if(!_.isEmpty(diff) || updateSchema) {
         if(updateSchema) params.updateSchema = updateSchema;
         else {
           keys = _.keys(diff);
@@ -1687,14 +1775,14 @@ function CNFlexFormService(
         }
 
         if(!params.updateSchema) {
-          diff = cnUtil.diff(params, _.omit(service.schema.params, 'updateSchema'));
+          diff = cnUtil.diff(params, _.omit(service.schema.params, ['updateSchema', 'updates']));
           keys = _.keys(diff);
 
           params.updateSchema = _.first(keys);
         }
 
         refresh(params).then(function(schema) {
-          ++service.updates;
+          service.incrementUpdates();
           //service.updateSchema(schema);
           service.processUpdatedSchema(schema);
         });
@@ -1733,7 +1821,7 @@ function CNFlexFormService(
         });
       }
 
-      var keys = [];
+      const keys = [];
 
       if(schema.diff.schema) {
         $rootScope.$broadcast('cnFlexFormDiff:schema', schema.diff.schema);
@@ -1745,37 +1833,29 @@ function CNFlexFormService(
 
       if(schema.diff.form) {
         $rootScope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
-        _.each(schema.diff.form, function(form) {
+        _.each(schema.diff.form, (form, key) => {
 
-          if(keys.indexOf(form.key) === -1) {
-            keys.push(form.key);
+          if(!keys.includes(key)) {
+            keys.push(key);
           }
 
           // don't want to override key when extending cached objects
           //var key = form.key;
           //delete form.key;
-
-          var cached = service.getFromFormCache(form.key);
-          if(cached) {
-            service.reprocessField(cached, form);
-          }
-          var copies = service.getArrayCopies(form.key);
-          if(copies) {
-            copies.forEach(copy => copy && service.reprocessField(copy, form));
-          }
+          
+          _.each(
+            service.getFormsToProcess(key),
+            (copy) => copy && service.reprocessField(copy, form)
+          );
         });
       }
 
       if(keys.length) {
-        _.each(keys, function(key) {
-          var form = service.getFromFormCache(key);
-          if(form) service.processField(form);
-          if(key.includes('[]')) {
-            var copies = service.getArrayCopies(key);
-            _.each(copies, function(copy) {
-              if(copy) service.processField(copy);
-            });
-          }
+        _.each(keys, (key) => {
+          _.each(
+            service.getFormsToProcess(key),
+            (copy) => copy && service.processField(copy)
+          );
         });
       }
 
@@ -1786,8 +1866,20 @@ function CNFlexFormService(
     }
   }
 
+  function getFormsToProcess(key) {
+    const service = this;
+    const [ , arrayIndex ] = key.match(/\[(\d)+]/) || [];
+    const copies = service.getArrayCopies(key.replace(/\[\d+]/g, '[]'));
+    if(_.isUndefined(arrayIndex)) {
+      const cached = service.getFromFormCache(key);
+      return [ cached, ...copies ];
+    }
+    return [ copies[arrayIndex] ];
+  }
+
   function reprocessField(current, update, isChild) {
-    var service = this;
+    const service = this;
+    const key = service.getKey(current.key);
 
     // other logic in the service will add conition = 'true' to force
     // condition to eval true, so we set the update condition to 'true'
@@ -1797,14 +1889,16 @@ function CNFlexFormService(
 
     _.extend(current, _.omit(update, 'items', 'key'));
 
-    current._ogKeys.forEach(key => {
-      if(!update[key]) delete current[key];
+    current._ogKeys.forEach((prop) => {
+      if(!update[prop]) {
+        delete current[prop];
+      }
     });
-    current._ogKeys = _.keys(update);
+    current._ogKeys = getOgKeys(update);
 
-    service.deregisterHandlers(update.key);
+    service.deregisterHandlers(key);
 
-    $rootScope.$broadcast('cnFlexFormReprocessField', update.key);
+    $rootScope.$broadcast('cnFlexFormReprocessField', key);
 
     // why do we redraw? If we're doing it to show error message
     // that has been addressed from the angular-schema-form library
@@ -1830,11 +1924,13 @@ function CNFlexFormService(
     }
   }
 
+  function getDotKey(key) {
+    return (_.isString(key) ? ObjectPath.parse(key) : key).join('.');
+  }
+
   function buildError(field) {
-    var service = this;
-    var key = service.getKey(field.key);
     return {
-      key: key,
+      key: getDotKey(field.key),
       message: field.error
     };
   }
@@ -1871,16 +1967,20 @@ function CNFlexFormService(
   }
 
   function setArrayIndex(key, index, asArray) {
-    var service = this;
-    var keyCopy;
+    const service = this;
+    let keyCopy;
+    if (!_.isArray(index)) {
+      index = [index];
+    }
     if(_.isString(key)) {
       keyCopy = ObjectPath.parse(key);
     } else {
       keyCopy = _.clone(key);
     }
-    var indexOfIndex = keyCopy.indexOf('');
-    keyCopy[indexOfIndex] = index;
-
+    while (index.length && keyCopy.indexOf('') > -1) {
+      let indexOfIndex = keyCopy.indexOf('');
+      keyCopy[indexOfIndex] = index.shift();
+    }
     if(asArray) {
       return keyCopy;
     } else {
@@ -1893,6 +1993,12 @@ function CNFlexFormService(
     _.each(service.events, function(listener) {
       listener();
     });
+  }
+
+  function incrementUpdates() {
+    const service =  this;
+    ++service.updates;
+    service.params.updates = service.updates;
   }
 }
 
