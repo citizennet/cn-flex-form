@@ -642,11 +642,14 @@ function CNFlexFormService(
         else {
           var adjustment = {};
 
-          adjustment.date = resolution.match(/\+ ?(\d+) days/);
+          adjustment.date = resolution.match(/\+ ?(\d+) (days|hours)/);
 
           if(adjustment.date) {
-            adjustment.date = adjustment.date[1];
-            resolution = resolution.replace(adjustment.date, '').trim();
+            adjustment.date = {
+              val: adjustment.date[1],
+              units: adjustment.date[2]
+            };
+            resolution = resolution.replace(adjustment.date.val, '').trim();
           }
           else {
             adjustment.math = resolution.match(/(\+|\-|\/|\*) ?(\S+)/);
@@ -680,7 +683,9 @@ function CNFlexFormService(
 
             if(!condition || service.parseCondition(curCondition)) {
               if(adjustment.date) {
-                update.set(moment(from.get()).add(adjustment.date, 'days').toDate());
+                update.set(moment(from.get())
+                            .add(adjustment.date.val, adjustment.date.units)
+                            .toDate());
               }
               else if(adjustment.math) {
                 //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
