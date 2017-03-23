@@ -577,7 +577,8 @@ function CNFlexFormService(
       delete field.loadMore;
     }
  
-    field[fieldProp] = (data && data.data) ? data.data : data;
+    const val = (data && data.data) ? data.data : data;
+    service.parseExpression(fieldProp, field).set(val);
 
     if(!skipPropHandlers) {
       fieldPropHandlers.forEach(({ prop, handler }) => 
@@ -1339,9 +1340,13 @@ function CNFlexFormService(
   function processMediaUpload(field) {
     var service = this;
     field.type = 'cn-mediaupload';
-    _.each(field.data, function(dataProp, key) {
-      field.data[key] = service.parseExpression(dataProp).get();
-    });
+    if(!field.resolve) {
+      field.resolve = { };
+      _.each(field.data, (exp, prop) =>
+          field.resolve[`data.${prop}`] = exp
+      );
+    }
+    service.processResolve(field);
   }
 
   function processCsvUpload(field) {
