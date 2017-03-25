@@ -30,6 +30,13 @@ const fieldPropHandlers = [{
   prop: 'selectDisplay',
   handler: (field, service) => service.processSelectDisplay(field)
 }, {
+  prop: 'default',
+  handler: (field, service) => service.processDefault(field)
+}, {
+  prop: 'schema',
+  handler: (field, service) => 
+    _.isUndefined(field.default) && !_.isUndefined(field.schema.default) && service.processDefault(field)
+}, {
   prop: 'watch',
   handler: (field, service) => field.watch && service.processFieldWatch(field)
 }, {
@@ -38,13 +45,6 @@ const fieldPropHandlers = [{
 }, {
   prop: 'conditionals',
   handler: (field, service) => service.processConditional(field)
-}, {
-  prop: 'default',
-  handler: (field, service) => service.processDefault(field)
-}, {
-  prop: 'schema',
-  handler: (field, service) => 
-    _.isUndefined(field.default) && !_.isUndefined(field.schema.default) && service.processDefault(field)
 }, {
   prop: 'updateSchema',
   handler: (field, service) => service.registerHandler(field, null, field.updateSchema)
