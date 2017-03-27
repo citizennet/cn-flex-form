@@ -3,7 +3,7 @@ function cnFlexForm() {
     restrict: 'E',
     template: `
       <div ng-if="vm.showForm()">
-        <ng-form 
+        <ng-form
           class="clearfix"
           name="{{vm.formName}}"
           sf-schema="vm.config.schema.schema"
@@ -74,10 +74,8 @@ function FlexForm(cnFlexFormService, $scope, $location) {
         });
       }
       else {
-        console.log('vm.service.isCompiled():', vm.service.isCompiled());
         vm.service.compile(vm.config.schema, vm.model);
       }
-      //$scope.$broadcast('schemaFormRedraw');
     }
   }
 
@@ -94,7 +92,8 @@ function FlexForm(cnFlexFormService, $scope, $location) {
     _.each(vm.events, function(listener) {
       listener();
     });
-    vm.service.cleanup();
+
+    cnFlexFormService.destroyService(vm.service);
   }
 
 }
