@@ -319,8 +319,10 @@ function CNFlexFormService(
       const modelValue = model.get();
       // if there's an existing default and it's the same as the current value
       // update the current value to the new default
-      if((_.has(service.defaults, key) ? angular.equals(modelValue, service.defaults[key]) : _.isTrulyEmpty(modelValue)) &&
-        !angular.equals(modelValue, curDefault)) {
+      if(_.isUndefined(modelValue) || (
+        (_.has(service.defaults, key) ? angular.equals(modelValue, service.defaults[key]) : _.isTrulyEmpty(modelValue)) &&
+        !angular.equals(modelValue, curDefault)
+      )) {
       //if ((
         //(!_.has(service.defaults, key) && _.isTrulyEmpty(modelValue)) ||
         //(_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
