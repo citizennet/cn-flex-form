@@ -74,7 +74,8 @@ function FlexFormHeader($scope) {
   vm.updateData = updateData;
   vm.isDisabled = isDisabled;
 
-  activate();
+  //activate();
+  $scope.$watch('vm.config', activate, true);
 
   ///////////
   
