@@ -47,7 +47,7 @@ const fieldPropHandlers = [{
   handler: (field, service) => service.processConditional(field)
 }, {
   prop: 'updateSchema',
-  handler: (field, service) => service.registerHandler(field, null, field.updateSchema)
+  handler: (field, service) => service.processFieldUpdatedSchema(field)
 }];
 
 function cnFlexFormServiceProvider(schemaFormDecoratorsProvider, cnFlexFormTypesProvider) {
@@ -140,6 +140,7 @@ function CNFlexFormService(
     processFieldset,
     processFieldProps,
     processFieldType,
+    processFieldUpdatedSchema,
     processFieldWatch,
     processComponent,
     processConditional,
@@ -305,10 +306,6 @@ function CNFlexFormService(
     if (service.skipDefault[key]) {
       delete service.skipDefault[key];
       return;
-    }
-    // if default is returned for new form, treat it as a previous param in order to not trigger unnecessary updateSchema
-    if(!service.updates && field.updateSchema && angular.isDefined(curDefault) && !service.schema.params[key]) {
-      service.schema.params[key] = curDefault;
     }
 
     // if schemaUpdate hasn't been triggered, let schemaForm directive handle defaults
@@ -754,6 +751,17 @@ function CNFlexFormService(
               .split(',')
               .reduce((acc, cur, i) => { acc[cur] = args[i]; return acc; }, {})
             );
+  }
+
+  function processFieldUpdatedSchema(field) {
+    const service = this;
+    const key = service.getKey(field.key);
+    if(!service.updates && field.updateSchema && !service.schema.params[key]) {
+      // by this point defaults should be processed so we can get value directly from model
+      const curVal = service.parseExpression(key, service.model).get();
+      if(!_.isUndefined(curVal)) service.schema.params[key] = curVal;
+    }
+    service.registerHandler(field, null, field.updateSchema);
   }
 
   function registerHandler(key, handler, updateSchema, runHandler) {
