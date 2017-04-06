@@ -8,7 +8,9 @@ function ffValidate() {
 }
 
 function link($scope, elem, attrs, ngModel) {
-  //console.log('$scope, ngModel:', $scope.form, ngModel);
+  function ffValidateTag() {}
+  $scope.__tag = new ffValidateTag();
+
   if($scope.form && $scope.form.required) {
     $scope.$watch(function() { return ngModel.$viewValue; }, function(value) {
       // override schemaForm validation
@@ -17,9 +19,5 @@ function link($scope, elem, attrs, ngModel) {
     });
   }
 }
-
-//angular
-    //.module('cn.flex-form')
-    //.directive('ffValidate', ffValidate);
 
 export default ffValidate;

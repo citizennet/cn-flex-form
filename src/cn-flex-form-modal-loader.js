@@ -1,5 +1,8 @@
-function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
+function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams, $scope) {
   'ngInject';
+
+  function FFModalLoaderTag() {}
+  $scope.__tag = FFModalLoaderTag();
 
   const vm = this;
 
@@ -26,7 +29,6 @@ function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams) {
   }
 
   function dismissModal() {
-    console.log('dismissModal');
     // unbind event
     vm.dismissEvent();
     vm.modal.dismiss();
@@ -39,23 +41,18 @@ function FlexFormModal(cnFlexFormModalLoaderService, $uibModal, $stateParams) {
   return { open };
 
   ////////////
-  
+
   function open() {
     return (
       cnFlexFormModalLoaderService
         .getMapping($stateParams.modal)
         .then(({ state, options }) => ({
           modal: $uibModal.open(state),
-          options 
+          options
         }))
     );
   }
 
 }
-
-//angular
-    //.module('cn.flex-form')
-    //.controller('FlexFormModalLoader', FlexFormModalLoader)
-    //.factory('FlexFormModal', FlexFormModal);
 
 export { FlexFormModalLoader, FlexFormModal };
