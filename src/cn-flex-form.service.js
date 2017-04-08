@@ -1481,20 +1481,27 @@ function CNFlexFormService(
     }
 
     if(select.titleMapQuery) {
-      var key = select.titleMapQuery.params.q;
+      const queryParams = select.titleMapQuery.params;
+      const paramsKeys = _.keys(queryParams);
       select.titleQuery = function(q) {
-        var params = {};
-        if(key) {
-          params[key] = q;
-        }
+        const params = _(paramsKeys)
+          .reduce((acc, key) => {
+            if (key === 'q') {
+              acc[queryParams[key]] = q;
+            } else {
+              const val = service.parseExpression(queryParams[key]).get();
+              acc[key] = val;
+            }
+            return acc;
+          }, {});
         return Api.get({
           url: select.titleMapQuery.url,
-          params: params
+          params
         });
       };
 
       // wrap in string so returns truthy when compiled, but converted to number within directive
-      if(!key) select.minLookup = '0';
+      if(!paramsKeys.length) select.minLookup = '0';
 
       select.onInit = function(val, form, event, setter) {
         if(event === 'tag-init') {
