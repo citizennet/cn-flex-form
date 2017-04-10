@@ -48,12 +48,14 @@ function cnFlexFormModalLoaderService($stateParams, $q) {
 
   return {
     getMapping,
-    resolveMapping
+    resolveMapping,
+    removeMapping
   };
 
   /////////////
 
   function resolveMapping(state, id, parent, options = {}) {
+    console.info(':: RESOLVE MAPPING CALLED ::');
     const { scope } = options;
     if(scope) {
       scope.options = scope.options || {};
@@ -75,10 +77,12 @@ function cnFlexFormModalLoaderService($stateParams, $q) {
       });
     return d.promise;
   }
-}
 
-//angular
-    //.module('cn.flex-form')
-    //.provider('cnFlexFormModalLoaderService', cnFlexFormModalLoaderServiceProvider);
+  // Holding on to scope references creates memory leaks
+  function removeMapping(state) {
+    modalMap[state] = null;
+    promiseMap[state] = null;
+  }
+}
 
 export default cnFlexFormModalLoaderServiceProvider;

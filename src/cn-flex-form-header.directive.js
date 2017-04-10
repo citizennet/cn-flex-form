@@ -69,6 +69,9 @@ function cnFlexFormHeader() {
 function FlexFormHeader($scope) {
   'ngInject';
 
+  function ffHeaderTag() {}
+  $scope.__tag = new ffHeaderTag();
+
   const vm = this;
 
   vm.updateData = updateData;
@@ -78,7 +81,7 @@ function FlexFormHeader($scope) {
   $scope.$watch('vm.config', activate, true);
 
   ///////////
-  
+
   function activate() {
     ({ title: vm.title } = vm.config);
     ({
@@ -91,7 +94,6 @@ function FlexFormHeader($scope) {
   }
 
   function updateData() {
-    console.log('updateData:', updateData);
     $scope.$emit('ffRefreshData');
   }
 
@@ -100,9 +102,5 @@ function FlexFormHeader($scope) {
     return false;
   }
 }
-
-//angular
-  //.module('cn.flex-form')
-  //.directive('cnFlexFormHeader', cnFlexFormHeader);
 
 export default cnFlexFormHeader;
