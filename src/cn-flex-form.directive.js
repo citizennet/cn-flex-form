@@ -33,6 +33,9 @@ function cnFlexForm() {
 function FlexForm(cnFlexFormService, $scope, $location) {
   'ngInject';
 
+  function cnFlexFormTag() {}
+  $scope.__tag = new cnFlexFormTag();
+
   var vm = this;
   vm.service = undefined;
   vm.events = [];
