@@ -9,15 +9,12 @@ import cnFlexForm from './cn-flex-form.directive';
 import cnFlexFormHeader from './cn-flex-form-header.directive';
 import ffValidate from './cn-flex-form-validate.directive';
 
-console.log(cnFlexFormServiceProvider);
-
 export default angular
   .module('cn.flex-form', [
     'ui.router',
     'schemaForm',
     'ui.bootstrap.datetimepicker',
     'cnTagsInput',
-    //'ngJsonExplorer',
     'cn.util'
   ])
   .provider('cnFlexFormConfig', cnFlexFormConfigProvider)

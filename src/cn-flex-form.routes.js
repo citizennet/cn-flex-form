@@ -42,9 +42,4 @@ function cnFlexFormRoutes($stateProvider) {
       });
 }
 
-//angular
-    //.module('cn.flex-form')
-    //.provider('cnFlexFormRoutes', cnFlexFormRoutesProvider)
-    //.config(cnFlexFormRoutes);
-
 export { cnFlexFormRoutes, cnFlexFormRoutesProvider };
