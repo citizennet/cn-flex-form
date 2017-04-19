@@ -31,7 +31,9 @@ function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams, $s
   function dismissModal() {
     // unbind event
     vm.dismissEvent();
-    vm.modal.dismiss();
+    vm.modal.opened.then(() =>
+        vm.modal.dismiss()
+    );
   }
 }
 

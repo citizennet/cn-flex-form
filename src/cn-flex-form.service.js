@@ -1998,9 +1998,8 @@ function CNFlexFormService(
       return _.find(key.key, function(key) {
         return _.isNumber(key);
       });
-    } else {
-      return /\[(\d+)\]/.exec(key)[1];
     }
+    return /\[(\d*)\]/.exec(key)[1];
   }
 
   function setArrayIndex(key, index, asArray) {
