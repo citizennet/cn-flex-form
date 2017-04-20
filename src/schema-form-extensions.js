@@ -159,10 +159,10 @@ function addTemplates($templateCache) {
                ng-show="showTitle()">{{form.title}}</label>
         <ol sf-array="form"
             class="list-group cn-autocomplete-list"
-            ng-show="modelArray.length"
+            ng-if="modelArray.length"
             ng-model="modelArray">
           <li class="list-group-item {{form.fieldHtmlClass}}"
-              ng-repeat="item in modelArray track by $index">
+              ng-repeat="item in modelArray">
             <button ng-hide="form.readonly || form.remove === null"
                     ng-click="deleteFromArray($index)"
                     type="button" class="close pull-right">
