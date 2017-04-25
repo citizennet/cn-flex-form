@@ -961,7 +961,9 @@ function CNFlexFormService(
           service.incrementUpdates();
         }
         else {
-          service.refreshSchema();
+          if(_.isFunction(service.refreshSchema)) {
+            service.refreshSchema();
+          }
         }
       }
     }
@@ -1975,9 +1977,11 @@ function CNFlexFormService(
   function broadcastErrors() {
     var service = this;
     $timeout(function() {
-      service.errors.forEach(function(error) {
-        $rootScope.$broadcast('schemaForm.error.' + error.key, 'serverValidation', error.message);
-      });
+      if (_.get(service, 'errors')) {
+        service.errors.forEach(function(error) {
+          $rootScope.$broadcast('schemaForm.error.' + error.key, 'serverValidation', error.message);
+        });
+      }
     }, 1);
   }
 
