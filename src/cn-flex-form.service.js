@@ -1484,6 +1484,7 @@ function CNFlexFormService(
     if(select.titleMapQuery) {
       const queryParams = select.titleMapQuery.params;
       const paramsKeys = _.keys(queryParams);
+      select.showClearAll = true;
       select.titleQuery = function(q) {
         const params = _(paramsKeys)
           .reduce((acc, key) => {
