@@ -232,7 +232,8 @@ function CNFlexFormService(
     this.updates = 0;
     this.skipDefault = {};
 
-    this.params = cnFlexFormConfig.getStateParams();
+    const overrides = config.getParams ? config.getParams() : {};
+    this.params = cnFlexFormConfig.getStateParams(overrides);
 
     this._ = _;
 
@@ -287,6 +288,7 @@ function CNFlexFormService(
       if(config.updateSchema) service.updateSchema = config.updateSchema;
       if(config.getSchema) service.getSchemaForm = service.setupSchemaRefresh(config.getSchema);
     }
+    service.getParamOverrides = config.getParms || _.noop;
   }
 
   function processSchema(field) {
@@ -409,8 +411,8 @@ function CNFlexFormService(
       ((key) => {
         if(_.find(service.errors, { key })) {
           service.errors = _.reject(service.errors, { key });
-          $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
           $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+          $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
         }
       })(getDotKey(key));
 
@@ -550,7 +552,7 @@ function CNFlexFormService(
         const x = service.parseExpression(all[i]).get();
         if(angular.isDefined(x)) data = x;
         else {
-          data = undefined;
+          data = false;
           break;
         }
       }
@@ -586,7 +588,8 @@ function CNFlexFormService(
     }
 
     const val = (data && data.data) ? data.data : data;
-    service.parseExpression(fieldProp, field).set(val);
+    const val1 = fieldProp === 'condition' ? val + '' : val;
+    service.parseExpression(fieldProp, field).set(val1);
 
     if(!skipPropHandlers) {
       fieldPropHandlers.forEach(({ prop, handler }) =>
@@ -1793,11 +1796,14 @@ function CNFlexFormService(
   }
 
   function setupSchemaRefresh(refresh) {
-    var service = this;
-    service.refreshSchema = _.debounce(function(updateSchema) {
-      var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
-      var diff = _.omit(cnUtil.diff(service.schema.params, params, true), 'updates');
-      var keys;
+    const service = this;
+    service.refreshSchema = _.debounce(updateSchema => {
+      const params = {
+        ...cnFlexFormConfig.getStateParams(service.getParamOverrides()),
+        ...service.params
+      };
+      let diff = _.omit(cnUtil.diff(service.schema.params, params, true, 'delete'), 'updates');
+      let keys;
 
       if(!_.isEmpty(diff) || updateSchema) {
         if(updateSchema) params.updateSchema = updateSchema;
