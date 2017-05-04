@@ -157,20 +157,21 @@ function addTemplates($templateCache) {
         <label class="control-label"
                for="{{form.key.join('.')}}-input"
                ng-show="showTitle()">{{form.title}}</label>
-        <ol sf-array="form"
-            class="list-group cn-autocomplete-list"
-            ng-if="modelArray.length"
-            ng-model="modelArray">
-          <li class="list-group-item {{form.fieldHtmlClass}}"
-              ng-repeat="item in modelArray">
-            <button ng-hide="form.readonly || form.remove === null"
-                    ng-click="deleteFromArray($index)"
-                    type="button" class="close pull-right">
-              <span aria-hidden="true">&times;</span>
-            </button>
-            <sf-decorator form="copyWithIndex($index)"/>
-          </li>
-        </ol>
+        <div sf-array="form">
+          <ol class="list-group cn-autocomplete-list"
+              ng-if="modelArray.length"
+              ng-model="modelArray">
+            <li class="list-group-item {{form.fieldHtmlClass}}"
+                ng-repeat="item in modelArray">
+              <button ng-hide="form.readonly || form.remove === null"
+                      ng-click="deleteFromArray($index)"
+                      type="button" class="close pull-right">
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <sf-decorator form="copyWithIndex($index)"/>
+            </li>
+          </ol>
+        </div>
         ${sharedAutocompleteTpl}
         <span class="help-block" sf-message="form.description"></span>
       </div>`
