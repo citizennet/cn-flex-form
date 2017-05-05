@@ -650,7 +650,10 @@ function CNFlexFormService(
       if(watch.resolution) {
         let condition;
         if(_.isString(field.condition)) {
-          condition = field.condition;
+          // if the condition isn't already wrapped in parens, wrap it
+          condition = /^\(.*\)$/.test(field.condition) ?
+            field.condition :
+            `(${field.condition})`;
         }
         if(_.isString(watch.condition)) {
           condition = condition ?
