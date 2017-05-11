@@ -1485,6 +1485,7 @@ function CNFlexFormService(
     if(select.titleMapQuery) {
       const queryParams = select.titleMapQuery.params;
       const paramsKeys = _.keys(queryParams);
+      select.showClearAll = true;
       select.titleQuery = function(q) {
         const params = _(paramsKeys)
           .reduce((acc, key) => {
@@ -2002,9 +2003,8 @@ function CNFlexFormService(
       return _.find(key.key, function(key) {
         return _.isNumber(key);
       });
-    } else {
-      return /\[(\d+)\]/.exec(key)[1];
     }
+    return /\[(\d*)\]/.exec(key)[1];
   }
 
   function setArrayIndex(key, index, asArray) {

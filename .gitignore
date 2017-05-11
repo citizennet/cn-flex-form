@@ -3,6 +3,6 @@ node_modules/
 bower_components/
 *.swp
 tags
-.DS_Store
+*.DS_Store
 
 
