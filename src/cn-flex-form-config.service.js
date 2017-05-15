@@ -23,14 +23,13 @@ function cnFlexFormConfigProvider() {
 
     ////////
 
-    function getStateParams() {
-      return _
-          .chain($stateParams)
-          .omit(ignoreParams)
-          .omit(function(v) {
-            return _.isUndefined(v) || _.isNull(v);
-          })
-          .value();
+    function getStateParams(overrides = {}) {
+      return (
+        _({ ...$stateParams, ...overrides })
+        .omit(ignoreParams)
+        .omit(v => (_.isUndefined(v) || v === null))
+        .value()
+      );
     }
   }
 
