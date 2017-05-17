@@ -23,31 +23,39 @@ const fieldTypeHandlers = {
   'array': 'processArray'
 };
 
+// handlers that don't run on secondPass are ones that shouldn't ever change
+// and we want to avoid compounding their effects
 const fieldPropHandlers = [{
   prop: 'resolve',
-  handler: (field, service) => service.processResolve(field)
+  handler: (field, service, secondPass) =>
+    !secondPass && service.processResolve(field)
 }, {
   prop: 'selectDisplay',
-  handler: (field, service) => service.processSelectDisplay(field)
+  handler: (field, service) =>
+    service.processSelectDisplay(field)
 }, {
   prop: 'default',
-  handler: (field, service) => service.processDefault(field)
+  handler: (field, service) =>
+    service.processDefault(field)
 }, {
   prop: 'schema',
   handler: (field, service) => 
     _.isUndefined(field.default) && !_.isUndefined(field.schema.default) && service.processDefault(field)
 }, {
   prop: 'watch',
-  handler: (field, service) => field.watch && service.processFieldWatch(field)
+  handler: (field, service, secondPass) =>
+    !secondPass &&field.watch && service.processFieldWatch(field)
 }, {
   prop: 'type',
-  handler: (field, service, secondPass) => service.processFieldType(field, secondPass)
+  handler: (field, service, secondPass) =>
+    service.processFieldType(field, secondPass)
 }, {
   prop: 'conditionals',
   handler: (field, service) => service.processConditional(field)
 }, {
   prop: 'updateSchema',
-  handler: (field, service) => service.processFieldUpdatedSchema(field)
+  handler: (field, service, secondPass) =>
+    !secondPass && service.processFieldUpdatedSchema(field)
 }];
 
 function cnFlexFormServiceProvider(schemaFormDecoratorsProvider, cnFlexFormTypesProvider) {
@@ -232,7 +240,8 @@ function CNFlexFormService(
     this.updates = 0;
     this.skipDefault = {};
 
-    this.params = cnFlexFormConfig.getStateParams();
+    const overrides = config.getParams ? config.getParams() : {};
+    this.params = cnFlexFormConfig.getStateParams(overrides);
 
     this._ = _;
 
@@ -287,6 +296,7 @@ function CNFlexFormService(
       if(config.updateSchema) service.updateSchema = config.updateSchema;
       if(config.getSchema) service.getSchemaForm = service.setupSchemaRefresh(config.getSchema);
     }
+    service.getParamOverrides = config.getParms || _.noop;
   }
 
   function processSchema(field) {
@@ -410,8 +420,8 @@ function CNFlexFormService(
       ((key) => {
         if(_.find(service.errors, { key })) {
           service.errors = _.reject(service.errors, { key });
-          $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
           $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+          $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
         }
       })(getDotKey(key));
 
@@ -551,7 +561,7 @@ function CNFlexFormService(
         const x = service.parseExpression(all[i]).get();
         if(angular.isDefined(x)) data = x;
         else {
-          data = undefined;
+          data = false;
           break;
         }
       }
@@ -587,7 +597,8 @@ function CNFlexFormService(
     }
 
     const val = (data && data.data) ? data.data : data;
-    service.parseExpression(fieldProp, field).set(val);
+    const val1 = fieldProp === 'condition' ? val + '' : val;
+    service.parseExpression(fieldProp, field).set(val1);
 
     if(!skipPropHandlers) {
       fieldPropHandlers.forEach(({ prop, handler }) =>
@@ -638,7 +649,18 @@ function CNFlexFormService(
 
     _.each(field.watch, function(watch) {
       if(watch.resolution) {
-        let condition = watch.condition;
+        let condition;
+        if(_.isString(field.condition)) {
+          // if the condition isn't already wrapped in parens, wrap it
+          condition = /^\(.*\)$/.test(field.condition) ?
+            field.condition :
+            `(${field.condition})`;
+        }
+        if(_.isString(watch.condition)) {
+          condition = condition ?
+            `${condition} && ${watch.condition}` :
+            watch.condition;
+        }
         let resolution = watch.resolution;
         let handler;
 
@@ -680,6 +702,9 @@ function CNFlexFormService(
 
           handler = (val, prev, key, trigger) => {
             let curCondition = condition && replaceArrayIndex(condition, key);
+            if(_.isString(curCondition) && curCondition.includes('[arrayIndex]')) {
+              return console.error(`arrayIndex could not be repalced from expression '${curCondition}'`);
+            }
             let updatePath = replaceArrayIndex(resolution[1], key);
             let fromPath = replaceArrayIndex(resolution[2], key);
 
@@ -1795,11 +1820,14 @@ function CNFlexFormService(
   }
 
   function setupSchemaRefresh(refresh) {
-    var service = this;
-    service.refreshSchema = _.debounce(function(updateSchema) {
-      var params = _.extend(cnFlexFormConfig.getStateParams(), service.params);
-      var diff = _.omit(cnUtil.diff(service.schema.params, params, true), 'updates');
-      var keys;
+    const service = this;
+    service.refreshSchema = _.debounce(updateSchema => {
+      const params = {
+        ...cnFlexFormConfig.getStateParams(service.getParamOverrides()),
+        ...service.params
+      };
+      let diff = _.omit(cnUtil.diff(service.schema.params, params, true, 'delete'), 'updates');
+      let keys;
 
       if(!_.isEmpty(diff) || updateSchema) {
         if(updateSchema) params.updateSchema = updateSchema;
@@ -1936,7 +1964,7 @@ function CNFlexFormService(
     });
     current._ogKeys = getOgKeys(update);
 
-    service.deregisterHandlers(key);
+    //service.deregisterHandlers(key);
 
     $rootScope.$broadcast('cnFlexFormReprocessField', key);
 

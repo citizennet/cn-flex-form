@@ -55,7 +55,6 @@ function cnFlexFormModalLoaderService($stateParams, $q) {
   /////////////
 
   function resolveMapping(state, id, parent, options = {}) {
-    console.info(':: RESOLVE MAPPING CALLED ::');
     const { scope } = options;
     if(scope) {
       scope.options = scope.options || {};
