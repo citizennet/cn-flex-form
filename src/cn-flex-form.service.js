@@ -26,6 +26,10 @@ const fieldTypeHandlers = {
 // handlers that don't run on secondPass are ones that shouldn't ever change
 // and we want to avoid compounding their effects
 const fieldPropHandlers = [{
+  prop: 'default',
+  handler: (field, service) =>
+    service.processDefault(field)
+}, {
   prop: 'resolve',
   handler: (field, service, secondPass) =>
     !secondPass && service.processResolve(field)
@@ -33,10 +37,6 @@ const fieldPropHandlers = [{
   prop: 'selectDisplay',
   handler: (field, service) =>
     service.processSelectDisplay(field)
-}, {
-  prop: 'default',
-  handler: (field, service) =>
-    service.processDefault(field)
 }, {
   prop: 'schema',
   handler: (field, service) => 
@@ -139,6 +139,8 @@ function CNFlexFormService(
     initSchemaParams,
     isCompiled,
     onModelWatch,
+    parseAll,
+    parseAny,
     parseCondition,
     parseExpression,
     processArray,
@@ -318,6 +320,11 @@ function CNFlexFormService(
       return;
     }
 
+    if(field.condition) {
+      const condition = replaceArrayIndex(field.condition, key);
+      if(!service.parseCondition(condition)) return;
+    }
+
     // if schemaUpdate hasn't been triggered, let schemaForm directive handle defaults
     //if(service.updates || field.default) {
     if(!_.isUndefined(curDefault)) {
@@ -334,6 +341,7 @@ function CNFlexFormService(
         //(!_.has(service.defaults, key) && _.isTrulyEmpty(modelValue)) ||
         //(_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
       //) && !angular.equals(modelValue, curDefault)) {
+        console.info('<< default >>', key, curDefault, field);
         model.set(angular.copy(curDefault));
       }
     }
@@ -541,50 +549,38 @@ function CNFlexFormService(
     return field;
   }
 
+  function parseAny(exp, base) {
+    const service = this;
+    let result;
+    const eithers = exp.split(' || ');
+    const match = _.find(eithers, x => {
+      const v = service.parseExpression(x, base).get();
+      if(!_.isUndefined(v)) {
+        result = v;
+        return true;
+      }
+    });
+    return result;
+  }
+
+  function parseAll(exp, base) {
+    const service = this;
+    const all = exp.split(' && ');
+    const match = _.reduce(all, (acc, x) => {
+      const v = service.parseExpression(x, base).get();
+      if(!_.isUndefined(v)) {
+        acc.push(v);
+      }
+      return acc;
+    }, []);
+    return all.length === match.length ? _.last(match) : undefined;
+  }
+
   function handleResolve(field, fieldProp, exp, skipPropHandlers) {
     const service = this;
-    let data;
-    // does declarative/functional outweigh performance?
-    if(exp.includes(' || ')) {
-      let eithers = exp.split(' || ');
-      for(let i = 0, l = eithers.length; i < l; i++) {
-        const x = service.parseExpression(eithers[i]).get();
-        if(angular.isDefined(x)) {
-          data = x;
-          break;
-        }
-      }
-    }
-    else if(exp.includes(' && ')) {
-      let all = exp.split(' && ');
-      for(let i = 0, l = all.length; i < l; i++) {
-        const x = service.parseExpression(all[i]).get();
-        if(angular.isDefined(x)) data = x;
-        else {
-          data = false;
-          break;
-        }
-      }
-    }
-    else {
-      data = service.parseExpression(exp).get();
-    }
-
-    // if we're resolving from model but defaults haven't been applied yet, resolve from default itself
-    if(!data && exp.indexOf('model.') === 0) {
-      const key = exp.replace('model.', '');
-      const genericKey = stripIndexes(key);
-      const cachedField = service.getFromFormCache(key) || service.getFromFormCache(genericKey);
-
-      data = (() => {
-        if(cachedField && cachedField.default)
-          return cachedField.default;
-        if(angular.isDefined(field.default))
-          return field.default;
-        const schema = service.getSchema(genericKey);
-        if(schema) return schema.default;
-      })();
-    }
+    const data = exp.includes(' || ') ?
+      service.parseAny(exp) : exp.includes(' && ') ?
+      service.parseAll(exp) : service.parseExpression(exp).get();
 
     if(data && data.cursor) {
       field.loadMore = function() {
