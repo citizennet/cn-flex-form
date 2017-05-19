@@ -101,7 +101,6 @@ function CNFlexFormService(
   cnFlexFormTypes,
   sfPath,
   $interpolate,
-  $rootScope,
   $timeout,
   cnUtil,
   $stateParams
@@ -260,6 +259,7 @@ function CNFlexFormService(
   function compile(schema, model, config) {
     var service = this;
 
+    service.scope = config.getScope();
     service.schema = schema;
     service.model = model;
 
@@ -428,8 +428,8 @@ function CNFlexFormService(
       ((key) => {
         if(_.find(service.errors, { key })) {
           service.errors = _.reject(service.errors, { key });
-          $rootScope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
-          $rootScope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
+          service.scope.$broadcast('schemaForm.error.' + key, 'serverValidation', true);
+          service.scope.$broadcast('schemaForm.error.' + key, 'schemaForm', true);
         }
       })(getDotKey(key));
 
@@ -622,7 +622,7 @@ function CNFlexFormService(
         field[key] = service.parseCondition(condition);
         const scope = service.getFromScopeCache(service.getKey(field.key));
         if(key === 'required' && scope) {
-          $rootScope.$broadcast('schemaFormValidate');
+          service.scope.$broadcast('schemaFormValidate');
         }
       };
       field
@@ -924,7 +924,7 @@ function CNFlexFormService(
     if(service.watching) return;
     if(service.modelWatch) service.modelWatch();
 
-    service.modelWatch = $rootScope.$watch(
+    service.modelWatch = service.scope.$watch(
       () => service.model,
       service.onModelWatch.bind(service),
       true
@@ -1009,7 +1009,7 @@ function CNFlexFormService(
   function initArrayCopyWatch() {
     const service = this;
 
-    service.events.push($rootScope.$on('schemaFormPropagateFormController', (event, scope) => {
+    service.events.push(service.scope.$on('schemaFormPropagateFormController', (event, scope) => {
       const { form } = scope;
       if(!form.key) {
         form.cacheKey = `${form.type}-${_.uniqueId()}`;
@@ -1038,7 +1038,7 @@ function CNFlexFormService(
       }
     }));
 
-    service.events.push($rootScope.$on('schemaFormDeleteFormController', (event, scope, index) => {
+    service.events.push(service.scope.$on('schemaFormDeleteFormController', (event, scope, index) => {
       const key = service.getKey(scope.form.key);
       const listener = service.listeners[key];
       if(listener) listener.handlers = [];
@@ -1588,7 +1588,7 @@ function CNFlexFormService(
       }
 
       if(select.titleMapResolve) {
-        $rootScope.$on('cnFlexFormDiff:data', (e, data) => {
+        service.scope.$on('cnFlexFormDiff:data', (e, data) => {
           if(data[select.titleMapResolve]) {
             let modelValue = service.parseExpression(select.key, service.model);
             let val = modelValue.get();
@@ -1740,7 +1740,7 @@ function CNFlexFormService(
     // run handler once all arrayCopies have been instantiated
     var count = 0;
     var keyMap = _.pluck(_.reject(selectDisplay.items, {"condition":"false"}), 'key');
-    var once = $rootScope.$on('flexFormArrayCopyAdded', function(event, key) {
+    var once = service.scope.$on('flexFormArrayCopyAdded', function(event, key) {
       var model = service.parseExpression(service.getKey(selectDisplay.key), service.model).get();
       if(model) {
         var total = model.length * (keyMap.length);
@@ -1755,7 +1755,7 @@ function CNFlexFormService(
         }
       }
     });
-    var resetCount = $rootScope.$on('flexForm.updatePage', function() {
+    var resetCount = service.scope.$on('flexForm.updatePage', function() {
       count = 0;
     });
     service.events.push(once);
@@ -1860,7 +1860,7 @@ function CNFlexFormService(
         });
     }, 100);
 
-    service.events.push($rootScope.$on('ffRefreshData', service.refreshData));
+    service.events.push(service.scope.$on('ffRefreshData', service.refreshData));
   }
 
   function processUpdatedSchema(schema) {
@@ -1869,7 +1869,7 @@ function CNFlexFormService(
       service.schema.params = schema.params;
 
       if(schema.diff.data) {
-        $rootScope.$broadcast('cnFlexFormDiff:data', schema.diff.data);
+        service.scope.$broadcast('cnFlexFormDiff:data', schema.diff.data);
         _.each(schema.diff.data, (data, prop) => {
           if(data && data.data && !_.isEmpty(service.schema.data[prop].data) && !data.reset) {
             data.data = service.schema.data[prop].data.concat(data.data);
@@ -1888,7 +1888,7 @@ function CNFlexFormService(
       const keys = [];
 
       if(schema.diff.schema) {
-        $rootScope.$broadcast('cnFlexFormDiff:schema', schema.diff.schema);
+        service.scope.$broadcast('cnFlexFormDiff:schema', schema.diff.schema);
         _.each(schema.diff.schema, function(schema, key) {
           service.schema.schema.properties[key] = schema;
           reprocessSchema(schema, key, keys);
@@ -1896,7 +1896,7 @@ function CNFlexFormService(
       }
 
       if(schema.diff.form) {
-        $rootScope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
+        service.scope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
         _.each(schema.diff.form, (form, key) => {
 
           if(!keys.includes(key)) {
@@ -1962,7 +1962,7 @@ function CNFlexFormService(
 
     //service.deregisterHandlers(key);
 
-    $rootScope.$broadcast('cnFlexFormReprocessField', key);
+    service.scope.$broadcast('cnFlexFormReprocessField', key);
 
     // why do we redraw? If we're doing it to show error message
     // that has been addressed from the angular-schema-form library
@@ -2004,7 +2004,7 @@ function CNFlexFormService(
     $timeout(function() {
       if (_.get(service, 'errors')) {
         service.errors.forEach(function(error) {
-          $rootScope.$broadcast('schemaForm.error.' + error.key, 'serverValidation', error.message);
+          service.scope.$broadcast('schemaForm.error.' + error.key, 'serverValidation', error.message);
         });
       }
     }, 1);
