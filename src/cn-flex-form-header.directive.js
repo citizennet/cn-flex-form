@@ -78,12 +78,17 @@ function FlexFormHeader($scope) {
   vm.isDisabled = isDisabled;
 
   //activate();
-  $scope.$watch('vm.config', activate, true);
+  //$scope.$on('$destroy', cleanup);
+  $scope.$watch('vm.config.title', initTitle, true);
+  $scope.$watch('vm.config.actionConfig', initActionConfig, true);
 
   ///////////
 
-  function activate() {
+  function initTitle() {
     ({ title: vm.title } = vm.config);
+  }
+
+  function initActionConfig() {
     ({
       returnState: vm.returnState,
       returnStyle: vm.returnStyle,

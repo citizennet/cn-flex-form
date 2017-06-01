@@ -337,11 +337,6 @@ function CNFlexFormService(
         (_.has(service.defaults, key) ? angular.equals(modelValue, service.defaults[key]) : _.isTrulyEmpty(modelValue)) &&
         !angular.equals(modelValue, curDefault)
       )) {
-      //if ((
-        //(!_.has(service.defaults, key) && _.isTrulyEmpty(modelValue)) ||
-        //(_.has(service.defaults, key) && angular.equals(modelValue, service.defaults[key]))
-      //) && !angular.equals(modelValue, curDefault)) {
-        console.info('<< default >>', key, curDefault, field);
         model.set(angular.copy(curDefault));
       }
     }
