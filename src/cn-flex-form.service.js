@@ -410,7 +410,6 @@ function CNFlexFormService(
       if(schema) {
         field.schema = schema;
         if(schema.description) field.description = schema.description;
-        if(field.readonly && !schema.readonly) field.readonly = false;
         if(schema.type === 'array' && !('showClearAll' in field)) field.showClearAll = true;
       }
 
