@@ -1888,12 +1888,12 @@ function CNFlexFormService(
           const curKeys = _.filter(keys, k => k.includes(key));
           _.each(curKeys, key => {
             const forms = _.compact([
-              service.arrayCopies[key],
-              service.formCache[key]
+              service.getFromFormCache(key),
+              ...(service.getArrayCopies(key) || [])
             ])
             _.each(forms, form => {
               const prevSchema = form.schema;
-              const newSchema  = service.getSchema(key, { [key]: schema });
+              const newSchema  = service.getSchema(key, { [schema.key]: schema });
               if(prevSchema.readonly && !newSchema.readonly) form.readonly = false;
             });
           });
