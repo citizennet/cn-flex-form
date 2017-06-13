@@ -3,9 +3,11 @@ function cnFlexForm() {
     restrict: 'E',
     template: `
       <div ng-if="vm.showForm()">
+        <!-- we process defaults ourselves, hence setSchemaDefaults: false -->
         <ng-form
           class="clearfix"
           name="{{vm.formName}}"
+          sf-options="{ setSchemaDefaults: false }"
           sf-schema="vm.config.schema.schema"
           sf-form="vm.form"
           sf-model="vm.model">
@@ -45,7 +47,7 @@ function FlexForm(cnFlexFormService, $scope, $location) {
   vm.process = process;
   vm.showForm = showForm;
 
-  vm.events.push($scope.$watch(function() { return vm.config.schema; }, vm.process));
+  vm.events.push($scope.$watch(() => vm.config.schema, vm.process));
 
   vm.activate();
 
@@ -71,6 +73,7 @@ function FlexForm(cnFlexFormService, $scope, $location) {
     if(vm.form) {
       if(!vm.service) {
         vm.service = cnFlexFormService(vm.config.schema, vm.model, {
+          getScope: vm.config.getScope || (() => $scope),
           formCtrl: vm.config.formCtrl,
           getSchema: vm.config.getSchema,
           updateSchema: updateSchema

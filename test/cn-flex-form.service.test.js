@@ -3,7 +3,7 @@ import cnFlexFormServiceProvider from '../src/cn-flex-form.service';
 
 const ff = cnFlexFormServiceProvider().$get();
 
-test('getKey', (t) => {
+test('getKey', t => {
   t.equal(ff.getKey('foo.bar'), 'foo.bar', 'string arg');
   t.equal(ff.getKey(['foo', 'bar']), 'foo.bar', 'array arg');
   t.equal(ff.getKey(['foo', '0', 'bar']), 'foo[0].bar', 'complex array arg');
@@ -11,7 +11,7 @@ test('getKey', (t) => {
   t.end();
 });
 
-test('parseExpression', (t) => {
+test('parseExpression', t => {
   const parse = (exp, scope) => ff.parseExpression(exp, scope).get();
   t.equal(parse(), undefined, 'no value');
   t.equal(parse('null'), null, 'null value');
@@ -33,7 +33,27 @@ test('parseExpression', (t) => {
   t.end();
 });
 
-test('getWatchables', (t) => {
+test('ff.parseAny', t => {
+  t.equal(ff.parseAny('foo.bar || foo.baz', { foo: { baz: 1 } }),
+    1, 'match last');
+  t.equal(ff.parseAny('foo.bar || foo.baz', { foo: { bar: 2, baz: 1 } }),
+    2, 'match first');
+  t.equal(ff.parseAny('foo.bar || foo.baz', { }),
+    undefined, 'match neither');
+  t.end();
+});
+
+test('ff.parseAll', t => {
+  t.equal(ff.parseAll('foo.bar && foo.baz', { foo: { baz: 1 } }),
+    undefined, 'one match');
+  t.equal(ff.parseAll('foo.bar && foo.baz', { foo: { bar: 2, baz: 1 } }),
+    1, 'both match');
+  t.equal(ff.parseAll('foo.bar && foo.baz', { }),
+    undefined, 'neither match');
+  t.end();
+});
+
+test('getWatchables', t => {
   t.looseEqual(ff.getWatchables('schema.data'), ['schema.data'], 'single watchable');
   t.looseEqual(ff.getWatchables('schema.data[model.foo]'), ['model.foo', 'schema.data'],
     'nested watchables');
@@ -56,7 +76,7 @@ test('getWatchables', (t) => {
   t.end();
 });
 
-test('replaceArrayIndex', (t) => {
+test('replaceArrayIndex', t => {
   t.equal(ff.replaceArrayIndex('foo.bar', 'foo.fiz'), 'foo.bar', 'no arrayIndex');
   t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 0), 'foo[0].bar', 'pass index 0');
   t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 1), 'foo[1].bar', 'pass index 1');
