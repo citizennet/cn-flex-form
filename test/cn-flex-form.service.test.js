@@ -11,6 +11,34 @@ test('getKey', t => {
   t.end();
 });
 
+test('getSchema', t => {
+  const schema = {
+    foo: {
+      type: 'object',
+      properties: {
+        bar: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { biz: { type: 'string' } }
+          }
+        },
+        baz: { type: 'string' }
+      }
+    }
+  };
+  t.equal(
+    ff.getSchema('foo', schema), schema.foo,
+    'match root level');
+  t.equal(
+    ff.getSchema('foo.baz', schema), schema.foo.properties.baz,
+    'match nested');
+  t.equal(
+    ff.getSchema('foo.bar[].biz', schema), schema.foo.properties.bar.items.properties.biz,
+    'match array item');
+  t.end();
+});
+
 test('parseExpression', t => {
   const parse = (exp, scope) => ff.parseExpression(exp, scope).get();
   t.equal(parse(), undefined, 'no value');
