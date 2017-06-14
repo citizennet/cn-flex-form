@@ -1884,8 +1884,20 @@ function CNFlexFormService(
       if(schema.diff.schema) {
         service.scope.$broadcast('cnFlexFormDiff:schema', schema.diff.schema);
         _.each(schema.diff.schema, function(schema, key) {
-          service.schema.schema.properties[key] = schema;
           reprocessSchema(schema, key, keys);
+          const curKeys = _.filter(keys, k => k.includes(key));
+          _.each(curKeys, key => {
+            const forms = _.compact([
+              service.getFromFormCache(key),
+              ...(service.getArrayCopies(key) || [])
+            ])
+            _.each(forms, form => {
+              const prevSchema = form.schema;
+              const newSchema  = service.getSchema(key, { [schema.key]: schema });
+              if(prevSchema.readonly && !newSchema.readonly) form.readonly = false;
+            });
+          });
+          service.schema.schema.properties[key] = schema;
         });
       }
 
