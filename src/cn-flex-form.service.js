@@ -321,7 +321,7 @@ function CNFlexFormService(
     }
 
     if(field.condition) {
-      const condition = replaceArrayIndex(field.condition, key);
+      const condition = replaceArrayIndex(field.condition, field.arrayIndex || key);
       if(!service.parseCondition(condition)) return;
     }
 
