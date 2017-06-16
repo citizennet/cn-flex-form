@@ -1669,6 +1669,10 @@ function CNFlexFormService(
       }
     });
     var handler = function(val, prev, key) {
+      const model = service.parseExpression(selectDisplay.link, service.model);
+      // band-aid because this is being set as an object instead of array somwhere
+      // deep in the angular or angular-schema-form nether-regions
+      if(!model.get()) model.set([]);
       var index = getArrayIndex(key);
       _.each(selectDisplay.items, function(item) {
         var selectKey = service.getKey(selectField.key);
