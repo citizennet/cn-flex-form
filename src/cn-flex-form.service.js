@@ -1032,7 +1032,7 @@ function CNFlexFormService(
       }
     }));
 
-    service.events.push(service.scope.$on('schemaFormDeleteFormController', (event, scope, index) => {
+    service.events.push(service.scope.$on('schemaFormDeleteFormController', (event, scope) => {
       const key = service.getKey(scope.form.key);
       const listener = service.listeners[key];
       if(listener) listener.handlers = [];
@@ -1046,10 +1046,27 @@ function CNFlexFormService(
       if(!copies.length) copies.push(service.getArrayScopes(unindexedKey) || []);
 
       copies.forEach((list) => list && list.splice(scope.arrayIndex, 1));
+    }));
+
+    service.events.push(service.scope.$on('schemaFormDeleteScope', (event, scope, index) => {
+      const key = service.getKey(scope.form.key);
+      const listener = service.listeners[key];
+      if(listener) listener.handlers = [];
 
       if(scope.form.link) {
-        var list = service.parseExpression(scope.form.link, service.model).get();
+        const list = service.parseExpression(scope.form.link, service.model).get();
         list.splice(index, 1);
+
+        const copyGroups = service.getArrayCopiesFor(scope.form.link);
+        _.each(copyGroups, group => _.each(group, scope => {
+          const key = scope.form.key;
+          for(let i = key.length - 1; i > -1; i--) {
+            if(_.isNumber(key[i])) {
+              if(key[i] > index) --key[i];
+              break;
+            }
+          }
+        }));
       }
     }));
   }
@@ -1662,17 +1679,18 @@ function CNFlexFormService(
   }
 
   function setupArraySelectDisplay(selectDisplay, selectField) {
-    var service = this;
+    const service = this;
+    const linkModel = service.parseExpression(selectDisplay.link, service.model);
+    // band-aid because this is being set as an object instead of array somwhere
+    // deep in the angular or angular-schema-form nether-regions
+    if(!linkModel.get()) linkModel.set([]);
+
     _.each(selectDisplay.items, function(item) {
       if(item.condition !== 'false') {
         item.condition = 'true';
       }
     });
     var handler = function(val, prev, key) {
-      const model = service.parseExpression(selectDisplay.link, service.model);
-      // band-aid because this is being set as an object instead of array somwhere
-      // deep in the angular or angular-schema-form nether-regions
-      if(!model.get()) model.set([]);
       var index = getArrayIndex(key);
       _.each(selectDisplay.items, function(item) {
         var selectKey = service.getKey(selectField.key);
@@ -1692,7 +1710,7 @@ function CNFlexFormService(
           _.each(formCopies, function(copy) {
             if(getArrayIndex(copy) == index) {
               copy.condition = 'false';
-              service.parseExpression(service.getKey(copy.key), service.model).set();
+              service.parseExpression(service.getKey(copy.key), service.model).set(undefined, { noConstruction: true });
             }
           });
         }
@@ -1739,6 +1757,7 @@ function CNFlexFormService(
     var count = 0;
     var keyMap = _.pluck(_.reject(selectDisplay.items, {"condition":"false"}), 'key');
     var once = service.scope.$on('flexFormArrayCopyAdded', function(event, key) {
+      once();
       var model = service.parseExpression(service.getKey(selectDisplay.key), service.model).get();
       if(model) {
         var total = model.length * (keyMap.length);
