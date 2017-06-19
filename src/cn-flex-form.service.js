@@ -117,6 +117,7 @@ function CNFlexFormService(
     broadcastErrors,
     buildError,
     cleanup,
+    deleteArrayCopiesFor,
     deregisterHandlers,
     deregisterArrayHandlers,
     getArrayCopy,
@@ -1009,6 +1010,7 @@ function CNFlexFormService(
         form.cacheKey = `${form.type}-${_.uniqueId()}`;
       }
       const key = form.cacheKey || service.getKey(form.key);
+      console.log('NEW SCOPE >>>', key);
 
       if(_.isNumber(scope.arrayIndex)) {
         const genericKey = stripIndexes(key);
@@ -1057,16 +1059,20 @@ function CNFlexFormService(
         const list = service.parseExpression(scope.form.link, service.model).get();
         list.splice(index, 1);
 
-        const copyGroups = service.getArrayCopiesFor(scope.form.link);
-        _.each(copyGroups, group => _.each(group, scope => {
-          const key = scope.form.key;
-          for(let i = key.length - 1; i > -1; i--) {
-            if(_.isNumber(key[i])) {
-              if(key[i] > index) --key[i];
-              break;
-            }
-          }
-        }));
+        // service.deleteArrayCopiesFor(scope.form.link);
+        const copyGroups = _.first(service.getArrayCopiesFor(scope.form.link));
+        const firstScope = _.first(copyGroups);
+        firstScope && firstScope.deleteFromArray && firstScope.deleteFromArray(index);
+        // debugger;
+        // _.each(copyGroups, group => _.each(group, scope => {
+        //   const key = scope.form.key;
+        //   for(let i = key.length - 1; i > -1; i--) {
+        //     if(_.isNumber(key[i])) {
+        //       if(key[i] > index) --key[i];
+        //       break;
+        //     }
+        //   }
+        // }));
       }
     }));
   }
@@ -1095,6 +1101,15 @@ function CNFlexFormService(
     keyStart += '[]';
 
     return _.filter(service.arrayCopies, (copy, key) => key.includes(keyStart));
+  }
+
+  function deleteArrayCopiesFor(keyStart) {
+    const service = this;
+    keyStart += '[]';
+
+    return _.each(service.arrayCopies, (copy, key) => {
+      if(key.includes(keyStart)) service.arrayCopies[key] = [];
+    });
   }
 
   function getArrayScopes(key) {
