@@ -13,6 +13,7 @@ const fieldTypeHandlers = {
   'cn-currency': 'processCurrency',
   'cn-percentage': 'processPercentage',
   'cn-mediaupload': 'processMediaUpload',
+  'cn-creativeimage': 'processCreativeImage',
   'cn-csvupload': 'processCsvUpload',
   'cn-reusable': 'processReusable',
   'cn-toggle': 'processToggle',
@@ -143,6 +144,7 @@ function CNFlexFormService(
     parseCondition,
     parseExpression,
     processArray,
+    processCreativeImage,
     processDefault,
     processDisplay,
     processField,
@@ -1377,6 +1379,18 @@ function CNFlexFormService(
       items: field.items,
       condition: '!model.' + service.getKey(field.key) + '.id'
     }];
+  }
+
+  function processCreativeImage(field) {
+    var service = this;
+    field.type = 'cn-creativeimage';
+    if(!field.resolve) {
+      field.resolve = { };
+      _.each(field.data, (exp, prop) =>
+          field.resolve[`data.${prop}`] = exp
+      );
+    }
+    service.processResolve(field);
   }
 
   function processMediaUpload(field) {
