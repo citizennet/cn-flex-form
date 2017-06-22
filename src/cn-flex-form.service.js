@@ -117,6 +117,7 @@ function CNFlexFormService(
     broadcastErrors,
     buildError,
     cleanup,
+    deleteArrayCopiesFor,
     deregisterHandlers,
     deregisterArrayHandlers,
     getArrayCopy,
@@ -1020,9 +1021,9 @@ function CNFlexFormService(
         }
 
         if(!form.condition) form.condition = 'true';
-        else if (form.condition.includes("arrayIndex")) {
-          form.condition = service.replaceArrayIndex(form.condition, key);
-        }
+        // else if (form.condition.includes("arrayIndex")) {
+        //   form.condition = service.replaceArrayIndex(form.condition, key);
+        // }
 
         service.addArrayCopy(scope, genericKey, index);
         scope.$emit('flexFormArrayCopyAdded', genericKey);
@@ -1032,24 +1033,17 @@ function CNFlexFormService(
       }
     }));
 
-    service.events.push(service.scope.$on('schemaFormDeleteFormController', (event, scope, index) => {
+    service.events.push(service.scope.$on('schemaFormDeleteScope', (event, scope, index) => {
       const key = service.getKey(scope.form.key);
       const listener = service.listeners[key];
       if(listener) listener.handlers = [];
 
-      const unindexedKey = stripIndexes(key);
-
-      // TODO -- not sure if getArrayCopiesFor is actually necessary
-      // we should look into where this function might be needed and
-      // potentially remove it
-      const copies = service.getArrayCopiesFor(unindexedKey);
-      if(!copies.length) copies.push(service.getArrayScopes(unindexedKey) || []);
-
-      copies.forEach((list) => list && list.splice(scope.arrayIndex, 1));
+      service.deleteArrayCopiesFor(key, index);
 
       if(scope.form.link) {
-        var list = service.parseExpression(scope.form.link, service.model).get();
+        const list = service.parseExpression(scope.form.link, service.model).get();
         list.splice(index, 1);
+        service.deleteArrayCopiesFor(scope.form.link, index);
       }
     }));
   }
@@ -1078,6 +1072,12 @@ function CNFlexFormService(
     keyStart += '[]';
 
     return _.filter(service.arrayCopies, (copy, key) => key.includes(keyStart));
+  }
+
+  function deleteArrayCopiesFor(key, index) {
+    const service = this;
+    const copies = service.getArrayCopiesFor(key);
+    _.each(copies, list => list && list.splice(index, 1));
   }
 
   function getArrayScopes(key) {
@@ -1645,55 +1645,44 @@ function CNFlexFormService(
   }
 
   function processSelectDisplay(selectDisplay) {
-    var service = this,
-        schema = service.getSchema(selectDisplay.key),
-        selectField = _.find(selectDisplay.items, 'selectField'),
-        handler;
+    const service = this;
+    const schema = service.getSchema(selectDisplay.key);
+    const selectField = _.find(selectDisplay.items, 'selectField');
 
-    if(schema && schema.type === 'array') {
-      handler = service.setupArraySelectDisplay(selectDisplay, selectField);
-    } else {
-      handler = service.setupSelectDisplay(selectDisplay, selectField);
-    }
-
-    selectDisplay.selectDisplay = false;
-    service.registerHandler(selectField.key, handler, selectField.updateSchema, true);
-    //service.processField(selectDisplay);
+    return schema && schema.type === 'array' ?
+      service.setupArraySelectDisplay(selectDisplay, selectField) :
+      service.setupSelectDisplay(selectDisplay, selectField);
   }
 
   function setupArraySelectDisplay(selectDisplay, selectField) {
-    var service = this;
-    _.each(selectDisplay.items, function(item) {
-      if(item.condition !== 'false') {
-        item.condition = 'true';
-      }
+    const service = this;
+    // band-aid because this is being set as an object instead of array somwhere
+    // deep in the angular or angular-schema-form nether-regions
+    const linkModel = service.parseExpression(selectDisplay.link, service.model);
+    if(!linkModel.get()) linkModel.set([]);
+
+    _.each(selectDisplay.items, item => {
+      if(item.selectField === true) return;
+
+      const key = _.isArray(item.key) ? item.key : ObjectPath.parse(item.key);
+      const featureKey = _.last(key);
+
+      item.showFeature = index => {
+        const features =
+              service
+              .parseExpression(`model.${selectDisplay.link}[${index}].features`)
+              .get();
+        const show =
+              features &&
+              features
+              .includes(featureKey);
+        return show;
+      };
+
+      const condition = `form.showFeature(arrayIndex)`;
+      item.condition = item.condition ?
+        `(${item.condition}) && ${condition}` : condition;
     });
-    var handler = function(val, prev, key) {
-      var index = getArrayIndex(key);
-      _.each(selectDisplay.items, function(item) {
-        var selectKey = service.getKey(selectField.key);
-        var key = service.getKey(item.key);
-        var splitKey = ObjectPath.parse(key);
-        if(selectKey === key) return;
-        var indexedSelectKey = service.setArrayIndex(selectKey, index);
-        var selectValue = service.parseExpression(indexedSelectKey, service.model).get();
-        var formCopies = service.getArrayCopies(key);
-        if(_.includes(selectValue, splitKey[splitKey.length - 1])) {
-          _.each(formCopies, function(copy) {
-            if(getArrayIndex(copy) == index) {
-              copy.condition = 'true';
-            }
-          });
-        } else {
-          _.each(formCopies, function(copy) {
-            if(getArrayIndex(copy) == index) {
-              copy.condition = 'false';
-              service.parseExpression(service.getKey(copy.key), service.model).set();
-            }
-          });
-        }
-      });
-    };
     // handle legacy objects that don't have values set in the selectField
     var model = service.parseExpression(service.getKey(selectDisplay.key), service.model).get();
     _.each(selectDisplay.items, function(item) {
@@ -1731,49 +1720,34 @@ function CNFlexFormService(
         selectModel.set(selectValue);
       });
     });
-    // run handler once all arrayCopies have been instantiated
-    var count = 0;
-    var keyMap = _.pluck(_.reject(selectDisplay.items, {"condition":"false"}), 'key');
-    var once = service.scope.$on('flexFormArrayCopyAdded', function(event, key) {
-      var model = service.parseExpression(service.getKey(selectDisplay.key), service.model).get();
-      if(model) {
-        var total = model.length * (keyMap.length);
-        if(_.includes(keyMap, key)) {
-          count++;
-        }
-        if(count === total) {
-          for (var i = 0; i < model.length; i++) {
-            handler(null, null, '[' + i + ']');
-          }
-          count = 0;
-        }
-      }
-    });
-    var resetCount = service.scope.$on('flexForm.updatePage', function() {
-      count = 0;
-    });
-    service.events.push(once);
-    service.events.push(resetCount);
-    return handler;
   }
 
   function setupSelectDisplay(selectDisplay, selectField) {
-    var service = this;
-    var handler = function() {
-      var selectKey = service.getKey(selectField.key);
-      _.each(selectDisplay.items, function(item) {
-        var key = service.getKey(item.key);
-        var splitKey = ObjectPath.parse(key);
-        if(selectKey === key) return;
-        var selectValue = service.parseExpression(selectKey, service.model).get();
-        if(_.includes(selectValue, splitKey[splitKey.length - 1])) {
-          item.condition = 'true';
-        } else {
-          item.condition = 'false';
-          service.parseExpression(key, service.model).set();
-        }
-      });
-    };
+    const service = this;
+    const selectFieldKey = service.getKey(selectField.key);
+
+    _.each(selectDisplay.items, item => {
+      if(item.selectField === true) return;
+
+      const key = _.isArray(item.key) ? item.key : ObjectPath.parse(item.key);
+      const featureKey = _.last(key);
+
+      item.showFeature = () => {
+        const features =
+              service
+              .parseExpression(`model.${selectFieldKey}`)
+              .get();
+        const show =
+              features &&
+              features
+              .includes(featureKey);
+        return show;
+      };
+
+      const condition = `form.showFeature()`;
+      item.condition = item.condition ?
+        `(${item.condition}) && ${condition}` : condition;
+    });
     // handle legacy objects that don't have values set in the selectField
     var selectKey = service.getKey(selectField.key);
     var selectModel = service.parseExpression(selectKey, service.model);
@@ -1805,8 +1779,6 @@ function CNFlexFormService(
     if(defaults && !model.get()) {
       model.set(defaults);
     }
-
-    return handler;
   }
 
   function setupSchemaRefresh(refresh) {
