@@ -1010,7 +1010,6 @@ function CNFlexFormService(
         form.cacheKey = `${form.type}-${_.uniqueId()}`;
       }
       const key = form.cacheKey || service.getKey(form.key);
-      console.log('NEW SCOPE >>>', key);
 
       if(_.isNumber(scope.arrayIndex)) {
         const genericKey = stripIndexes(key);
@@ -1034,45 +1033,17 @@ function CNFlexFormService(
       }
     }));
 
-    service.events.push(service.scope.$on('schemaFormDeleteFormController', (event, scope) => {
-      const key = service.getKey(scope.form.key);
-      const listener = service.listeners[key];
-      if(listener) listener.handlers = [];
-
-      const unindexedKey = stripIndexes(key);
-
-      // TODO -- not sure if getArrayCopiesFor is actually necessary
-      // we should look into where this function might be needed and
-      // potentially remove it
-      const copies = service.getArrayCopiesFor(unindexedKey);
-      if(!copies.length) copies.push(service.getArrayScopes(unindexedKey) || []);
-
-      copies.forEach((list) => list && list.splice(scope.arrayIndex, 1));
-    }));
-
     service.events.push(service.scope.$on('schemaFormDeleteScope', (event, scope, index) => {
       const key = service.getKey(scope.form.key);
       const listener = service.listeners[key];
       if(listener) listener.handlers = [];
 
+      service.deleteArrayCopiesFor(key, index);
+
       if(scope.form.link) {
         const list = service.parseExpression(scope.form.link, service.model).get();
         list.splice(index, 1);
-
-        // service.deleteArrayCopiesFor(scope.form.link);
-        const copyGroups = _.first(service.getArrayCopiesFor(scope.form.link));
-        const firstScope = _.first(copyGroups);
-        firstScope && firstScope.deleteFromArray && firstScope.deleteFromArray(index);
-        // debugger;
-        // _.each(copyGroups, group => _.each(group, scope => {
-        //   const key = scope.form.key;
-        //   for(let i = key.length - 1; i > -1; i--) {
-        //     if(_.isNumber(key[i])) {
-        //       if(key[i] > index) --key[i];
-        //       break;
-        //     }
-        //   }
-        // }));
+        service.deleteArrayCopiesFor(scope.form.link, index);
       }
     }));
   }
@@ -1103,13 +1074,10 @@ function CNFlexFormService(
     return _.filter(service.arrayCopies, (copy, key) => key.includes(keyStart));
   }
 
-  function deleteArrayCopiesFor(keyStart) {
+  function deleteArrayCopiesFor(key, index) {
     const service = this;
-    keyStart += '[]';
-
-    return _.each(service.arrayCopies, (copy, key) => {
-      if(key.includes(keyStart)) service.arrayCopies[key] = [];
-    });
+    const copies = service.getArrayCopiesFor(key);
+    _.each(copies, list => list && list.splice(index, 1));
   }
 
   function getArrayScopes(key) {
@@ -1695,9 +1663,9 @@ function CNFlexFormService(
 
   function setupArraySelectDisplay(selectDisplay, selectField) {
     const service = this;
-    const linkModel = service.parseExpression(selectDisplay.link, service.model);
     // band-aid because this is being set as an object instead of array somwhere
     // deep in the angular or angular-schema-form nether-regions
+    const linkModel = service.parseExpression(selectDisplay.link, service.model);
     if(!linkModel.get()) linkModel.set([]);
 
     _.each(selectDisplay.items, function(item) {
