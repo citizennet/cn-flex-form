@@ -438,7 +438,6 @@ function addTemplates($templateCache) {
                for="{{form.key && form.key[0]}}">{{form.title}}</label>
         <cn-creative-image ng-model="$$value$$"
                       cn-disabled="form.readonly"
-                      cn-file-type="form.fileType"
                       cn-upload-path="form.uploadPath"
                       cn-data="form.data"
                       cn-preview-path="form.previewPath"
