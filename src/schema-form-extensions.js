@@ -444,6 +444,7 @@ function addTemplates($templateCache) {
                       cn-model-value-key="form.modelValueKey"
                       cn-existing-preview="form.existingPreview"
                       ng-model-options="form.ngModelOptions"
+                      cn-ng-model-key="form.ngModelKey"
                       sf-changed="form"
                       schema-validate="form"
                       ff-form="form"
