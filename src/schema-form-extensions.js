@@ -23,7 +23,8 @@ function schemaFormConfig(cnFlexFormServiceProvider) {
     'cn-mediaupload',
     'cn-csvupload',
     'cn-reusable',
-    'cn-table'
+    'cn-table',
+    'cn-creativeimage'
   ];
 
   _.each(extensions, function(extension) {
@@ -425,6 +426,32 @@ function addTemplates($templateCache) {
         </div>
         <span class="help-block" sf-message="form.description"></span>
       </div>`
+  );
+
+  $templateCache.put(
+      'app/components/cn-flex-form/forms/cn-creativeimage.html',
+      `
+      <div class="form-group {{form.htmlClass}}"
+           ng-class="{'has-error': hasError(), 'has-success': hasSuccess()}">
+        <label class="control-label"
+               ng-show="showTitle()"
+               for="{{form.key && form.key[0]}}">{{form.title}}</label>
+        <cn-creative-image ng-model="$$value$$"
+                      cn-disabled="form.readonly"
+                      cn-upload-path="form.uploadPath"
+                      cn-data="form.data"
+                      cn-preview-path="form.previewPath"
+                      cn-model-value-key="form.modelValueKey"
+                      cn-existing-preview="form.existingPreview"
+                      ng-model-options="form.ngModelOptions"
+                      cn-ng-model-key="form.ngModelKey"
+                      sf-changed="form"
+                      schema-validate="form"
+                      ff-form="form"
+                      class="clearfix">
+        </cn-creative-image>
+        <span class="help-block" sf-message="form.description"></span>
+     </div>`
   );
 }
 
