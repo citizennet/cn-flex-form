@@ -99,7 +99,10 @@ function FlexFormHeader($scope) {
   }
 
   function updateData() {
-    $scope.$emit('ffRefreshData');
+    // $scope.$emit('ffRefreshData');
+    // this component will often be siblings to the flex forms one,
+    // so need to broadcast from shared parent...yes it's ugly
+    $scope.$parent.$parent.$broadcast('ffRefreshData');
   }
 
   function isDisabled(btnConfig) {
