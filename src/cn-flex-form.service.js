@@ -1494,8 +1494,8 @@ function CNFlexFormService(
   }
 
   function processSelect(select) {
-    var service = this,
-        schema = select.schema;
+    const service = this;
+    const schema = select.schema;
 
     if(select.titleMapResolve || select.titleMap) {
       select.getTitleMap = () =>
@@ -1532,8 +1532,8 @@ function CNFlexFormService(
         });
       };
 
-      // wrap in string so returns truthy when compiled, but converted to number within directive
-      if(!paramsKeys.length) select.minLookup = '0';
+      if(!_.isNumber(select.minLookup)) select.minLookup = paramsKeys.length ? 3 : 0;
+      if(!_.has(select, 'skipFiltering')) select.skipFiltering = !!select.minLookup;
 
       select.onInit = function(val, form, event, setter) {
         if(event === 'tag-init') {
@@ -1541,6 +1541,8 @@ function CNFlexFormService(
         }
       };
     }
+
+    if(!_.isNumber(select.minLookup)) select.minLookup = 0;
 
     if(schema.items) {
       var defaults = [];
