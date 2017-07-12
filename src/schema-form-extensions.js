@@ -129,9 +129,10 @@ function addTemplates($templateCache) {
           bulk-delimiter="{{form.bulkDelimiter}}"
           bulk-placeholder="{{form.bulkPlaceholder}}"
           show-clear-all="{{form.showClearAll}}"
+          show-clear-cache="{{form.showClearCache}}"
           show-button="true">
           <auto-complete
-            source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query)"
+            source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query, options)"
             skip-filtering="{{form.skipFiltering}}"
             min-length="{{form.minLookup}}">
           </auto-complete>

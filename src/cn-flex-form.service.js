@@ -1515,12 +1515,18 @@ function CNFlexFormService(
       const queryParams = select.titleMapQuery.params;
       const paramsKeys = _.keys(queryParams);
       select.showClearAll = true;
-      select.titleQuery = function(q) {
-        const params = _(paramsKeys)
+      select.showClearCache = !!select.titleMapQuery.params.refreshData;
+      select.titleQuery = (q, { refreshData }) => {
+        const params =
+          _(paramsKeys)
           .reduce((acc, key) => {
             if (key === 'q') {
               acc[queryParams[key]] = q;
-            } else {
+            }
+            else if (key === 'refreshData') {
+              if (refreshData) acc[queryParams[key]] = true;
+            }
+            else {
               const val = service.parseExpression(queryParams[key]).get();
               acc[key] = val;
             }
