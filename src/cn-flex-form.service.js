@@ -1494,8 +1494,8 @@ function CNFlexFormService(
   }
 
   function processSelect(select) {
-    var service = this,
-        schema = select.schema;
+    const service = this;
+    const schema = select.schema;
 
     if(select.titleMapResolve || select.titleMap) {
       select.getTitleMap = () =>
@@ -1515,12 +1515,18 @@ function CNFlexFormService(
       const queryParams = select.titleMapQuery.params;
       const paramsKeys = _.keys(queryParams);
       select.showClearAll = true;
-      select.titleQuery = function(q) {
-        const params = _(paramsKeys)
+      select.showClearCache = !!select.titleMapQuery.params.refreshData;
+      select.titleQuery = (q, { refreshData }) => {
+        const params =
+          _(paramsKeys)
           .reduce((acc, key) => {
             if (key === 'q') {
               acc[queryParams[key]] = q;
-            } else {
+            }
+            else if (key === 'refreshData') {
+              if (refreshData) acc[queryParams[key]] = true;
+            }
+            else {
               const val = service.parseExpression(queryParams[key]).get();
               acc[key] = val;
             }
@@ -1532,8 +1538,8 @@ function CNFlexFormService(
         });
       };
 
-      // wrap in string so returns truthy when compiled, but converted to number within directive
-      if(!paramsKeys.length) select.minLookup = '0';
+      if(!_.isNumber(select.minLookup)) select.minLookup = paramsKeys.length ? 3 : 0;
+      if(!_.has(select, 'skipFiltering')) select.skipFiltering = !!select.minLookup;
 
       select.onInit = function(val, form, event, setter) {
         if(event === 'tag-init') {
@@ -1541,6 +1547,8 @@ function CNFlexFormService(
         }
       };
     }
+
+    if(!_.isNumber(select.minLookup)) select.minLookup = 0;
 
     if(schema.items) {
       var defaults = [];
