@@ -134,6 +134,7 @@ function addTemplates($templateCache) {
           <auto-complete
             source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query, options)"
             skip-filtering="{{form.skipFiltering}}"
+            single-query="{{form.singleQuery}}"
             min-length="{{form.minLookup}}">
           </auto-complete>
         </tags-input>`;
