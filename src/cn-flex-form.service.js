@@ -1516,6 +1516,7 @@ function CNFlexFormService(
       const paramsKeys = _.keys(queryParams);
       select.showClearAll = true;
       select.showClearCache = !!select.titleMapQuery.params.refreshData;
+      select.singleQuery = select.minLookup === 0;
       select.titleQuery = (q, { refreshData }) => {
         const params =
           _(paramsKeys)
