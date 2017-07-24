@@ -129,11 +129,13 @@ function addTemplates($templateCache) {
           bulk-delimiter="{{form.bulkDelimiter}}"
           bulk-placeholder="{{form.bulkPlaceholder}}"
           show-clear-all="{{form.showClearAll}}"
+          show-clear-cache="{{form.showClearCache}}"
           show-button="true">
           <auto-complete
-            source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query)"
-            skip-filtering="{{form.titleQuery ? true : false}}"
-            min-length="{{form.minLookup || (form.titleQuery && 3 || 0)}}">
+            source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query, options)"
+            skip-filtering="{{form.skipFiltering}}"
+            single-query="{{form.singleQuery}}"
+            min-length="{{form.minLookup}}">
           </auto-complete>
         </tags-input>`;
 
