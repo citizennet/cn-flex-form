@@ -316,8 +316,9 @@ function addTemplates($templateCache) {
       <fieldset 
         ng-disabled="form.readonly"
         class="schema-form-fieldset {{form.htmlClass}}"
-        ng-class="{'borderless': form.pos === 0}">
-        <legend ng-click="form.toggleCollapse(form)"
+        ng-class="{'borderless': form.pos === 0, 'notitle': form.notitle || !form.title}">
+        <legend ng-hide="form.notitle"
+                ng-click="form.toggleCollapse(form)"
                 ng-class="{'sr-only': !showTitle(), collapsible: form.collapsible}"
                 ng-mouseenter="form.render = true">
           <i ng-show="form.collapsible"
