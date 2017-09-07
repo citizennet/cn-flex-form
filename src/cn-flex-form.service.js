@@ -752,7 +752,7 @@ function CNFlexFormService(
   }
 
   function parseCondition(condition) {
-    let service = this;
+    const service = this;
     if(condition.startsWith("_")) {
       let exp = /^_\.(.*?)\((.*?),[\s(]*(.*?)\)?\s*=>[{\s]*(?:return)?(.*?)\}?\)$/;
       let [, fn, list, predicateParams, predicateBody] = condition.match(exp);
@@ -1811,7 +1811,7 @@ function CNFlexFormService(
         ...cnFlexFormConfig.getStateParams(service.getParamOverrides()),
         ...service.params
       };
-      let diff = _.omit(cnUtil.diff(service.schema.params, params, true, 'delete'), 'updates');
+      let diff = _.omit(cnUtil.diff(service.schema.params, params, true), 'updates');
       let keys;
 
       if(!_.isEmpty(diff) || updateSchema) {
