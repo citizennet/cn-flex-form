@@ -1496,29 +1496,8 @@ function CNFlexFormService(
   }
 
   function processSchedule(field) {
-      const type = {
-        INDEX: 0,
-        TYPE: 'cn-schedule'
-      };
-
       field.startEmpty = true;
-      field.type = type.TYPE;
-
-      if (_.isUndefined(field.directiveId)) {
-        field.directiveId = type.index++;
-      }
-
-      field.getQueryParams = () => {
-        const params = {};
-        let resolved = 0;
-        _.each(field.resolve, (val, key) => {
-          if (field[key]) {
-            params[key] = field[key];
-            resolved = 1;
-          }
-        });
-        return params;
-      };
+      field.type = 'cn-schedule';
   }
 
   function processSelect(select) {
