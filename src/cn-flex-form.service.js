@@ -1496,6 +1496,11 @@ function CNFlexFormService(
   }
 
   function processSchedule(field) {
+      const type = {
+        INDEX: 0,
+        TYPE: 'cn-schedule'
+      };
+
       field.startEmpty = true;
       field.type = type.TYPE;
 

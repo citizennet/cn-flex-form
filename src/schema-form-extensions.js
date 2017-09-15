@@ -20,7 +20,7 @@ function schemaFormConfig(cnFlexFormServiceProvider) {
     'cn-csvupload',
     'cn-reusable',
     'cn-table',
-    'cn-creativeimage'
+    'cn-creativeimage',
     'cn-schedule'
   ];
 
@@ -452,7 +452,7 @@ function addTemplates($templateCache) {
         </cn-creative-image>
         <span class="help-block" sf-message="form.description"></span>
      </div>`
-  )
+  );
 
   $templateCache.put(
     'app/components/cn-flex-form/forms/cn-schedule.html', 
