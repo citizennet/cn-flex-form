@@ -1,7 +1,3 @@
-//angular.module('cn.flex-form')
-    //.config(schemaFormConfig)
-    //.run(addTemplates);
-
 function schemaFormConfig(cnFlexFormServiceProvider) {
   'ngInject';
 
@@ -24,7 +20,8 @@ function schemaFormConfig(cnFlexFormServiceProvider) {
     'cn-csvupload',
     'cn-reusable',
     'cn-table',
-    'cn-creativeimage'
+    'cn-creativeimage',
+    'cn-schedule'
   ];
 
   _.each(extensions, function(extension) {
@@ -455,6 +452,24 @@ function addTemplates($templateCache) {
         </cn-creative-image>
         <span class="help-block" sf-message="form.description"></span>
      </div>`
+  );
+
+  $templateCache.put(
+    'app/components/cn-flex-form/forms/cn-schedule.html', 
+    `
+      <div class="form-group {{ form.htmlClass }}"
+           ng-class="{ 'has-error': hasError(), 'has-success': hasSuccess() }">
+        <label class="control-label"
+               ng-show="showTitle()"
+               for="{{ form.key.join('.') }}">
+          {{ form.title }}
+        </label>
+        <cn-schedule form="form"
+                     ng-model="$$value$$">
+        </cn-schedule>
+        <span class="help-block" sf-message="form.description"></span>
+      </div>
+    `
   );
 }
 

@@ -48,6 +48,9 @@ function cnFlexFormTypesProvider() {
   }, {
     condition: field => field.type === 'array',
     type: 'array'
+  }, {
+    condition: field => field.type === 'schedule',
+    type: 'cn-schedule'
   }];
 
   return {
@@ -80,9 +83,5 @@ function cnFlexFormTypesProvider() {
   }
 
 }
-
-//angular
-    //.module('cn.flex-form')
-    //.provider('cnFlexFormTypes', cnFlexFormTypesProvider);
 
 export default cnFlexFormTypesProvider;

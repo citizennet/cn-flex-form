@@ -21,7 +21,8 @@ const fieldTypeHandlers = {
   'component': 'processComponent',
   'section': 'processSection',
   'tabarray': 'processSection',
-  'array': 'processArray'
+  'array': 'processArray',
+  'cn-schedule': 'processSchedule'
 };
 
 // handlers that don't run on secondPass are ones that shouldn't ever change
@@ -168,6 +169,7 @@ function CNFlexFormService(
     processResolve,
     processSection,
     processSelect,
+    processSchedule,
     processTable,
     processTemplate,
     processToggle,
@@ -1491,6 +1493,11 @@ function CNFlexFormService(
     else {
       return _.find(titleMap, {[valProp]: val});
     }
+  }
+
+  function processSchedule(field) {
+      field.startEmpty = true;
+      field.type = 'cn-schedule';
   }
 
   function processSelect(select) {
