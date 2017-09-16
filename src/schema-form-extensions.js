@@ -43,6 +43,7 @@ function addTemplates($templateCache) {
         <label class="control-label" ng-show="showTitle()">{{form.title}}</label>
         <div class="clearfix">
           <cn-toggle-switch
+            name="{{form.key.join('.')}}"
             class="pull-left"
             ng-show="form.key"
             ng-model-options="form.ngModelOptions"
