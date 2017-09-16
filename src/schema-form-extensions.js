@@ -51,6 +51,7 @@ function addTemplates($templateCache) {
             schema-validate="form"
             on-value="form.onValue"
             off-value="form.offValue"
+            required="form.required"
             read-only="form.readonly"
             undefined-class="form.undefinedClass"/>
           <span ng-show="form.onText && form.offText">
