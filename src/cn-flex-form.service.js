@@ -1535,7 +1535,8 @@ function CNFlexFormService(
               if (refreshData) acc[queryParams[key]] = true;
             }
             else {
-              const val = service.parseExpression(queryParams[key]).get();
+              const exp = service.replaceArrayIndex(queryParams[key], select.arrayIndex);
+              const val = service.parseExpression(exp).get();
               acc[key] = val;
             }
             return acc;
