@@ -21,7 +21,8 @@ function schemaFormConfig(cnFlexFormServiceProvider) {
     'cn-reusable',
     'cn-table',
     'cn-creativeimage',
-    'cn-schedule'
+    'cn-schedule',
+    'cn-facebookvideo'
   ];
 
   _.each(extensions, function(extension) {
@@ -472,6 +473,33 @@ function addTemplates($templateCache) {
         <span class="help-block" sf-message="form.description"></span>
       </div>
     `
+  );
+
+  $templateCache.put(
+      'app/components/cn-flex-form/forms/cn-facebookvideo.html',
+      `
+      <div class="form-group {{form.htmlClass}}"
+           ng-class="{'has-error': hasError(), 'has-success': hasSuccess()}">
+        <label class="control-label"
+               ng-show="showTitle()"
+               for="{{form.key && form.key[0]}}">{{form.title}}</label>
+        <cn-facebook-video ng-model="$$value$$"
+                      cn-disabled="form.readonly"
+                      cn-upload-path="form.uploadPath"
+                      cn-data="form.data"
+                      cn-preview-path="form.previewPath"
+                      cn-model-value-key="form.modelValueKey"
+                      cn-existing-preview="form.existingPreview"
+                      ng-model-options="form.ngModelOptions"
+                      cn-video-key="form.videoKey"
+                      cn-thumbnail-key="form.thumbnailKey"
+                      sf-changed="form"
+                      schema-validate="form"
+                      ff-form="form"
+                      class="clearfix">
+        </cn-facebook-video>
+        <span class="help-block" sf-message="form.description"></span>
+     </div>`
   );
 }
 

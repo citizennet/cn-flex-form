@@ -14,6 +14,7 @@ const fieldTypeHandlers = {
   'cn-percentage': 'processPercentage',
   'cn-mediaupload': 'processMediaUpload',
   'cn-creativeimage': 'processCreativeImage',
+  'cn-facebookvideo': 'processFacebookVideo',
   'cn-csvupload': 'processCsvUpload',
   'cn-reusable': 'processReusable',
   'cn-toggle': 'processToggle',
@@ -149,6 +150,7 @@ function CNFlexFormService(
     processCreativeImage,
     processDefault,
     processDisplay,
+    processFacebookVideo,
     processField,
     processFieldset,
     processFieldProps,
@@ -1381,6 +1383,18 @@ function CNFlexFormService(
       items: field.items,
       condition: '!model.' + service.getKey(field.key) + '.id'
     }];
+  }
+
+  function processFacebookVideo(field) {
+    var service = this;
+    field.type = 'cn-facebookvideo';
+    if(!field.resolve) {
+      field.resolve = { };
+      _.each(field.data, (exp, prop) =>
+          field.resolve[`data.${prop}`] = exp
+      );
+    }
+    service.processResolve(field);
   }
 
   function processCreativeImage(field) {
