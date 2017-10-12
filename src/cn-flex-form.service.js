@@ -1888,7 +1888,7 @@ function CNFlexFormService(
         service.scope.$broadcast('cnFlexFormDiff:schema', schema.diff.schema);
         _.each(schema.diff.schema, function(schema, key) {
           reprocessSchema(schema, key, keys);
-          const curKeys = _.filter(keys, k => k.includes(key));
+          const curKeys = _.filter(keys, k => _.startsWith(k, key));
           _.each(curKeys, key => {
             const forms = _.compact([
               service.getFromFormCache(key),
