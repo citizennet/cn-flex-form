@@ -34,6 +34,9 @@ function cnFlexFormTypesProvider() {
     condition: field => field.type === 'creativeimage',
     type: 'cn-creativeimage'
   }, {
+    condition: field => field.type === 'facebookvideo',
+    type: 'cn-facebookvideo'
+  }, {
     condition: field => field.type === 'mediaupload',
     type: 'cn-mediaupload'
   }, {
