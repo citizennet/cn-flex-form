@@ -14,6 +14,7 @@ const fieldTypeHandlers = {
   'cn-percentage': 'processPercentage',
   'cn-mediaupload': 'processMediaUpload',
   'cn-creativeimage': 'processCreativeImage',
+  'cn-facebookvideo': 'processFacebookVideo',
   'cn-csvupload': 'processCsvUpload',
   'cn-reusable': 'processReusable',
   'cn-toggle': 'processToggle',
@@ -149,6 +150,7 @@ function CNFlexFormService(
     processCreativeImage,
     processDefault,
     processDisplay,
+    processFacebookVideo,
     processField,
     processFieldset,
     processFieldProps,
@@ -1383,6 +1385,18 @@ function CNFlexFormService(
     }];
   }
 
+  function processFacebookVideo(field) {
+    var service = this;
+    field.type = 'cn-facebookvideo';
+    if(!field.resolve) {
+      field.resolve = { };
+      _.each(field.data, (exp, prop) =>
+          field.resolve[`data.${prop}`] = exp
+      );
+    }
+    service.processResolve(field);
+  }
+
   function processCreativeImage(field) {
     var service = this;
     field.type = 'cn-creativeimage';
@@ -1888,7 +1902,7 @@ function CNFlexFormService(
         service.scope.$broadcast('cnFlexFormDiff:schema', schema.diff.schema);
         _.each(schema.diff.schema, function(schema, key) {
           reprocessSchema(schema, key, keys);
-          const curKeys = _.filter(keys, k => k.includes(key));
+          const curKeys = _.filter(keys, k => _.startsWith(k, key));
           _.each(curKeys, key => {
             const forms = _.compact([
               service.getFromFormCache(key),
