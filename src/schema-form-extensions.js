@@ -216,7 +216,9 @@ function addTemplates($templateCache) {
       'app/components/cn-flex-form/forms/cn-radios.html',
       `<div class="form-group {{form.htmlClass}}"
             ng-class="{'has-error': hasError(), 'has-success': hasSuccess()}">
-         <label class="control-label" ng-show="showTitle()">{{form.title}}</label>
+         <div>
+             <label class="control-label" ng-show="showTitle()">{{form.title}}</label>
+         </div>
          <div class="btn-group clearfix">
            <label class="radio radio-block"
                   ng-repeat="item in form.titleMap">
