@@ -472,11 +472,10 @@ function CNFlexFormService(
     let first, next;
 
     while(key.length > 1) {
-      first = key[0];
       next = key[1];
       if(/^-?\d*$/.test(next)) {
         if(key.length === 2) {
-          depth = depth = depth[key.shift()];
+          depth = depth[key.shift()];
         }
         else {
           depth = depth[key.shift()].items.properties;
