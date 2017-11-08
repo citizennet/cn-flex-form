@@ -1878,6 +1878,9 @@ function CNFlexFormService(
     var service = this;
     if(schema.diff) {
       service.schema.params = schema.params;
+      if (cnFlexFormConfig.onProcessDiff) {
+        cnFlexFormConfig.onProcessDiff(schema)
+      }
 
       if(schema.diff.data) {
         service.scope.$broadcast('cnFlexFormDiff:data', schema.diff.data);
