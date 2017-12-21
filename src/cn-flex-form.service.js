@@ -183,6 +183,7 @@ function CNFlexFormService(
     registerResolve,
     replaceArrayIndex,
     reprocessField,
+    resetUpdates,
     resolveNestedExpressions,
     setArrayIndex,
     setupConfig,
@@ -1856,8 +1857,6 @@ function CNFlexFormService(
         }
 
         refresh(params).then(function(schema) {
-          service.incrementUpdates();
-          //service.updateSchema(schema);
           service.processUpdatedSchema(schema);
         });
       }
@@ -1876,6 +1875,7 @@ function CNFlexFormService(
   function processUpdatedSchema(schema) {
     var service = this;
     if(schema.diff) {
+      service.incrementUpdates();
       service.schema.params = schema.params;
       if (cnFlexFormConfig.onProcessDiff) {
         cnFlexFormConfig.onProcessDiff(schema)
@@ -1951,6 +1951,7 @@ function CNFlexFormService(
       service.broadcastErrors();
     }
     else {
+      service.resetUpdates();
       service.updateSchema(schema);
     }
   }
@@ -2083,6 +2084,12 @@ function CNFlexFormService(
     _.each(service.events, function(listener) {
       listener();
     });
+  }
+
+  function resetUpdates() {
+    const service =  this;
+    service.updates = 0;
+    service.params.updates = service.updates;
   }
 
   function incrementUpdates() {
