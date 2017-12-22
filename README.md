@@ -1,5 +1,5 @@
-# cn-flex-form
-Flex Form library by CitizenNet
+# CitizenNet Flex Form Library [![CircleCI](https://circleci.com/gh/citizennet/cn-flex-form.svg?style=badge)](https://circleci.com/gh/citizennet/cn-flex-form)
+Flexible form-building library by CitizenNet
 
 ## Contributing
 To get started run to download all dependencies:
