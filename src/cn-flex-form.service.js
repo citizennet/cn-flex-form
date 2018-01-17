@@ -1630,7 +1630,7 @@ function CNFlexFormService(
             let val = modelValue.get();
             if(val !== undefined) {
               let valid = getAllowedSelectValue(select, val, data[select.titleMapResolve]);
-              if(valid === undefined) modelValue.set();
+              if(valid === undefined || (_.isArray(valid) && _.isEmpty(valid))) modelValue.set();
             }
           }
         });
