@@ -4,5 +4,6 @@ bower_components/
 *.swp
 tags
 *.DS_Store
+.tern-port
 
 

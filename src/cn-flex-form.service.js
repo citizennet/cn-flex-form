@@ -42,7 +42,7 @@ const fieldPropHandlers = [{
     service.processSelectDisplay(field)
 }, {
   prop: 'schema',
-  handler: (field, service) => 
+  handler: (field, service) =>
     _.isUndefined(field.default) && !_.isUndefined(field.schema.default) && service.processDefault(field)
 }, {
   prop: 'watch',
@@ -183,6 +183,7 @@ function CNFlexFormService(
     registerResolve,
     replaceArrayIndex,
     reprocessField,
+    resetUpdates,
     resolveNestedExpressions,
     setArrayIndex,
     setupConfig,
@@ -1299,7 +1300,7 @@ function CNFlexFormService(
     const keys = _.filter(_.keys(service.formCache), (k) => k.startsWith(ks));
     let skipKeys = [];
     _.each(keys, (key) => {
-      const indexedKey = service.setArrayIndex(key, index); 
+      const indexedKey = service.setArrayIndex(key, index);
       const model = service.parseExpression(indexedKey, service.model).get();
       if (_.isArray(model)) {
         const childKeys = _.filter(_.keys(service.formCache), (k) => k.startsWith(key));
@@ -1494,17 +1495,15 @@ function CNFlexFormService(
   function getAllowedSelectValue(select, val, titleMap) {
     titleMap = titleMap || select.getTitleMap();
     let valProp = getSelectValProp(select);
-    if(!valProp) return;
-
+    let omitHashKey = valProp ?  _.identity : _.partialRight(_.omit, "$$hashKey")
+    let findFn = valProp ?
+      _.compose(_.partial(_.find, titleMap), _.partial(_.set, {}, valProp), omitHashKey) :
+      _.compose(_.partial(_.find, titleMap), omitHashKey)
     if(select.getSchemaType() === 'array') {
       if(!val || !_.isArray(val)) return;
-
-      let mapVal = val.map(x => _.find(titleMap, {[valProp]: x})).filter(x => x !== undefined);
-
-      return mapVal;
-    }
-    else {
-      return _.find(titleMap, {[valProp]: val});
+      return val.map(findFn).filter(x => x !== undefined);
+    } else {
+      return findFn(val);
     }
   }
 
@@ -1632,7 +1631,7 @@ function CNFlexFormService(
             let val = modelValue.get();
             if(val !== undefined) {
               let valid = getAllowedSelectValue(select, val, data[select.titleMapResolve]);
-              if(valid === undefined) modelValue.set();
+              if(valid === undefined || (_.isArray(valid) && _.isEmpty(valid))) modelValue.set();
             }
           }
         });
@@ -1856,8 +1855,6 @@ function CNFlexFormService(
         }
 
         refresh(params).then(function(schema) {
-          service.incrementUpdates();
-          //service.updateSchema(schema);
           service.processUpdatedSchema(schema);
         });
       }
@@ -1876,6 +1873,7 @@ function CNFlexFormService(
   function processUpdatedSchema(schema) {
     var service = this;
     if(schema.diff) {
+      service.incrementUpdates();
       service.schema.params = schema.params;
       if (cnFlexFormConfig.onProcessDiff) {
         cnFlexFormConfig.onProcessDiff(schema)
@@ -1951,6 +1949,7 @@ function CNFlexFormService(
       service.broadcastErrors();
     }
     else {
+      service.resetUpdates();
       service.updateSchema(schema);
     }
   }
@@ -2083,6 +2082,12 @@ function CNFlexFormService(
     _.each(service.events, function(listener) {
       listener();
     });
+  }
+
+  function resetUpdates() {
+    const service =  this;
+    service.updates = 0;
+    service.params.updates = service.updates;
   }
 
   function incrementUpdates() {
