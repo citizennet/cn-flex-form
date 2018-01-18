@@ -399,7 +399,7 @@ function addTemplates($templateCache) {
           directiveId="form.directiveId"
           item-template="form.itemTemplate"
           toggle-text="form.toggleText"
-          disabled="form.readonly"
+          ng-disabled="form.readonly"
           view="form.view">
           <sf-decorator ng-repeat="item in form.items" form="item"/>
         </cn-select-or>
