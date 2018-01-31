@@ -12,6 +12,7 @@ function schemaFormConfig(cnFlexFormServiceProvider) {
     'cn-autocomplete',
     'cn-autocomplete-detailed',
     'cn-currency',
+    'cn-url',
     'cn-radios',
     'cn-radiobuttons',
     'cn-percentage',
@@ -213,6 +214,29 @@ function addTemplates($templateCache) {
   );
 
   $templateCache.put(
+      'app/components/cn-flex-form/forms/cn-url.html',
+      `
+      <div class="form-group {{form.htmlClass}}"
+           ng-class="{'has-error': hasError(), 'has-success': hasSuccess()}">
+        <label class="control-label"
+               ng-show="showTitle()"
+               for="{{form.key.join('.')}}">{{form.title}}</label>
+        <input class="form-control"
+               cn-url-format
+               ng-show="form.key"
+               ng-model-options="form.ngModelOptions"
+               ng-disabled="form.readonly"
+               sf-changed="form"
+               schema-validate="form"
+               type="text"
+               id="{{form.key.join('.')}}"
+               name="{{form.key.join('.')}}"
+               ng-model="$$value$$">
+        <span class="help-block" sf-message="form.description"></span>
+      </div>`
+  );
+
+  $templateCache.put(
       'app/components/cn-flex-form/forms/cn-radios.html',
       `<div class="form-group {{form.htmlClass}}"
             ng-class="{'has-error': hasError(), 'has-success': hasSuccess()}">
@@ -313,7 +337,7 @@ function addTemplates($templateCache) {
   $templateCache.put(
       'app/components/cn-flex-form/forms/cn-fieldset.html',
       `
-      <fieldset 
+      <fieldset
         ng-disabled="form.readonly"
         class="schema-form-fieldset {{form.htmlClass}}"
         ng-class="{'borderless': form.pos === 0, 'notitle': form.notitle || !form.title}">
@@ -458,7 +482,7 @@ function addTemplates($templateCache) {
   );
 
   $templateCache.put(
-    'app/components/cn-flex-form/forms/cn-schedule.html', 
+    'app/components/cn-flex-form/forms/cn-schedule.html',
     `
       <div class="form-group {{ form.htmlClass }}"
            ng-class="{ 'has-error': hasError(), 'has-success': hasSuccess() }">

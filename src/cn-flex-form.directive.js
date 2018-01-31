@@ -80,7 +80,7 @@ function FlexForm(cnFlexFormService, $scope, $location) {
         });
       }
       else {
-        vm.service.compile(vm.config.schema, vm.model);
+        vm.service.compile(vm.config.schema, vm.model, vm.config);
       }
     }
   }

@@ -12,6 +12,7 @@ const fieldTypeHandlers = {
   'cn-display': 'processDisplay',
   'cn-currency': 'processCurrency',
   'cn-percentage': 'processPercentage',
+  'cn-url': 'processUrl',
   'cn-mediaupload': 'processMediaUpload',
   'cn-creativeimage': 'processCreativeImage',
   'cn-facebookvideo': 'processFacebookVideo',
@@ -161,6 +162,7 @@ function CNFlexFormService(
     processConditional,
     processCurrency,
     processPercentage,
+    processUrl,
     processDate,
     processHelp,
     processRadios,
@@ -266,7 +268,9 @@ function CNFlexFormService(
   function compile(schema, model, config) {
     var service = this;
 
-    service.scope = config.getScope();
+    if (config && config.getScope) {
+      service.scope = config.getScope();
+    }
     service.schema = schema;
     service.model = model;
 
@@ -305,7 +309,7 @@ function CNFlexFormService(
       if(config.updateSchema) service.updateSchema = config.updateSchema;
       if(config.getSchema) service.getSchemaForm = service.setupSchemaRefresh(config.getSchema);
     }
-    service.getParamOverrides = config.getParms || _.noop;
+    service.getParamOverrides = config.getParams || _.noop;
   }
 
   function processSchema(field) {
@@ -350,7 +354,7 @@ function CNFlexFormService(
     service.defaults[key] = angular.copy(curDefault);
 
     if(schema.format === 'url' && !field.validationMessage) {
-      if(!field.type) field.type = 'url';
+      if(!field.type) field.type = 'cn-url';
       field.validationMessage = 'Must be a valid url (https://...)';
     }
   }
@@ -1370,6 +1374,10 @@ function CNFlexFormService(
 
   function processPercentage(field) {
     field.type = 'cn-percentage';
+  }
+
+  function processUrl(field) {
+    field.type = 'cn-url';
   }
 
   function processReusable(field) {
