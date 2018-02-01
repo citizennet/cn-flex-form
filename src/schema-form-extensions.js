@@ -222,6 +222,7 @@ function addTemplates($templateCache) {
                ng-show="showTitle()"
                for="{{form.key.join('.')}}">{{form.title}}</label>
         <input class="form-control"
+               placeholder="https://"
                cn-url-format
                ng-show="form.key"
                ng-model-options="form.ngModelOptions"
