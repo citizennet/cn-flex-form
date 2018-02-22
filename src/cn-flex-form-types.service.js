@@ -28,6 +28,9 @@ function cnFlexFormTypesProvider() {
     condition: field => field.schema && field.schema.format === 'percentage',
     type: 'cn-percentage'
   }, {
+    condition: field => field.schema && field.type === 'url',
+    type: 'cn-url'
+  }, {
     condition: field => field.type === 'toggle' || field.type === 'boolean',
     type: 'cn-toggle'
   }, {
