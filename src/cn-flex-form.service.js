@@ -10,6 +10,7 @@ const fieldTypeHandlers = {
   'cn-datetimepicker': 'processDate',
   'help': 'processHelp',
   'cn-display': 'processDisplay',
+  'cn-number': 'processNumber',
   'cn-currency': 'processCurrency',
   'cn-percentage': 'processPercentage',
   'cn-url': 'processUrl',
@@ -161,6 +162,7 @@ function CNFlexFormService(
     processComponent,
     processConditional,
     processCurrency,
+    processNumber,
     processPercentage,
     processUrl,
     processDate,
@@ -1371,6 +1373,10 @@ function CNFlexFormService(
     }[field.schema.format];
 
     field.type = 'cn-currency';
+  }
+
+  function processNumber(field) {
+    field.type = 'cn-number';
   }
 
   function processPercentage(field) {
