@@ -11,6 +11,7 @@ function schemaFormConfig(cnFlexFormServiceProvider) {
     'cn-datetimepicker',
     'cn-autocomplete',
     'cn-autocomplete-detailed',
+    'cn-number',
     'cn-currency',
     'cn-url',
     'cn-radios',
@@ -180,6 +181,35 @@ function addTemplates($templateCache) {
         <span class="help-block" sf-message="form.description"></span>
       </div>`
   );
+
+  $templateCache.put(
+      'app/components/cn-flex-form/forms/cn-number.html',
+      `
+      <div class="form-group {{form.htmlClass}}"
+           ng-class="{'has-error': hasError(), 'has-success': hasSuccess()}">
+        <label class="control-label"
+               ng-show="showTitle()"
+               for="{{form.key.join('.')}}">{{form.title}}</label>
+        <div class="{{form.fieldClass}}">
+          <input class="form-control"
+                 cn-number
+                 ng-show="form.key"
+                 ng-model-options="form.ngModelOptions"
+                 ng-disabled="form.readonly"
+                 sf-changed="form"
+                 schema-validate="form"
+                 type="text"
+                 step="any"
+                 min="{{form.min}}"
+                 max="{{form.max}}"
+                 id="{{form.key.join('.')}}"
+                 name="{{form.key.join('.')}}"
+                 ng-model="$$value$$">
+        </div>
+        <span class="help-block" sf-message="form.description"></span>
+      </div>`
+  );
+
 
   $templateCache.put(
       'app/components/cn-flex-form/forms/cn-currency.html',
