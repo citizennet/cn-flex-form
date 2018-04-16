@@ -734,7 +734,16 @@ function CNFlexFormService(
                   let p = schema && schema.format === 'currency-dollars' ? 2 : 0;
 
                   if(adjustment.math[1] === '*') {
-                    result = _.floor(result, p);
+                    let bottom = _.floor(result, p);
+                    if(bottom % 10 == 9) {
+                      result = bottom + 1;
+                    }
+                    else if(bottom % 10 == 1) {
+                      result = bottom - 1;
+                    }
+                    else {
+                      result = bottom;
+                    }
                   }
                   else if(adjustment.math[1] === '/') {
                     result = _.ceil(result, p);
