@@ -735,11 +735,11 @@ function CNFlexFormService(
 
                   if(adjustment.math[1] === '*') {
                     let bottom = _.floor(result, p);
-                    if(bottom % 10 == 9) {
-                      result = bottom + 1;
+                    if(_.round(bottom * 10**p % 10) == 9) {
+                      result = _.round(bottom + 10**-p, p);
                     }
-                    else if(bottom % 10 == 1) {
-                      result = bottom - 1;
+                    else if(_.round(bottom * 10**p % 10) == 1) {
+                      result = _.round(bottom - 10**-p, p);
                     }
                     else {
                       result = bottom;
