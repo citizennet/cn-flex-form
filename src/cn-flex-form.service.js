@@ -1426,7 +1426,6 @@ function CNFlexFormService(
   function processMediaUpload(field) {
     var service = this;
     field.type = 'cn-mediaupload';
-    field.service = service;
     if(!field.resolve) {
       field.resolve = { };
       _.each(field.data, (exp, prop) =>
