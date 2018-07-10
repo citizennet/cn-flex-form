@@ -85,6 +85,7 @@ function addTemplates($templateCache) {
           min-date="form.minDate"
           max-date="form.maxDate"
           max-view="{{form.maxView}}"
+          default-time="form.defaultTime"
           cn-date-required="form.required"
           placeholder="{{form.placeholder}}"
           model-type="{{form.schema.type}}"
