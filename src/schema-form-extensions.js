@@ -138,6 +138,7 @@ function addTemplates($templateCache) {
             source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query, options)"
             skip-filtering="{{form.skipFiltering}}"
             single-query="{{form.singleQuery}}"
+            debounce-delay="{{form.debounceDelay}}"
             min-length="{{form.minLookup}}">
           </auto-complete>
         </tags-input>`;
@@ -376,7 +377,6 @@ function addTemplates($templateCache) {
         <legend ng-hide="form.notitle"
                 ng-click="form.toggleCollapse(form)"
                 ng-class="{'sr-only': !showTitle(), collapsible: form.collapsible}"
-                ng-model-options="form.ngModelOptions"
                 ng-mouseenter="form.render = true">
           <i ng-show="form.collapsible"
              class="fa fa-caret-{{form.collapsed ? 'right' : 'down'}}"></i>
