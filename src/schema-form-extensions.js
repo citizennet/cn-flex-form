@@ -138,6 +138,7 @@ function addTemplates($templateCache) {
             source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query, options)"
             skip-filtering="{{form.skipFiltering}}"
             single-query="{{form.singleQuery}}"
+            debounce-delay="{{form.debounceDelay}}"
             min-length="{{form.minLookup}}">
           </auto-complete>
         </tags-input>`;
