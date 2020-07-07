@@ -403,6 +403,7 @@ function addTemplates($templateCache) {
         <media-upload ng-model="$$value$$"
                       cn-disabled="form.readonly"
                       cn-file-type="form.fileType"
+                      cn-text-button="form.textButton"
                       cn-upload-path="form.uploadPath"
                       cn-data="form.data"
                       cn-preview-path="form.previewPath"
