@@ -288,7 +288,7 @@ function addTemplates($templateCache) {
                     name="{{form.key.join('.')}}">
              <span class="radio-block-icon" ng-if="item.iconClass || item.iconPath">
                <i ng-if="item.iconClass" class="fa fa-{{item.iconClass}} fa-lg"></i>
-               <img ng-if="item.iconPath" class="custom" ng-src="item.iconPath">
+               <img ng-if="item.iconPath" class="custom" src="{{item.iconPath}}">
              </span>
              <span ng-bind-html="item.name"></span>
            </label>
