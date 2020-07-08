@@ -138,6 +138,7 @@ function addTemplates($templateCache) {
             source="form.getTitleMap && form.getTitleMap() || form.titleQuery($query, options)"
             skip-filtering="{{form.skipFiltering}}"
             single-query="{{form.singleQuery}}"
+            debounce-delay="{{form.debounceDelay}}"
             min-length="{{form.minLookup}}">
           </auto-complete>
         </tags-input>`;
@@ -285,8 +286,9 @@ function addTemplates($templateCache) {
                     ff-validate="form"
                     ng-value="item.value"
                     name="{{form.key.join('.')}}">
-             <span class="radio-block-icon" ng-if="item.iconClass">
-               <i class="fa fa-{{item.iconClass}} fa-lg"></i>
+             <span class="radio-block-icon" ng-if="item.iconClass || item.iconPath">
+               <i ng-if="item.iconClass" class="fa fa-{{item.iconClass}} fa-lg"></i>
+               <img ng-if="item.iconPath" class="custom" ng-src="{{item.iconPath}}"/>
              </span>
              <span ng-bind-html="item.name"></span>
            </label>
@@ -401,6 +403,7 @@ function addTemplates($templateCache) {
         <media-upload ng-model="$$value$$"
                       cn-disabled="form.readonly"
                       cn-file-type="form.fileType"
+                      cn-text-button="form.textButton"
                       cn-upload-path="form.uploadPath"
                       cn-data="form.data"
                       cn-preview-path="form.previewPath"
