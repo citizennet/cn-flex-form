@@ -45,13 +45,17 @@ function FlexFormModal(cnFlexFormModalLoaderService, $uibModal, $stateParams) {
   ////////////
 
   function open() {
+
     return (
       cnFlexFormModalLoaderService
         .getMapping($stateParams.modal)
-        .then(({ state, options }) => ({
-          modal: $uibModal.open(state),
-          options
-        }))
+        .then(({ state, options }) => {
+          console.log('OPEN', state, options);
+          return {
+            modal: $uibModal.open(state),
+            options
+          }
+        })
     );
   }
 
