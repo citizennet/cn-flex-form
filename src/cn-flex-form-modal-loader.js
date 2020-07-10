@@ -11,7 +11,6 @@ function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams, $s
   //////////
 
   function activate() {
-    console.log('Activate', vm)
     FlexFormModal
       .open(vm)
       .then(({ modal, options: { onDismiss, onAfterDismiss } }) => {
@@ -46,17 +45,13 @@ function FlexFormModal(cnFlexFormModalLoaderService, $uibModal, $stateParams) {
   ////////////
 
   function open() {
-
     return (
       cnFlexFormModalLoaderService
         .getMapping($stateParams.modal)
-        .then(({ state, options }) => {
-          console.log('OPEN', state, options);
-          return {
-            modal: $uibModal.open(state),
-            options
-          }
-        })
+        .then(({ state, options }) => ({
+          modal: $uibModal.open(state),
+          options
+        }))
     );
   }
 
