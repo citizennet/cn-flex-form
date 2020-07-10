@@ -11,6 +11,7 @@ function FlexFormModalLoader(FlexFormModal, $state, $rootScope, $stateParams, $s
   //////////
 
   function activate() {
+    console.log('Activate', vm)
     FlexFormModal
       .open(vm)
       .then(({ modal, options: { onDismiss, onAfterDismiss } }) => {
