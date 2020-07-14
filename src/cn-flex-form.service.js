@@ -1442,6 +1442,7 @@ function CNFlexFormService(
 
   function processRadios(field) {
     field.type = 'cn-radios';
+    console.log('radio', field);
   }
 
   function processRadiobuttons(radios) {
