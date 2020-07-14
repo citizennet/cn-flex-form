@@ -328,6 +328,8 @@ function CNFlexFormService(
     const { schema } = field;
     const curDefault = field.default || schema.default;
     const key = service.getKey(field.key);
+    console.log('Process Default')
+    console.log(service, schema, curDefault, key)
 
     if (service.skipDefault[key]) {
       delete service.skipDefault[key];
@@ -341,6 +343,8 @@ function CNFlexFormService(
 
     // if schemaUpdate hasn't been triggered, let schemaForm directive handle defaults
     //if(service.updates || field.default) {
+    console.log('Process Default')
+    console.log(curDefault, !_.isUndefined(curDefault))
     if(!_.isUndefined(curDefault)) {
       if(key.includes && key.includes('[]')) return;
       const model = service.parseExpression(field.key, service.model);
