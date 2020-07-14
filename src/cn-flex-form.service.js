@@ -336,14 +336,14 @@ function CNFlexFormService(
       return;
     }
 
-    if(field.condition) {
-      const condition = replaceArrayIndex(field.condition, field.arrayIndex || key);
-      if(!service.parseCondition(condition)) return;
-    }
+    // if(field.condition) {
+    //   const condition = replaceArrayIndex(field.condition, field.arrayIndex || key);
+    //   if(!service.parseCondition(condition)) return;
+    // }
 
     // if schemaUpdate hasn't been triggered, let schemaForm directive handle defaults
     //if(service.updates || field.default) {
-    console.log('Process Default')
+    console.log('is curDefault undefined');
     console.log(curDefault, !_.isUndefined(curDefault))
     if(!_.isUndefined(curDefault)) {
       if(key.includes && key.includes('[]')) return;
