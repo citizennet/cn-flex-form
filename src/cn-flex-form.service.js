@@ -623,7 +623,6 @@ function CNFlexFormService(
 
   function processConditional(field) {
     const service = this;
-    console.log('processConditional', field);
 
     _.each(field.conditionals, (condition, key) => {
       const handler = (val, prev) => {
@@ -1443,7 +1442,6 @@ function CNFlexFormService(
 
   function processRadios(field) {
     field.type = 'cn-radios';
-    console.log('radio', field);
   }
 
   function processRadiobuttons(radios) {
