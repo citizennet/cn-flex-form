@@ -5,5 +5,4 @@ bower_components/
 tags
 *.DS_Store
 .tern-port
-
-
+.history/

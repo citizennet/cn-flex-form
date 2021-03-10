@@ -32,7 +32,7 @@
     "babel-loader": "^6.2.10",
     "babel-plugin-transform-object-rest-spread": "^6.22.0",
     "babel-preset-latest": "^6.22.0",
-    "cn-datetimepicker": "https://github.com/citizennet/cn-datetimepicker.git#master",
+    "cn-datetimepicker": "https://github.com/citizennet/cn-datetimepicker.git#1.2.0beta",
     "cn-tags-input": "https://github.com/citizennet/cn-tags-input.git#master",
     "cn-util": "https://github.com/citizennet/cn-util.git#master",
     "eslint": "^3.13.1",
