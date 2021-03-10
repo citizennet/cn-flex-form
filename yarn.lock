@@ -859,9 +859,9 @@ clone@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/clone/-/clone-1.0.2.tgz#260b7a99ebb1edfe247538175f783243cb19d149"
 
-"cn-datetimepicker@https://github.com/citizennet/cn-datetimepicker.git#master":
-  version "1.0.0"
-  resolved "https://github.com/citizennet/cn-datetimepicker.git#97b6a4dc0ae070da3db12aac8b56b6c028f1c605"
+"cn-datetimepicker@https://github.com/citizennet/cn-datetimepicker.git#1.2.0beta":
+  version "1.2.0"
+  resolved "https://github.com/citizennet/cn-datetimepicker.git#453e12f47aaa3bdfbc428e36d57007a2363a44e9"
 
 "cn-tags-input@https://github.com/citizennet/cn-tags-input.git#master":
   version "1.0.0"
