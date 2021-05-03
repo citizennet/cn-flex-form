@@ -475,7 +475,6 @@ function CNFlexFormService(
 
     key = ObjectPath.parse(service.getKey(key));
     depth = depth || service.schema.schema.properties;
-
     let first, next;
 
     while(key.length > 1) {
@@ -1107,7 +1106,7 @@ function CNFlexFormService(
 
   function getFromScopeCache(key) {
     const service = this;
-    return service.scopeCache[key];
+	  return service.scopeCache[key];
   }
 
   function addToFormCache(field, key) {
@@ -1704,8 +1703,19 @@ function CNFlexFormService(
   function processSelectDisplay(selectDisplay) {
     const service = this;
     const schema = service.getSchema(selectDisplay.key);
-    const selectField = _.find(selectDisplay.items, 'selectField');
 
+    // Needed for batchform to check recursively
+    let selectField = null;
+    for (let item of selectDisplay.items) {
+      if (item.selectField) {
+        selectField = item;
+      } else if (item.items) {
+        selectField = _.find(item.items, 'selectField');
+      }
+      if (selectField) {
+        break;
+      }
+    }
     return schema && schema.type === 'array' ?
       service.setupArraySelectDisplay(selectDisplay, selectField) :
       service.setupSelectDisplay(selectDisplay, selectField);
@@ -1783,7 +1793,18 @@ function CNFlexFormService(
     const service = this;
     const selectFieldKey = service.getKey(selectField.key);
 
-    _.each(selectDisplay.items, item => {
+    let selectDisplayItems = [];
+    // Needed for batchform to check recursively
+    for (let item of selectDisplay.items) {
+      if (!item.items) {
+        selectDisplayItems.push(item);
+      } else if (item.items) {
+        selectDisplayItems.push(...item.items);
+      }
+    }
+
+    _.each(selectDisplayItems, item => {
+
       if(item.selectField === true) return;
 
       const key = _.isArray(item.key) ? item.key : ObjectPath.parse(item.key);
@@ -1809,7 +1830,7 @@ function CNFlexFormService(
     var selectKey = service.getKey(selectField.key);
     var selectModel = service.parseExpression(selectKey, service.model);
     var selectValue = selectModel.get();
-    _.each(selectDisplay.items, function(item) {
+    _.each(selectDisplayItems, function(item) {
       var key = service.getKey(item.key);
       if(selectKey === key) return;
       var splitKey = ObjectPath.parse(key);
