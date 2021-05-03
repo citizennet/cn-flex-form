@@ -1106,7 +1106,7 @@ function CNFlexFormService(
 
   function getFromScopeCache(key) {
     const service = this;
-	  return service.scopeCache[key];
+    return service.scopeCache[key];
   }
 
   function addToFormCache(field, key) {
