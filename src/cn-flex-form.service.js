@@ -1715,7 +1715,7 @@ function CNFlexFormService(
         break;
       }
     }
-    console.log('selectDisplay', selectDisplay);
+
     return schema && schema.type === 'array' ?
       service.setupArraySelectDisplay(selectDisplay, selectField) :
       service.setupSelectDisplay(selectDisplay, selectField);
@@ -1799,7 +1799,6 @@ function CNFlexFormService(
         .value();
 
     _.each(selectDisplayItems, item => {
-
       if(item.selectField === true) return;
 
       const key = _.isArray(item.key) ? item.key : ObjectPath.parse(item.key);
