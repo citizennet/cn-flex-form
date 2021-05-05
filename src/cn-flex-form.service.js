@@ -1703,7 +1703,6 @@ function CNFlexFormService(
   function processSelectDisplay(selectDisplay) {
     const service = this;
     const schema = service.getSchema(selectDisplay.key);
-
     // Needed for batchform to check recursively
     let selectField = null;
     for (let item of selectDisplay.items) {
@@ -1716,6 +1715,7 @@ function CNFlexFormService(
         break;
       }
     }
+    console.log('selectDisplay', selectDisplay);
     return schema && schema.type === 'array' ?
       service.setupArraySelectDisplay(selectDisplay, selectField) :
       service.setupSelectDisplay(selectDisplay, selectField);
@@ -1793,15 +1793,10 @@ function CNFlexFormService(
     const service = this;
     const selectFieldKey = service.getKey(selectField.key);
 
-    let selectDisplayItems = [];
-    // Needed for batchform to check recursively
-    for (let item of selectDisplay.items) {
-      if (!item.items) {
-        selectDisplayItems.push(item);
-      } else if (item.items) {
-        selectDisplayItems.push(...item.items);
-      }
-    }
+    let selectDisplayItems = _(selectDisplay.items)
+        .map(item => item.items || [item])
+        .flatten()
+        .value();
 
     _.each(selectDisplayItems, item => {
 
