@@ -1793,6 +1793,7 @@ function CNFlexFormService(
     const service = this;
     const selectFieldKey = service.getKey(selectField.key);
 
+    selectField.selectDisplayKey = selectDisplay.key;
     let selectDisplayItems = _(selectDisplay.items)
         .map(item => item.items || [item])
         .flatten()
