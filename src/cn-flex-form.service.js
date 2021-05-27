@@ -1561,7 +1561,15 @@ function CNFlexFormService(
             }
             else {
               const exp = service.replaceArrayIndex(queryParams[key], select.arrayIndex);
-              const val = service.parseExpression(exp).get();
+              let val = null, variables = exp.split('||');
+              for (let exp of variables) {
+                console.log(exp.trim());
+                val = service.parseExpression(exp.trim()).get();
+                console.log(val);
+                if (val) {
+                  break;
+                }
+              }
               acc[key] = val;
             }
             return acc;
@@ -1701,6 +1709,7 @@ function CNFlexFormService(
   }
 
   function processSelectDisplay(selectDisplay) {
+    console.log("processSelectDisplay", selectDisplay)
     const service = this;
     const schema = service.getSchema(selectDisplay.key);
     // Needed for batchform to check recursively
