@@ -1707,7 +1707,6 @@ function CNFlexFormService(
   }
 
   function processSelectDisplay(selectDisplay) {
-    console.log("processSelectDisplay", selectDisplay)
     const service = this;
     const schema = service.getSchema(selectDisplay.key);
     // Needed for batchform to check recursively
