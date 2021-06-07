@@ -1561,7 +1561,13 @@ function CNFlexFormService(
             }
             else {
               const exp = service.replaceArrayIndex(queryParams[key], select.arrayIndex);
-              const val = service.parseExpression(exp).get();
+              let val = null, variables = exp.split('||');
+              for (let exp of variables) {
+                val = service.parseExpression(exp.trim()).get();
+                if (val) {
+                  break;
+                }
+              }
               acc[key] = val;
             }
             return acc;
