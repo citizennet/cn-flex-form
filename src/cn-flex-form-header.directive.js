@@ -35,7 +35,7 @@ function cnFlexFormHeader() {
               <span ng-class="{'btn-group': button.options}">
                 <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}}"
                    ng-disabled="vm.isDisabled(button)"
-                   ng-click="vm.submit({handler: button.handler})"
+                   ng-click="vm.isDisabled(button) || vm.submit({handler: button.handler})"
                    uib-tooltip="{{button.helptext}}"
                    uib-tooltip-placement="bottom"
                    ng-bind-html="button.text || 'Save'">
@@ -49,7 +49,7 @@ function cnFlexFormHeader() {
                 <ul class="dropdown-menu" ng-if="button.options">
                   <li ng-repeat="option in button.options"
                       ng-disabled="vm.isDisabled(option)">
-                    <a ng-click="vm.submit({handler: option.handler})"
+                    <a ng-click="vm.isDisabled(option) || vm.submit({handler: option.handler})"
                        ng-bind-html="option.text">
                     </a>
                   </li>
@@ -106,7 +106,11 @@ function FlexFormHeader($scope) {
   }
 
   function isDisabled(btnConfig) {
-    if(vm.config.isDisabled) return vm.config.isDisabled(btnConfig);
+    console.log('isDisabled', vm);
+    if(vm.config.isDisabled) {
+      console.log('IF', vm.config.isDisabled(btnConfig))
+      return vm.config.isDisabled(btnConfig);
+    }
     return false;
   }
 }
