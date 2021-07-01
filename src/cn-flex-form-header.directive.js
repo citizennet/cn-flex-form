@@ -49,7 +49,7 @@ function cnFlexFormHeader() {
                 <ul class="dropdown-menu" ng-if="button.options">
                   <li ng-repeat="option in button.options"
                       ng-disabled="vm.isDisabled(option)">
-                    <a ng-click="vm.submit({handler: option.handler})"
+                    <a ng-click="!vm.isDisabled(option) || vm.submit({handler: option.handler})"
                        ng-bind-html="option.text">
                     </a>
                   </li>
