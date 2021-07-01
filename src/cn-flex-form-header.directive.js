@@ -106,7 +106,6 @@ function FlexFormHeader($scope) {
   }
 
   function isDisabled(btnConfig) {
-    console.log('isDisabled', vm);
     if(vm.config.isDisabled) return vm.config.isDisabled(btnConfig);
     return false;
   }
