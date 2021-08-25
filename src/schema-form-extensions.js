@@ -413,6 +413,7 @@ function addTemplates($templateCache) {
                       cn-key="form.key && form.key[0]"
                       cn-form="form"
                       ng-model-options="form.ngModelOptions"
+                      required="form.required"
                       sf-changed="form"
                       schema-validate="form"
                       ff-form="form"

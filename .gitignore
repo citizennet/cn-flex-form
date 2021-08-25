@@ -6,4 +6,4 @@ tags
 *.DS_Store
 .tern-port
 
-
+.history/
