@@ -25,7 +25,8 @@ const fieldTypeHandlers = {
   'section': 'processSection',
   'tabarray': 'processSection',
   'array': 'processArray',
-  'cn-schedule': 'processSchedule'
+  'cn-schedule': 'processSchedule',
+  'cn-pac-customizations': 'processPacCustomizations'
 };
 
 // handlers that don't run on secondPass are ones that shouldn't ever change
@@ -163,6 +164,7 @@ function CNFlexFormService(
     processConditional,
     processCurrency,
     processNumber,
+    processPacCustomizations,
     processPercentage,
     processUrl,
     processDate,
@@ -186,6 +188,7 @@ function CNFlexFormService(
     registerHandler,
     registerResolve,
     replaceArrayIndex,
+    replaceCustomizationIndex,
     reprocessField,
     resetUpdates,
     resolveNestedExpressions,
@@ -1338,6 +1341,22 @@ function CNFlexFormService(
     service.processSection(array);
   }
 
+  function processPacCustomizations(array) {
+    var service = this;
+    var key = service.getKey(array.key);
+
+    array.sortOptions = {
+      update: function(e, ui) {
+        let listener = service.arrayListeners[`${key}.length`];
+        listener.handlers.forEach(handler => {
+          handler(listener.prev, listener.prev, true);
+        });
+      }
+    }
+
+    service.processSection(array);
+  }
+
   function processSection(section, secondPass) {
     var service = this;
     // if we're here because a parent's scope was emitted,
@@ -2080,6 +2099,18 @@ function CNFlexFormService(
       resolve = resolve.replace(new RegExp(arrayIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
     }
     return resolve;
+  }
+
+  function replaceCustomizationIndex(resolve, key) {
+    if (resolve.includes('customizationIndex')) {
+      if (_.isNumber(key)) return resolve.replace(/customizationIndex/g, key);
+      const customizationIndexKey = /([^.[]*)\[customizationIndex\]/.exec(resolve);
+      const re = new RegExp(customizationIndexKey[1] + '\\[(-?\\d+\\]');
+      const index = re.exec(key);
+      if (!index) {return resolve;}
+      resolve = resolve.replace(new RegExp(customizationIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
+    }
+    return resolve
   }
 
   function getArrayIndex(key) {

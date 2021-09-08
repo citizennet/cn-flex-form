@@ -24,7 +24,8 @@ function schemaFormConfig(cnFlexFormServiceProvider) {
     'cn-table',
     'cn-creativeimage',
     'cn-schedule',
-    'cn-facebookvideo'
+    'cn-facebookvideo',
+    'cn-paccarousel'
   ];
 
   _.each(extensions, function(extension) {
@@ -563,6 +564,64 @@ function addTemplates($templateCache) {
         </cn-facebook-video>
         <span class="help-block" sf-message="form.description"></span>
      </div>`
+  );
+
+  $templateCache.put(
+    'app/components/cn-flex-form/forms/cn-pac-customizations.html',
+    `
+    <div cn-array="form"
+         class="schema-form-array {{form.htmlClass}}"
+         name="{{form.key.slice(-1)[0]}}"
+         ng-model="$$value$$"
+         ng-model-options="form.ngModelOptions">
+      <label class="control-label" ng-show="showTitle()" ng-click="collapseForm()">
+        <i ng-hide="!form.collapsible || !form.collapsed" class="fa fa-caret-right"></i>
+        <i ng-hide="!form.collapsible || form.collapsed" class="fa fa-caret-down"></i>
+        {{ form.title }}
+      </label>
+      <ol class="list-group" ng-model="modelArray" ui-sortable="form.sortOptions">
+        <li class="list-group-item {{form.fieldHtmlClass}}"
+            ng-repeat="item in modelArray track by $index">
+          <div class="collapse-array-title" ng-hide="!form.collapsible">
+            <span ng-click="collapsedItems[$index] = !collapsedItems[$index]">
+              <i ng-hide="!collapsedItems[$index]" class="fa fa-caret-right"></i>
+              <i ng-hide="collapsedItems[$index]" class="fa fa-caret-down"></i>
+              Version {{$index + 1}}
+            </span>
+          </div>
+          <button ng-hide="form.readonly || form.remove === null"
+                  ng-click="deleteFromArray($index)"
+                  type="button" class="close pull-right">
+                  <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+          </button>
+          <div uib-collapse="collapsedItems[$index]">
+            <sf-decorator ng-init="customizationIndex = $index" form="copyWithIndex($index)"></sf-decorator>
+          </div>
+        </li>
+      </ol>
+      <div ng-class="{'has-error': form.disableErrorState !== true && hasError(), 'has-success': form.disableSuccessState !== true && hasSuccess(), 'has-feedback': form.feedback !== false }">
+        <div class="help-block" sf-message="form.description"></div>
+      </div>
+      <div class="clearfix">
+        <button ng-hide="form.readonly || form.add === null"
+                ng-click="appendToArray()"
+                type="button"
+                class="btn {{ form.style.add || 'btn-default' }} pull-right">
+          <i class="fa fa-plus"></i>
+          'Create Another Carousel From Scratch'
+        </button>
+      </div>
+      <div>
+        <button ng-hide="form.readonly || form.add === null"
+                ng-click="appendTemplateToArray()"
+                type="button"
+                class="btn {{ form.style.add || 'btn-default' }} pull-right">
+          <i class="fa fa-plus"></i>
+          'Create Another Carousel Using the First as a Template'
+        </button>
+      </div>
+    </div>
+    `
   );
 }
 

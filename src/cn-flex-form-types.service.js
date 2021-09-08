@@ -60,6 +60,9 @@ function cnFlexFormTypesProvider() {
   }, {
     condition: field => field.schema && field.schema.type === 'number',
     type: 'cn-number'
+  }, {
+    condition: field => field.type === 'pac',
+    type: 'cn-pac-customizations'
   }];
 
   return {
