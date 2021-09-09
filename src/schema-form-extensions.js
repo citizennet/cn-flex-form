@@ -131,7 +131,7 @@ function addTemplates($templateCache) {
           allow-bulk="{{form.bulkAdd}}"
           bulk-delimiter="{{form.bulkDelimiter}}"
           bulk-placeholder="{{form.bulkPlaceholder}}"
-          bulk-add-exact="{{form.bulkAddExact}}"
+          sort-filtered-results="{{(form.titleMapResolve || form.titleMap) && !form.titleMapQuery}}"
           show-clear-all="{{form.showClearAll}}"
           show-clear-cache="{{form.showClearCache}}"
           show-button="true">
