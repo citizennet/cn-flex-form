@@ -25,7 +25,7 @@
   "devDependencies": {
     "angular": "^1.6.1",
     "angular-mocks": "^1.6.1",
-    "angular-schema-form": "https://github.com/citizennet/angular-schema-form.git#master",
+    "angular-schema-form": "https://github.com/citizennet/angular-schema-form.git#API-1641-PAC-carousels",
     "angular-ui-router": "0.4.2",
     "angular-ui-sortable": "^0.16.1",
     "babel-core": "^6.21.0",

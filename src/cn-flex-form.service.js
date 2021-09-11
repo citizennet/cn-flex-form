@@ -188,7 +188,6 @@ function CNFlexFormService(
     registerHandler,
     registerResolve,
     replaceArrayIndex,
-    replaceCustomizationIndex,
     reprocessField,
     resetUpdates,
     resolveNestedExpressions,
@@ -338,7 +337,7 @@ function CNFlexFormService(
     }
 
     if(field.condition) {
-      const condition = replaceArrayIndex(field.condition, field.arrayIndex || key, field.customizationIndex);
+      const condition = replaceArrayIndex(field.condition, field.arrayIndex || key, field.customizationIndex || key);
       if(!service.parseCondition(condition)) return;
     }
 
@@ -534,7 +533,7 @@ function CNFlexFormService(
     const key = service.getKey(field.key);
 
     _.each(field.resolve, function(dataProp, fieldProp) {
-      dataProp = replaceArrayIndex(dataProp, key || field.arrayIndex, field.customizationIndex);
+      dataProp = replaceArrayIndex(dataProp, key || field.arrayIndex, field.customizationIndex || key);
       if(dataProp.includes('[arrayIndex]') || dataProp.includes('[customizationIndex]')) return;
 
       service.handleResolve(field, fieldProp, dataProp, true);
@@ -705,8 +704,9 @@ function CNFlexFormService(
 
           resolution = resolution.match(/(\S+) ?= ?(\S+)/);
 
+          // TODO below is what to match
           handler = (val, prev, key, trigger, customizationIndex) => {
-            let curCondition = condition && replaceArrayIndex(condition, key, customizationIndex);
+            let curCondition = condition && replaceArrayIndex(condition, key, customizationIndex, field.type);
             if(_.isString(curCondition)) {
               if (curCondition.includes('[arrayIndex]')) {
                 return console.error(`arrayIndex could not be replaced from expression '${curCondition}'`);
@@ -714,8 +714,8 @@ function CNFlexFormService(
                 return console.error(`customizationIndex could not be replaced from expression '${curCondition}'`);
               }
             }
-            let updatePath = replaceArrayIndex(resolution[1], key, customizationIndex);
-            let fromPath = replaceArrayIndex(resolution[2], key, customizationIndex);
+            let updatePath = replaceArrayIndex(resolution[1], key, customizationIndex, field.type);
+            let fromPath = replaceArrayIndex(resolution[2], key, customizationIndex, field.type);
 
             let update = service.parseExpression(updatePath);
 
@@ -973,6 +973,7 @@ function CNFlexFormService(
           if(!angular.equals(val, listener.prev) && !isInitArray) {
             listener.handlers.forEach(handler => {
               handler(val, listener.prev, key, listener.trigger);
+              // TODO match handler definition with additional input
             });
             listener.trigger = null;
             listener.prev = angular.copy(val);
@@ -1364,6 +1365,7 @@ function CNFlexFormService(
 
   function processPacCustomizations(array) {
     var service = this;
+    array.type = "cn-pac-customizations";
     var key = service.getKey(array.key);
 
     array.sortOptions = {
@@ -2113,7 +2115,7 @@ function CNFlexFormService(
     }, 1);
   }
 
-  function replaceArrayIndex(resolve, key, customizationIndex) {
+  function replaceArrayIndex(resolve, key, arrayIndex, customizationIndex) {
     if (customizationIndex) {
       resolve = resolve.replace(/customizationIndex/g, customizationIndex);
     }

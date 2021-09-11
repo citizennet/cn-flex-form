@@ -25,7 +25,7 @@ function schemaFormConfig(cnFlexFormServiceProvider) {
     'cn-creativeimage',
     'cn-schedule',
     'cn-facebookvideo',
-    'cn-paccarousel'
+    'cn-pac-customizations'
   ];
 
   _.each(extensions, function(extension) {
@@ -573,12 +573,10 @@ function addTemplates($templateCache) {
         class="schema-form-array {{form.htmlClass}}"
         name="{{form.key.slice(-1)[0]}}"
         ng-model="$$value$$"
-        ng-model-options="form.ngModelOptions"
-        is-cn-pac-customization="true">
+        ng-model-options="form.ngModelOptions">
       <label class="control-label"
             ng-show="showTitle()"
-            ng-click="collapseForm()"
-            for="{{form.key.join('.')}}">
+            ng-click="collapseForm()">
         <i ng-hide="!form.collapsible || !form.collapsed" class="fa fa-caret-right"></i>
         <i ng-hide="!form.collapsible || form.collapsed" class="fa fa-caret-down"></i>
         {{ form.title }}
@@ -609,22 +607,22 @@ function addTemplates($templateCache) {
       <div ng-class="{'has-error': form.disableErrorState !== true && hasError(), 'has-success': form.disableSuccessState !== true && hasSuccess(), 'has-feedback': form.feedback !== false }">
         <div class="help-block" sf-message="form.description"></div>
       </div>
-      <div class="clearfix">
+      <div class="clearfix pull-right">
         <button ng-hide="form.readonly || form.add === null"
                 ng-click="appendToArray()"
                 type="button"
                 class="btn {{ form.style.add || 'btn-default' }} pull-right">
           <i class="fa fa-plus"></i>
-          'Create Another Carousel From Scratch'
+          Add Blank
         </button>
       </div>
-      <div>
-        <button ng-hide="form.readonly || form.add === null"
+      <div class="clearfix pull-right" ng-show="modelArray && modelArray.length">
+        <button ng-hide="form.readonly"
                 ng-click="appendTemplateToArray()"
                 type="button"
                 class="btn {{ form.style.add || 'btn-default' }} pull-right">
           <i class="fa fa-plus"></i>
-          'Create Another Carousel Using the First as a Template'
+          Duplicate First
         </button>
       </div>
     </div>

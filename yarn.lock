@@ -68,9 +68,9 @@ angular-mocks@^1.6.1:
   version "1.6.4"
   resolved "https://registry.yarnpkg.com/angular-sanitize/-/angular-sanitize-1.6.4.tgz#60a37ea96fb0d4a322a3ccb64ee4a5cf3b154f0c"
 
-"angular-schema-form@https://github.com/citizennet/angular-schema-form.git#master":
+"angular-schema-form@https://github.com/citizennet/angular-schema-form.git#API-1641-PAC-carousels":
   version "0.8.8"
-  resolved "https://github.com/citizennet/angular-schema-form.git#388c07c9db99d4b6d1fa63bb6784d6a118a44721"
+  resolved "https://github.com/citizennet/angular-schema-form.git#88e4f39ce20162b906fef2c2f7e6ef2fa200a685"
   dependencies:
     angular ">= 1.2"
     angular-sanitize ">= 1.2"
