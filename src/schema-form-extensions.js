@@ -569,12 +569,16 @@ function addTemplates($templateCache) {
   $templateCache.put(
     'app/components/cn-flex-form/forms/cn-pac-customizations.html',
     `
-    <div cn-array="form"
-         class="schema-form-array {{form.htmlClass}}"
-         name="{{form.key.slice(-1)[0]}}"
-         ng-model="$$value$$"
-         ng-model-options="form.ngModelOptions">
-      <label class="control-label" ng-show="showTitle()" ng-click="collapseForm()">
+    <div sf-array="form"
+        class="schema-form-array {{form.htmlClass}}"
+        name="{{form.key.slice(-1)[0]}}"
+        ng-model="$$value$$"
+        ng-model-options="form.ngModelOptions"
+        is-cn-pac-customization="true">
+      <label class="control-label"
+            ng-show="showTitle()"
+            ng-click="collapseForm()"
+            for="{{form.key.join('.')}}">
         <i ng-hide="!form.collapsible || !form.collapsed" class="fa fa-caret-right"></i>
         <i ng-hide="!form.collapsible || form.collapsed" class="fa fa-caret-down"></i>
         {{ form.title }}
@@ -595,7 +599,10 @@ function addTemplates($templateCache) {
                   <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
           </button>
           <div uib-collapse="collapsedItems[$index]">
-            <sf-decorator ng-init="customizationIndex = $index" form="copyWithIndex($index)"></sf-decorator>
+            <sf-decorator
+              ng-init="customizationIndex = $index"
+              form="copyWithIndex($index)">
+            </sf-decorator>
           </div>
         </li>
       </ol>

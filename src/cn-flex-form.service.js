@@ -338,7 +338,7 @@ function CNFlexFormService(
     }
 
     if(field.condition) {
-      const condition = replaceArrayIndex(field.condition, field.arrayIndex || key);
+      const condition = replaceArrayIndex(field.condition, field.arrayIndex || key, field.customizationIndex);
       if(!service.parseCondition(condition)) return;
     }
 
@@ -534,8 +534,8 @@ function CNFlexFormService(
     const key = service.getKey(field.key);
 
     _.each(field.resolve, function(dataProp, fieldProp) {
-      dataProp = replaceArrayIndex(dataProp, key || field.arrayIndex);
-      if(dataProp.includes('[arrayIndex]')) return;
+      dataProp = replaceArrayIndex(dataProp, key || field.arrayIndex, field.customizationIndex);
+      if(dataProp.includes('[arrayIndex]') || dataProp.includes('[customizationIndex]')) return;
 
       service.handleResolve(field, fieldProp, dataProp, true);
 
@@ -705,13 +705,17 @@ function CNFlexFormService(
 
           resolution = resolution.match(/(\S+) ?= ?(\S+)/);
 
-          handler = (val, prev, key, trigger) => {
-            let curCondition = condition && replaceArrayIndex(condition, key);
-            if(_.isString(curCondition) && curCondition.includes('[arrayIndex]')) {
-              return console.error(`arrayIndex could not be repalced from expression '${curCondition}'`);
+          handler = (val, prev, key, trigger, customizationIndex) => {
+            let curCondition = condition && replaceArrayIndex(condition, key, customizationIndex);
+            if(_.isString(curCondition)) {
+              if (curCondition.includes('[arrayIndex]')) {
+                return console.error(`arrayIndex could not be replaced from expression '${curCondition}'`);
+              } else if (curCondition.includes('[customizationIndex]')) {
+                return console.error(`customizationIndex could not be replaced from expression '${curCondition}'`);
+              }
             }
-            let updatePath = replaceArrayIndex(resolution[1], key);
-            let fromPath = replaceArrayIndex(resolution[2], key);
+            let updatePath = replaceArrayIndex(resolution[1], key, customizationIndex);
+            let fromPath = replaceArrayIndex(resolution[2], key, customizationIndex);
 
             let update = service.parseExpression(updatePath);
 
@@ -1042,6 +1046,23 @@ function CNFlexFormService(
         service.addArrayCopy(scope, genericKey, index);
         scope.$emit('flexFormArrayCopyAdded', genericKey);
       }
+      else if(_.isNumber(scope.customizationIndex)) {
+        const genericKey = stripIndexes(key);
+        const index = scope.customizationIndex;
+        form.customizationIndex = index;
+
+        if(!service.getArrayCopy(genericKey, index)) {
+          service.processFieldProps(form, true);
+        }
+
+        if(!form.condition) form.condition = 'true';
+        // else if (form.condition.includes("arrayIndex")) {
+        //   form.condition = service.replaceArrayIndex(form.condition, key);
+        // }
+
+        service.addArrayCopy(scope, genericKey, index);
+        scope.$emit('flexFormArrayCopyAdded', genericKey);
+      }
       else {
         service.addToScopeCache(scope, key);
       }
@@ -1352,7 +1373,7 @@ function CNFlexFormService(
           handler(listener.prev, listener.prev, true);
         });
       }
-    }
+    };
 
     service.processSection(array);
   }
@@ -1579,7 +1600,7 @@ function CNFlexFormService(
               if (refreshData) acc[queryParams[key]] = true;
             }
             else {
-              const exp = service.replaceArrayIndex(queryParams[key], select.arrayIndex);
+              const exp = service.replaceArrayIndex(queryParams[key], select.arrayIndex, select.customizationIndex);
               let val = null, variables = exp.split('||');
               for (let exp of variables) {
                 val = service.parseExpression(exp.trim()).get();
@@ -1700,10 +1721,13 @@ function CNFlexFormService(
     var service = this;
     //var processor = /<(\S+)[^>]*>.*<\/\1>/.test(tpl) ? $compile : $interpolate;
     var processor = $interpolate;
-    return function(scope, arrayIndex) {
+    return function(scope, arrayIndex, customizationIndex) {
       if(parseScope) {
-        if(angular.isDefined(arrayIndex)) {
+        if(angular.isDefined(arrayIndex) || angular.isDefined(customizationIndex)) {
           scope = _.map(scope, function(key) {
+            if (angular.isDefined(customizationIndex) && key === 'customizationIndex') {
+              return customizationIndex
+            }
             return key === 'arrayIndex' ? arrayIndex : key;
           });
         }
@@ -2089,7 +2113,10 @@ function CNFlexFormService(
     }, 1);
   }
 
-  function replaceArrayIndex(resolve, key) {
+  function replaceArrayIndex(resolve, key, customizationIndex) {
+    if (customizationIndex) {
+      resolve = resolve.replace(/customizationIndex/g, customizationIndex);
+    }
     while(resolve.includes('arrayIndex')) {
       if(_.isNumber(key)) return resolve.replace(/arrayIndex/g, key);
       const arrayIndexKey = /([^.[]*)\[arrayIndex\]/.exec(resolve);
@@ -2099,18 +2126,6 @@ function CNFlexFormService(
       resolve = resolve.replace(new RegExp(arrayIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
     }
     return resolve;
-  }
-
-  function replaceCustomizationIndex(resolve, key) {
-    if (resolve.includes('customizationIndex')) {
-      if (_.isNumber(key)) return resolve.replace(/customizationIndex/g, key);
-      const customizationIndexKey = /([^.[]*)\[customizationIndex\]/.exec(resolve);
-      const re = new RegExp(customizationIndexKey[1] + '\\[(-?\\d+\\]');
-      const index = re.exec(key);
-      if (!index) {return resolve;}
-      resolve = resolve.replace(new RegExp(customizationIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
-    }
-    return resolve
   }
 
   function getArrayIndex(key) {
