@@ -706,7 +706,7 @@ function CNFlexFormService(
 
           // TODO below is what to match
           handler = (val, prev, key, trigger, customizationIndex) => {
-            let curCondition = condition && replaceArrayIndex(condition, key, customizationIndex, field.type);
+            let curCondition = condition && replaceArrayIndex(condition, key, customizationIndex);
             if(_.isString(curCondition)) {
               if (curCondition.includes('[arrayIndex]')) {
                 return console.error(`arrayIndex could not be replaced from expression '${curCondition}'`);
@@ -714,8 +714,8 @@ function CNFlexFormService(
                 return console.error(`customizationIndex could not be replaced from expression '${curCondition}'`);
               }
             }
-            let updatePath = replaceArrayIndex(resolution[1], key, customizationIndex, field.type);
-            let fromPath = replaceArrayIndex(resolution[2], key, customizationIndex, field.type);
+            let updatePath = replaceArrayIndex(resolution[1], key, customizationIndex);
+            let fromPath = replaceArrayIndex(resolution[2], key, customizationIndex);
 
             let update = service.parseExpression(updatePath);
 
@@ -1047,7 +1047,7 @@ function CNFlexFormService(
         service.addArrayCopy(scope, genericKey, index);
         scope.$emit('flexFormArrayCopyAdded', genericKey);
       }
-      else if(_.isNumber(scope.customizationIndex)) {
+      if(_.isNumber(scope.customizationIndex)) {
         const genericKey = stripIndexes(key);
         const index = scope.customizationIndex;
         form.customizationIndex = index;
@@ -1064,7 +1064,7 @@ function CNFlexFormService(
         service.addArrayCopy(scope, genericKey, index);
         scope.$emit('flexFormArrayCopyAdded', genericKey);
       }
-      else {
+      if (!_.isNumber(scope.customizationIndex) && !_.isNumber(scope.arrayIndex)) {
         service.addToScopeCache(scope, key);
       }
     }));
@@ -2115,9 +2115,17 @@ function CNFlexFormService(
     }, 1);
   }
 
-  function replaceArrayIndex(resolve, key, arrayIndex, customizationIndex) {
-    if (customizationIndex) {
-      resolve = resolve.replace(/customizationIndex/g, customizationIndex);
+  function replaceArrayIndex(resolve, key) {
+    if (resolve.includes('customizationIndex')) {
+      if (_.isNumber(key)) {
+        return resolve.replace(/customizationIndex/g, key);
+      }
+      const customizationIndexKey = /([^.[]*)\[customizationIndex\]/.exec(resolve);
+      let re = new RegExp(customizationIndexKey[1] + '\\[(-?\\d+)\\]');
+      let index = re.exec(key);
+      if(index) {
+        resolve = resolve.replace(new RegExp(customizationIndexKey[0].replace(/(\[|\])/g, '\\$1'), 'g'), index[0]);
+      }
     }
     while(resolve.includes('arrayIndex')) {
       if(_.isNumber(key)) return resolve.replace(/arrayIndex/g, key);
