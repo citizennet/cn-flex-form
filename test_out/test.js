@@ -123,11 +123,11 @@
 	    var lazyLoad = function () {
 	        return getHarness().apply(this, arguments);
 	    };
-	    
+
 	    lazyLoad.only = function () {
 	        return getHarness().only.apply(this, arguments);
 	    };
-	    
+
 	    lazyLoad.createStream = function (opts) {
 	        if (!opts) opts = {};
 	        if (!harness) {
@@ -137,7 +137,7 @@
 	        }
 	        return harness.createStream(opts);
 	    };
-	    
+
 	    lazyLoad.onFinish = function () {
 	        return getHarness().onFinish.apply(this, arguments);
 	    };
@@ -159,16 +159,16 @@
 	    var harness = createHarness({
 	        autoclose: defined(conf.autoclose, false)
 	    });
-	    
+
 	    var stream = harness.createStream({ objectMode: conf.objectMode });
 	    var es = stream.pipe(conf.stream || createDefaultStream());
 	    if (canEmitExit) {
 	        es.on('error', function (err) { harness._exitCode = 1 });
 	    }
-	    
+
 	    var ended = false;
 	    stream.on('end', function () { ended = true });
-	    
+
 	    if (conf.exit === false) return harness;
 	    if (!canEmitExit || !canExit) return harness;
 
@@ -191,7 +191,7 @@
 	        harness.close();
 	        process.exit(code || harness._exitCode);
 	    });
-	    
+
 	    return harness;
 	}
 
@@ -208,11 +208,11 @@
 	    if (conf_.autoclose !== false) {
 	        results.once('done', function () { results.close() });
 	    }
-	    
+
 	    var test = function (name, conf, cb) {
 	        var t = new Test(name, conf, cb);
 	        test._tests.push(t);
-	        
+
 	        (function inspectCode (st) {
 	            st.on('test', function sub (st_) {
 	                inspectCode(st_);
@@ -221,14 +221,14 @@
 	                if (!r.ok && typeof r !== 'string') test._exitCode = 1
 	            });
 	        })(t);
-	        
+
 	        results.push(t);
 	        return t;
 	    };
 	    test._results = results;
-	    
+
 	    test._tests = [];
-	    
+
 	    test.createStream = function (opts) {
 	        return results.createStream(opts);
 	    };
@@ -236,7 +236,7 @@
 	    test.onFinish = function (cb) {
 	        results.on('done', cb);
 	    };
-	    
+
 	    var only = false;
 	    test.only = function () {
 	        if (only) throw new Error('there can only be one only test');
@@ -246,9 +246,9 @@
 	        return t;
 	    };
 	    test._exitCode = 0;
-	    
+
 	    test.close = function () { results.close() };
-	    
+
 	    return test;
 	}
 
@@ -714,7 +714,7 @@
 	    var line = '';
 	    var stream = through(write, flush);
 	    return stream;
-	    
+
 	    function write (buf) {
 	        for (var i = 0; i < buf.length; i++) {
 	            var c = typeof buf === 'string'
@@ -725,7 +725,7 @@
 	            else line += c;
 	        }
 	    }
-	    
+
 	    function flush () {
 	        if (fs.writeSync && /^win/.test(process.platform)) {
 	            try { fs.writeSync(1, line + '\n'); }
@@ -5858,7 +5858,7 @@
 /* 34 */
 /***/ function(module, exports) {
 
-	
+
 
 /***/ },
 /* 35 */
@@ -5961,13 +5961,13 @@
 	    t.on('prerun', function () {
 	        self.assertCount++;
 	    })
-	    
+
 	    if (!self._pendingAsserts()) {
 	        nextTick(function () {
 	            self._end();
 	        });
 	    }
-	    
+
 	    nextTick(function() {
 	        if (!self._plan && self.pendingCount == self._progeny.length) {
 	            self._end();
@@ -5999,12 +5999,12 @@
 	    });
 	}
 
-	Test.prototype.end = function (err) { 
+	Test.prototype.end = function (err) {
 	    var self = this;
 	    if (arguments.length >= 1 && !!err) {
 	        this.ifError(err);
 	    }
-	    
+
 	    if (this.calledEnd) {
 	        this.fail('.end() called twice');
 	    }
@@ -6020,7 +6020,7 @@
 	        t.run();
 	        return;
 	    }
-	    
+
 	    if (!this.ended) this.emit('end');
 	    var pendingAsserts = this._pendingAsserts();
 	    if (!this._planError && this._plan !== undefined && pendingAsserts) {
@@ -6062,7 +6062,7 @@
 	Test.prototype._assert = function assert (ok, opts) {
 	    var self = this;
 	    var extra = opts.extra || {};
-	    
+
 	    var res = {
 	        id : self.assertCount ++,
 	        ok : Boolean(ok),
@@ -6078,27 +6078,27 @@
 	        res.expected = defined(extra.expected, opts.expected);
 	    }
 	    this._ok = Boolean(this._ok && ok);
-	    
+
 	    if (!ok) {
 	        res.error = defined(extra.error, opts.error, new Error(res.name));
 	    }
-	    
+
 	    if (!ok) {
 	        var e = new Error('exception');
 	        var err = (e.stack || '').split('\n');
 	        var dir = path.dirname(__dirname) + path.sep;
-	        
+
 	        for (var i = 0; i < err.length; i++) {
 	            var m = /^[^\s]*\s*\bat\s+(.+)/.exec(err[i]);
 	            if (!m) {
 	                continue;
 	            }
-	            
+
 	            var s = m[1].split(/\s+/);
 	            var filem = /((?:\/|[A-Z]:\\)[^:\s]+:(\d+)(?::(\d+))?)/.exec(s[1]);
 	            if (!filem) {
 	                filem = /((?:\/|[A-Z]:\\)[^:\s]+:(\d+)(?::(\d+))?)/.exec(s[2]);
-	                
+
 	                if (!filem) {
 	                    filem = /((?:\/|[A-Z]:\\)[^:\s]+:(\d+)(?::(\d+))?)/.exec(s[3]);
 
@@ -6107,23 +6107,23 @@
 	                    }
 	                }
 	            }
-	            
+
 	            if (filem[1].slice(0, dir.length) === dir) {
 	                continue;
 	            }
-	            
+
 	            res.functionName = s[0];
 	            res.file = filem[1];
 	            res.line = Number(filem[2]);
 	            if (filem[3]) res.column = filem[3];
-	            
+
 	            res.at = m[1];
 	            break;
 	        }
 	    }
 
 	    self.emit('result', res);
-	    
+
 	    var pendingAsserts = self._pendingAsserts();
 	    if (!pendingAsserts) {
 	        if (extra.exiting) {
@@ -6134,7 +6134,7 @@
 	            });
 	        }
 	    }
-	    
+
 	    if (!self._planError && pendingAsserts < 0) {
 	        self._planError = true;
 	        self.fail('plan != count', {
@@ -7078,7 +7078,7 @@
 /* 47 */
 /***/ function(module, exports) {
 
-	
+
 	var hasOwn = Object.prototype.hasOwnProperty;
 	var toString = Object.prototype.toString;
 
@@ -7400,7 +7400,7 @@
 	    if (arguments.length < 3) {
 	        context = this
 	    }
-	    
+
 	    if (toString.call(list) === '[object Array]')
 	        forEachArray(list, iterator, context)
 	    else if (typeof list === 'string')
@@ -7524,7 +7524,7 @@
 	        output.queue('TAP version 13\n');
 	        self._stream.pipe(output);
 	    }
-	    
+
 	    nextTick(function next() {
 	        var t;
 	        while (t = getNextTest(self)) {
@@ -7533,7 +7533,7 @@
 	        }
 	        self.emit('done');
 	    });
-	    
+
 	    return output;
 	};
 
@@ -7554,7 +7554,7 @@
 	    t.once('prerun', function () {
 	        write('# ' + t.name + '\n');
 	    });
-	    
+
 	    t.on('result', function (res) {
 	        if (typeof res === 'string') {
 	            write('# ' + res + '\n');
@@ -7566,7 +7566,7 @@
 	        if (res.ok) self.pass ++
 	        else self.fail ++
 	    });
-	    
+
 	    t.on('test', function (st) { self._watch(st) });
 	};
 
@@ -7575,7 +7575,7 @@
 	    if (self.closed) self._stream.emit('error', new Error('ALREADY CLOSED'));
 	    self.closed = true;
 	    var write = function (s) { self._stream.queue(s) };
-	    
+
 	    write('\n1..' + self.count + '\n');
 	    write('# tests ' + self.count + '\n');
 	    write('# pass  ' + self.pass + '\n');
@@ -7589,22 +7589,22 @@
 	    var output = '';
 	    output += (res.ok ? 'ok ' : 'not ok ') + count;
 	    output += res.name ? ' ' + res.name.toString().replace(/\s+/g, ' ') : '';
-	    
+
 	    if (res.skip) output += ' # SKIP';
 	    else if (res.todo) output += ' # TODO';
-	    
+
 	    output += '\n';
 	    if (res.ok) return output;
-	    
+
 	    var outer = '  ';
 	    var inner = outer + '  ';
 	    output += outer + '---\n';
 	    output += inner + 'operator: ' + res.operator + '\n';
-	    
+
 	    if (has(res, 'expected') || has(res, 'actual')) {
 	        var ex = inspect(res.expected, {depth: res.objectPrintDepth});
 	        var ac = inspect(res.actual, {depth: res.objectPrintDepth});
-	        
+
 	        if (Math.max(ex.length, ac.length) > 65 || invalidYaml(ex) || invalidYaml(ac)) {
 	            output += inner + 'expected: |-\n' + inner + '  ' + ex + '\n';
 	            output += inner + 'actual: |-\n' + inner + '  ' + ac + '\n';
@@ -7624,7 +7624,7 @@
 	            output += inner + '  ' + lines[i] + '\n';
 	        }
 	    }
-	    
+
 	    output += outer + '...\n';
 	    return output;
 	}
@@ -7633,7 +7633,7 @@
 	    if (!results._only) {
 	        return results.tests.shift();
 	    }
-	    
+
 	    do {
 	        var t = results.tests.shift();
 	        if (!t) continue;
@@ -7665,21 +7665,21 @@
 	    var resume = tr.resume;
 	    var pause = tr.pause;
 	    var paused = false;
-	    
+
 	    tr.pause = function () {
 	        paused = true;
 	        return pause.apply(this, arguments);
 	    };
-	    
+
 	    tr.resume = function () {
 	        paused = false;
 	        return resume.apply(this, arguments);
 	    };
-	    
+
 	    nextTick(function () {
 	        if (!paused) tr.resume();
 	    });
-	    
+
 	    return tr;
 	};
 
@@ -7701,18 +7701,18 @@
 
 	module.exports = function inspect_ (obj, opts, depth, seen) {
 	    if (!opts) opts = {};
-	    
+
 	    var maxDepth = opts.depth === undefined ? 5 : opts.depth;
 	    if (depth === undefined) depth = 0;
 	    if (depth >= maxDepth && maxDepth > 0 && obj && typeof obj === 'object') {
 	        return '[Object]';
 	    }
-	    
+
 	    if (seen === undefined) seen = [];
 	    else if (indexOf(seen, obj) >= 0) {
 	        return '[Circular]';
 	    }
-	    
+
 	    function inspect (value, from) {
 	        if (from) {
 	            seen = seen.slice();
@@ -7720,7 +7720,7 @@
 	        }
 	        return inspect_(value, opts, depth + 1, seen);
 	    }
-	    
+
 	    if (typeof obj === 'string') {
 	        return inspectString(obj);
 	    }
@@ -7758,7 +7758,7 @@
 	        var parts = [];
 	        for (var key in obj) {
 	            if (!has(obj, key)) continue;
-	            
+
 	            if (/[^\w$]/.test(key)) {
 	                parts.push(inspect(key) + ': ' + inspect(obj[key]));
 	            }
@@ -7888,7 +7888,7 @@
 	function inspectString (str) {
 	    var s = str.replace(/(['\\])/g, '\\$1').replace(/[\x00-\x1f]/g, lowbyte);
 	    return "'" + s + "'";
-	    
+
 	    function lowbyte (c) {
 	        var n = c.charCodeAt(0);
 	        var x = { 8: 'b', 9: 't', 10: 'n', 12: 'f', 13: 'r' }[n];
@@ -7942,7 +7942,7 @@
 	//},
 	//],
 	//process: [
-	//(field, service) => 
+	//(field, service) =>
 	//};
 
 	cnFlexFormServiceProvider.$inject = ['schemaFormDecoratorsProvider', 'cnFlexFormTypesProvider'];
@@ -8036,8 +8036,6 @@
 	    reprocessField: reprocessField,
 	    setArrayIndex: setArrayIndex,
 	    setupConfig: setupConfig,
-	    setupArraySelectDisplay: setupArraySelectDisplay,
-	    setupSelectDisplay: setupSelectDisplay,
 	    setupSchemaRefresh: setupSchemaRefresh
 	  };
 
