@@ -1860,6 +1860,10 @@ function CNFlexFormService(
             keys.push(key);
           }
 
+          console.log("key ===> ", key);
+          console.log("keys ===> ", keys);
+          console.log("service.getFormsToProcess(key) ===> ", service.getFormsToProcess(key));
+
           // don't want to override key when extending cached objects
           //var key = form.key;
           //delete form.key;
