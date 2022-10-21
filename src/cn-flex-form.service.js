@@ -1803,6 +1803,7 @@ function CNFlexFormService(
 
   function processUpdatedSchema(schema) {
     var service = this;
+    console.log("schema ===> ", schema);
     if(schema.diff) {
       service.incrementUpdates();
       service.schema.params = schema.params;
