@@ -1860,6 +1860,7 @@ function CNFlexFormService(
             keys.push(key);
           }
 
+          console.log("form ===> ", form);
           console.log("key ===> ", key);
           console.log("keys ===> ", keys);
           console.log("service.getFormsToProcess(key) ===> ", service.getFormsToProcess(key));
@@ -1870,8 +1871,13 @@ function CNFlexFormService(
 
           _.each(
             service.getFormsToProcess(key),
-            (copy) => copy && service.reprocessField(copy, form)
+            (copy) => {
+              copy && service.reprocessField(copy, form);
+            }
           );
+
+          service.processFieldProps(form, true);
+
         });
       }
 
