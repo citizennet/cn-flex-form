@@ -623,6 +623,8 @@ function CNFlexFormService(
   function processConditional(field) {
     const service = this;
 
+    console.log("field.conditionals ===> ", field);
+
     _.each(field.conditionals, (condition, key) => {
       const handler = (val, prev) => {
         field[key] = service.parseCondition(condition);
