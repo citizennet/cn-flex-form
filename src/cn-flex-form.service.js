@@ -1803,7 +1803,6 @@ function CNFlexFormService(
 
   function processUpdatedSchema(schema) {
     var service = this;
-    console.log("schema ===> ", schema);
     if(schema.diff) {
       service.incrementUpdates();
       service.schema.params = schema.params;
@@ -1851,6 +1850,9 @@ function CNFlexFormService(
       }
 
       if(schema.diff.form) {
+
+        console.log("schema.diff.form ===> ", schema.diff.form);
+
         service.scope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
         _.each(schema.diff.form, (form, key) => {
 
