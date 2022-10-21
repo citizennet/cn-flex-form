@@ -428,7 +428,7 @@ function CNFlexFormService(
       service.processSchema(field);
     }
 
-    console.log("processFieldProps(field) ===> ", field);
+    console.log("processFieldProps(field) in processField ===> ", field);
 
     service.processFieldProps(field);
 
@@ -622,9 +622,6 @@ function CNFlexFormService(
 
   function processConditional(field) {
     const service = this;
-
-    console.log("field.conditionals ===> ", field);
-
     _.each(field.conditionals, (condition, key) => {
       const handler = (val, prev) => {
         field[key] = service.parseCondition(condition);
@@ -1030,6 +1027,10 @@ function CNFlexFormService(
         form.arrayIndex = index;
 
         if(!service.getArrayCopy(genericKey, index)) {
+
+          console.log("processFieldProps(form, true) in initArrayCopyWatch ===> ", field);
+
+
           service.processFieldProps(form, true);
         }
 
@@ -1971,6 +1972,7 @@ function CNFlexFormService(
   function broadcastErrors() {
     var service = this;
     $timeout(function() {
+      console.log("_.get(service, 'errors') ===> ", _.get(service, 'errors'));
       if (_.get(service, 'errors')) {
         service.errors.forEach(function(error) {
           service.scope.$broadcast('schemaForm.error.' + error.key, 'serverValidation', error.message);
