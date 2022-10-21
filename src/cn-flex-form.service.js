@@ -428,6 +428,8 @@ function CNFlexFormService(
       service.processSchema(field);
     }
 
+    console.log("processFieldProps(field) ===> ", field);
+
     service.processFieldProps(field);
 
     if(key) {
@@ -1875,9 +1877,6 @@ function CNFlexFormService(
               copy && service.reprocessField(copy, form);
             }
           );
-
-          service.processFieldProps(form, true);
-
         });
       }
 
