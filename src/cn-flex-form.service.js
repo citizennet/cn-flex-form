@@ -1028,9 +1028,6 @@ function CNFlexFormService(
 
         if(!service.getArrayCopy(genericKey, index)) {
 
-          console.log("processFieldProps(form, true) in initArrayCopyWatch ===> ", field);
-
-
           service.processFieldProps(form, true);
         }
 
@@ -1893,6 +1890,7 @@ function CNFlexFormService(
       }
 
       service.broadcastErrors();
+      service.scope.$broadcast("schemaFormRedraw");
     }
     else {
       service.resetUpdates();
