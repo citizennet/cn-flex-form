@@ -1829,7 +1829,7 @@ function CNFlexFormService(
 
       const keys = [];
 
-      if(Object.keys(schema.diff.schema) > 0) {
+      if(Object.keys(schema.diff.schema).length > 0) {
         service.scope.$broadcast('cnFlexFormDiff:schema', schema.diff.schema);
         _.each(schema.diff.schema, function(schema, key) {
           reprocessSchema(schema, key, keys);
@@ -1849,7 +1849,7 @@ function CNFlexFormService(
         });
       }
 
-      if(Object.keys(schema.diff.form) > 0) {
+      if(Object.keys(schema.diff.form).length > 0) {
         service.scope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
         _.each(schema.diff.form, (form, key) => {
 
