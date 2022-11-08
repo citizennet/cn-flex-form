@@ -428,8 +428,6 @@ function CNFlexFormService(
       service.processSchema(field);
     }
 
-    console.log("processFieldProps(field) in processField ===> ", field);
-
     service.processFieldProps(field);
 
     if(key) {
@@ -622,6 +620,7 @@ function CNFlexFormService(
 
   function processConditional(field) {
     const service = this;
+
     _.each(field.conditionals, (condition, key) => {
       const handler = (val, prev) => {
         field[key] = service.parseCondition(condition);
@@ -1027,10 +1026,6 @@ function CNFlexFormService(
         form.arrayIndex = index;
 
         if(!service.getArrayCopy(genericKey, index)) {
-
-          console.log("processFieldProps(form, true) in initArrayCopyWatch ===> ", field);
-
-
           service.processFieldProps(form, true);
         }
 
@@ -1855,9 +1850,6 @@ function CNFlexFormService(
       }
 
       if(schema.diff.form) {
-
-        console.log("schema.diff.form ===> ", schema.diff.form);
-
         service.scope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
         _.each(schema.diff.form, (form, key) => {
 
@@ -1865,22 +1857,18 @@ function CNFlexFormService(
             keys.push(key);
           }
 
-          console.log("form ===> ", form);
-          console.log("key ===> ", key);
-          console.log("keys ===> ", keys);
-          console.log("service.getFormsToProcess(key) ===> ", service.getFormsToProcess(key));
-
           // don't want to override key when extending cached objects
           //var key = form.key;
           //delete form.key;
 
           _.each(
             service.getFormsToProcess(key),
-            (copy) => {
-              copy && service.reprocessField(copy, form);
-            }
+            (copy) => copy && service.reprocessField(copy, form)
           );
         });
+
+        service.scope.$broadcast("schemaFormRedraw");
+        
       }
 
       if(keys.length) {
@@ -1972,7 +1960,6 @@ function CNFlexFormService(
   function broadcastErrors() {
     var service = this;
     $timeout(function() {
-      console.log("_.get(service, 'errors') ===> ", _.get(service, 'errors'));
       if (_.get(service, 'errors')) {
         service.errors.forEach(function(error) {
           service.scope.$broadcast('schemaForm.error.' + error.key, 'serverValidation', error.message);
