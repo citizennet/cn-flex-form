@@ -1893,7 +1893,7 @@ function CNFlexFormService(
         cnFlexFormConfig.onProcessDiff(schema)
       }
 
-      if(schema.diff.data) {
+      if(Object.keys(schema.diff.data).length > 0) {
         service.scope.$broadcast('cnFlexFormDiff:data', schema.diff.data);
         _.each(schema.diff.data, (data, prop) => {
           if(data && data.data && !_.isEmpty(service.schema.data[prop].data) && !data.reset) {
@@ -1912,7 +1912,7 @@ function CNFlexFormService(
 
       const keys = [];
 
-      if(schema.diff.schema) {
+      if(Object.keys(schema.diff.schema).length > 0) {
         service.scope.$broadcast('cnFlexFormDiff:schema', schema.diff.schema);
         _.each(schema.diff.schema, function(schema, key) {
           reprocessSchema(schema, key, keys);
@@ -1932,7 +1932,7 @@ function CNFlexFormService(
         });
       }
 
-      if(schema.diff.form) {
+      if(Object.keys(schema.diff.form).length > 0) {
         service.scope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
         _.each(schema.diff.form, (form, key) => {
 
@@ -1950,7 +1950,16 @@ function CNFlexFormService(
           );
         });
 
+        const cnFormElements = document.getElementsByClassName('cn-form');
+        const oldScrollPosition = cnFormElements && cnFormElements[0] ? cnFormElements[0].scrollTop : 0;
+
         service.scope.$broadcast("schemaFormRedraw");
+        
+        setTimeout(() => {
+          if (cnFormElements && cnFormElements[0]) {
+            cnFormElements[0].scrollTop = oldScrollPosition;
+          }
+        }, 1000);
         
       }
 
