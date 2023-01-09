@@ -33,25 +33,25 @@ function cnFlexFormHeader() {
             </a>
             <span ng-repeat="button in vm.actions">
               <span ng-class="{'btn-group': button.options}">
-                <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}}"
+                <button class="btn {{button.style ? 'btn-'+button.style : ($index === vm.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}}"
                    ng-disabled="vm.isDisabled(button)"
-                   ng-click="{{vm.isDisabled(button) ? undefined : vm.submit({handler: button.handler})}}"
+                   ng-click="vm.submit({handler: button.handler})"
                    uib-tooltip="{{button.helptext}}"
                    uib-tooltip-placement="bottom"
                    ng-bind-html="button.text || 'Save'">
-                </a>
-                <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}} dropdown-toggle"
+                </button>
+                <button class="btn {{button.style ? 'btn-'+button.style : ($index === vm.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}} dropdown-toggle"
                         ng-disabled="vm.isDisabled(button)"
                         ng-show="button.options"
-                        data-toggle="{{vm.isDisabled(button) ? '' : 'dropdown'}}">
+                        data-toggle="dropdown">
                   <span class="caret"></span>
-                </a>
+                </button>
                 <ul class="dropdown-menu" ng-if="button.options">
                   <li ng-repeat="option in button.options"
                       ng-disabled="vm.isDisabled(option)">
-                    <a ng-click="vm.submit({handler: option.handler})"
+                    <button ng-click="vm.submit({handler: option.handler})"
                        ng-bind-html="option.text">
-                    </a>
+                    </button>
                   </li>
                 </ul>
               </span>
