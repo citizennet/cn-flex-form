@@ -35,7 +35,7 @@ function cnFlexFormHeader() {
               <span ng-class="{'btn-group': button.options}">
                 <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}}"
                    ng-disabled="vm.isDisabled(button)"
-                   ng-click="vm.submit({handler: button.handler})"
+                   ng-click="{{vm.isDisabled(button) ? undefined : vm.submit({handler: button.handler})}}"
                    uib-tooltip="{{button.helptext}}"
                    uib-tooltip-placement="bottom"
                    ng-bind-html="button.text || 'Save'">
@@ -43,7 +43,7 @@ function cnFlexFormHeader() {
                 <a class="btn {{button.style ? 'btn-'+button.style : ($index === vm.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}} dropdown-toggle"
                         ng-disabled="vm.isDisabled(button)"
                         ng-show="button.options"
-                        data-toggle="dropdown">
+                        data-toggle="{{vm.isDisabled(button) ? '' : 'dropdown'}}">
                   <span class="caret"></span>
                 </a>
                 <ul class="dropdown-menu" ng-if="button.options">
