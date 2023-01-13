@@ -1949,9 +1949,6 @@ function CNFlexFormService(
             (copy) => copy && service.reprocessField(copy, form)
           );
         });
-
-        service.scope.$broadcast("schemaFormRedraw");
-        
       }
 
       if(keys.length) {
