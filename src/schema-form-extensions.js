@@ -334,6 +334,7 @@ function addTemplates($templateCache) {
                for="{{form.key && form.key[0]}}">{{form.title}}</label>
         <div class="{{form.fieldClass}} input-group">
           <input class="form-control"
+                 cn-ignore-wheel
                  cn-percentage-format
                  ng-show="form.key"
                  ng-model-options="form.ngModelOptions"
