@@ -126,8 +126,8 @@ function addTemplates($templateCache) {
           allowed-tags-pattern=".*"
           dropdown-icon="true"
           item-formatter="form.itemFormatter"
-          min-tags="{{form.schema.minItems}}"
-          max-tags="{{form.schema.maxItems || form.getSchemaType() !== 'array' ? 1 : 0}}"
+          min-tags="{{form.minItems || form.schema.minItems}}"
+          max-tags="{{form.maxItems || form.schema.maxItems || (form.getSchemaType() !== 'array' ? 1 : 0)}}"
           allow-bulk="{{form.bulkAdd}}"
           bulk-delimiter="{{form.bulkDelimiter}}"
           bulk-placeholder="{{form.bulkPlaceholder}}"
@@ -334,6 +334,7 @@ function addTemplates($templateCache) {
                for="{{form.key && form.key[0]}}">{{form.title}}</label>
         <div class="{{form.fieldClass}} input-group">
           <input class="form-control"
+                 cn-ignore-wheel
                  cn-percentage-format
                  ng-show="form.key"
                  ng-model-options="form.ngModelOptions"
