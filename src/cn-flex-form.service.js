@@ -973,7 +973,8 @@ function CNFlexFormService(
             !isInitArray &&
             val !== null/* &&
             !angular.equals(val, service.getDefault(key))*/) {
-            service.params[key] = val;
+              // if val is an array that has on object, need deep copy 
+              service.params[key] = angular.copy(val);
           }
           else {
             delete service.params[key];
@@ -1000,7 +1001,7 @@ function CNFlexFormService(
       if(listener) {
         var val = service.parseExpression(key, service.model).get();
         if(listener.updateSchema && !angular.isUndefined(val) && val !== null) {
-          service.params[key] = val;
+          service.params[key] = angular.copy(val);
         }
       }
     });
