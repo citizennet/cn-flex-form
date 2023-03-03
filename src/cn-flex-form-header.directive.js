@@ -35,7 +35,7 @@ function cnFlexFormHeader() {
               <span ng-class="{'btn-group': button.options}">
                 <button class="btn {{button.style ? 'btn-'+button.style : ($index === vm.actions.length - 1 ? 'btn-primary' : 'btn-default-dark')}}"
                    ng-disabled="vm.isDisabled(button)"
-                   ng-click="vm.submit({handler: button.handler})"
+                   ng-click="vm.isDisabled(button) || vm.submit({handler: button.handler})"
                    uib-tooltip="{{button.helptext}}"
                    uib-tooltip-placement="bottom"
                    ng-bind-html="button.text || 'Save'">

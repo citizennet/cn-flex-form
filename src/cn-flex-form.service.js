@@ -49,7 +49,7 @@ const fieldPropHandlers = [{
 }, {
   prop: 'watch',
   handler: (field, service, secondPass) =>
-    !secondPass &&field.watch && service.processFieldWatch(field)
+    !secondPass && field.watch && service.processFieldWatch(field)
 }, {
   prop: 'type',
   handler: (field, service, secondPass) =>
@@ -191,8 +191,6 @@ function CNFlexFormService(
     resolveNestedExpressions,
     setArrayIndex,
     setupConfig,
-    setupArraySelectDisplay,
-    setupSelectDisplay,
     setupSchemaRefresh,
     silenceListeners,
     skipDefaults
@@ -475,7 +473,6 @@ function CNFlexFormService(
 
     key = ObjectPath.parse(service.getKey(key));
     depth = depth || service.schema.schema.properties;
-
     let first, next;
 
     while(key.length > 1) {
@@ -976,7 +973,8 @@ function CNFlexFormService(
             !isInitArray &&
             val !== null/* &&
             !angular.equals(val, service.getDefault(key))*/) {
-            service.params[key] = val;
+              // if val is an array that has on object, need deep copy 
+              service.params[key] = angular.copy(val);
           }
           else {
             delete service.params[key];
@@ -1003,7 +1001,7 @@ function CNFlexFormService(
       if(listener) {
         var val = service.parseExpression(key, service.model).get();
         if(listener.updateSchema && !angular.isUndefined(val) && val !== null) {
-          service.params[key] = val;
+          service.params[key] = angular.copy(val);
         }
       }
     });
@@ -1562,7 +1560,13 @@ function CNFlexFormService(
             }
             else {
               const exp = service.replaceArrayIndex(queryParams[key], select.arrayIndex);
-              const val = service.parseExpression(exp).get();
+              let val = null, variables = exp.split('||');
+              for (let exp of variables) {
+                val = service.parseExpression(exp.trim()).get();
+                if (val) {
+                  break;
+                }
+              }
               acc[key] = val;
             }
             return acc;
@@ -1695,7 +1699,6 @@ function CNFlexFormService(
     table.items.forEach(function(row) {
       for (var i = 0; i < table.columns.length; i++) {
         _.extend(row.items[i], table.columns[i]);
-        //if(row.columns[i].key) row.columns[i].key = ObjectPath.parse(row.columns[i].key);
         service.processField(row.items[i]);
       }
     });
@@ -1703,16 +1706,19 @@ function CNFlexFormService(
 
   function processSelectDisplay(selectDisplay) {
     const service = this;
-    const schema = service.getSchema(selectDisplay.key);
-    const selectField = _.find(selectDisplay.items, 'selectField');
+    // Needed for batchform to check recursively
+    let selectField = null;
+    for (let item of selectDisplay.items) {
+      if (item.selectField) {
+        selectField = item;
+      } else if (item.items) {
+        selectField = _.find(item.items, 'selectField');
+      }
+      if (selectField) {
+        break;
+      }
+    }
 
-    return schema && schema.type === 'array' ?
-      service.setupArraySelectDisplay(selectDisplay, selectField) :
-      service.setupSelectDisplay(selectDisplay, selectField);
-  }
-
-  function setupArraySelectDisplay(selectDisplay, selectField) {
-    const service = this;
     // band-aid because this is being set as an object instead of array somwhere
     // deep in the angular or angular-schema-form nether-regions
     const linkModel = service.parseExpression(selectDisplay.link, service.model);
@@ -1742,100 +1748,12 @@ function CNFlexFormService(
     });
     // handle legacy objects that don't have values set in the selectField
     var model = service.parseExpression(service.getKey(selectDisplay.key), service.model).get();
-    _.each(selectDisplay.items, function(item) {
-      var key = service.getKey(item.key);
-      var selectKey = service.getKey(selectField.key);
-      if(key === selectKey) return;
-      _.each(model, function(elem, i) {
-        var indexedKey = service.setArrayIndex(key, i);
-        var splitIndexedKey = ObjectPath.parse(indexedKey);
-        var indexedSelectKey = service.setArrayIndex(selectKey, i);
-        var selectModel = service.parseExpression(indexedSelectKey, service.model);
-        var selectValue = selectModel.get();
-        var itemValue = service.parseExpression(indexedKey, service.model).get();
-        if(itemValue && !_.includes(selectValue, splitIndexedKey[splitIndexedKey.length - 1])) {
-          if(!selectValue) {
-            selectValue = [];
-          }
-          selectValue.push(splitIndexedKey[splitIndexedKey.length - 1]);
-          selectModel.set(selectValue);
-        }
-      });
-    });
-    // handle new objects with values set in defaults
-    var defaults = service.getSchema(selectDisplay.key).default;
-    _.each(defaults, function(elem, i) {
-      var selectKey = service.getKey(selectField.key);
+    var selectKey = service.getKey(selectField.key);
+    _.each(model, function(elem, i) {
       var indexedSelectKey = service.setArrayIndex(selectKey, i);
       var selectModel = service.parseExpression(indexedSelectKey, service.model);
-      var selectValue = selectModel.get();
-      _.each(elem, function(val, key) {
-        if(!selectValue) {
-          selectValue = [];
-        }
-        selectValue.push(key);
-        selectModel.set(selectValue);
-      });
+      if(!selectModel.get()) selectModel.set([]);
     });
-  }
-
-  function setupSelectDisplay(selectDisplay, selectField) {
-    const service = this;
-    const selectFieldKey = service.getKey(selectField.key);
-
-    _.each(selectDisplay.items, item => {
-      if(item.selectField === true) return;
-
-      const key = _.isArray(item.key) ? item.key : ObjectPath.parse(item.key);
-      const featureKey = _.last(key);
-
-      item.showFeature = () => {
-        const features =
-              service
-              .parseExpression(`model.${selectFieldKey}`)
-              .get();
-        const show =
-              features &&
-              features
-              .includes(featureKey);
-        return show;
-      };
-
-      const condition = `form.showFeature()`;
-      item.condition = item.condition ?
-        `(${item.condition}) && ${condition}` : condition;
-    });
-    // handle legacy objects that don't have values set in the selectField
-    var selectKey = service.getKey(selectField.key);
-    var selectModel = service.parseExpression(selectKey, service.model);
-    var selectValue = selectModel.get();
-    _.each(selectDisplay.items, function(item) {
-      var key = service.getKey(item.key);
-      if(selectKey === key) return;
-      var splitKey = ObjectPath.parse(key);
-      var itemValue = service.parseExpression(key, service.model).get();
-      if(itemValue && !_.includes(selectValue, splitKey[splitKey.length - 1])) {
-        if(!selectValue) {
-          selectValue = [];
-        }
-        selectValue.push(splitKey[splitKey.length - 1]);
-        selectModel.set(selectValue);
-      }
-    });
-    // handle new objects with values set in the defaults
-    var defaults = service.getSchema(selectDisplay.key).default;
-    _.each(defaults, function(val, key) {
-      if(!selectValue) {
-        selectValue = [];
-      }
-      selectValue.push(key);
-      selectModel.set(selectValue);
-    });
-    // set default values here
-    var model = service.parseExpression(selectDisplay.key, service.model);
-    if(defaults && !model.get()) {
-      model.set(defaults);
-    }
   }
 
   function setupSchemaRefresh(refresh) {
