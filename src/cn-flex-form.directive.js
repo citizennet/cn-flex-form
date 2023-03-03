@@ -53,6 +53,10 @@ function FlexForm(cnFlexFormService, $scope, $location) {
 
   $scope.$on(vm.cleanupEvent || '$destroy', vm.cleanup);
 
+  $scope.refreshAdbook = function () {
+    vm.model['refreshAdbook'] = !vm.model['refreshAdbook'];
+  }
+
   //////////
 
   function activate() {
