@@ -108,7 +108,9 @@ function CNFlexFormService(
   $interpolate,
   $timeout,
   cnUtil,
-  $stateParams
+  $stateParams,
+  cnSession,
+  EVENTS,
 ) {
   'ngInject';
 
@@ -193,7 +195,8 @@ function CNFlexFormService(
     setupConfig,
     setupSchemaRefresh,
     silenceListeners,
-    skipDefaults
+    skipDefaults, 
+    convertToLocalFrom,
   };
 
   function getService(fn) {
@@ -273,6 +276,21 @@ function CNFlexFormService(
       service.scope = config.getScope();
     }
     service.schema = schema;
+
+    if (!service.schema.dateConverted && Object.keys(service.schema.schema.properties || {}).length) {
+      _.each(service.schema.schema.properties, function (field) {
+        if (field.format === "datetime-local") {
+          const curVal = service.parseExpression(field.key, service.model).get();
+          try {
+            model[field.key] = service.convertToLocalFrom(curVal);
+          } catch (error) {
+            service.scope.$emit(EVENTS.notify, error);
+          }
+        }
+      });
+      service.schema.dateConverted = true;
+    }
+
     service.model = model;
 
     if(!service.isCompiled()) {
@@ -2027,6 +2045,34 @@ function CNFlexFormService(
     ++service.updates;
     service.params.updates = service.updates;
   }
+
+  /**
+   * From PT time to local time
+   * @param ptTime: string
+   * @return localTime: string|undefined|error
+   */
+  function convertToLocalFrom(ptTime) {
+    if (!ptTime) return; 
+    if(!moment(ptTime, 'YYYY-MM-DD HH:mm:ss').isValid()) {
+      throw `Invalid datetime string detected: ${ptTime}`;
+    }
+
+    let dateInPT;
+    let localTime;
+
+    const user = cnSession.getUser();
+    
+    if(user && user.timezone) {
+      dateInPT = moment.tz(ptTime, "YYYY-MM-DD HH:mm:ss", "America/Los_Angeles");
+      localTime = dateInPT.tz(user.timezone).format('YYYY-MM-DD HH:mm:ss');
+      return localTime;
+    }
+    
+    dateInPT = new Date(ptTime + " UTC-8");
+    localTime = dateInPT.toLocaleString();
+    return localTime;
+  }
+
 }
 
 //angular
