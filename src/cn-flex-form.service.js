@@ -109,7 +109,6 @@ function CNFlexFormService(
   $timeout,
   cnUtil,
   $stateParams,
-  cnSession,
   EVENTS,
 ) {
   'ngInject';
@@ -196,7 +195,6 @@ function CNFlexFormService(
     setupSchemaRefresh,
     silenceListeners,
     skipDefaults, 
-    convertToLocalFrom,
   };
 
   function getService(fn) {
@@ -278,12 +276,11 @@ function CNFlexFormService(
     service.schema = schema;
 
     if (!service.schema.dateConverted && Object.keys(service.schema.schema.properties || {}).length) {
-      const user = cnSession.getUser();
       _.each(service.schema.schema.properties, function (field) {
         if (field.format === "datetime-local") {
           const curVal = service.parseExpression(field.key, service.model).get();
           try {
-            model[field.key] = cnUtil.convertToLocalFrom(curVal, user.timezone);
+            model[field.key] = cnUtil.convertToLocalTime(curVal);
           } catch (error) {
             service.scope.$emit(EVENTS.notify, error);
           }
