@@ -108,7 +108,8 @@ function CNFlexFormService(
   $interpolate,
   $timeout,
   cnUtil,
-  $stateParams
+  $stateParams,
+  EVENTS,
 ) {
   'ngInject';
 
@@ -193,7 +194,7 @@ function CNFlexFormService(
     setupConfig,
     setupSchemaRefresh,
     silenceListeners,
-    skipDefaults
+    skipDefaults, 
   };
 
   function getService(fn) {
@@ -273,6 +274,21 @@ function CNFlexFormService(
       service.scope = config.getScope();
     }
     service.schema = schema;
+
+    if (!service.schema.dateConverted && Object.keys(service.schema.schema.properties || {}).length) {
+      _.each(service.schema.schema.properties, function (field) {
+        if (field.format === "datetime-local") {
+          const curVal = service.parseExpression(field.key, service.model).get();
+          try {
+            model[field.key] = cnUtil.convertToLocalTime(curVal);
+          } catch (error) {
+            service.scope.$emit(EVENTS.notify, error);
+          }
+        }
+      });
+      service.schema.dateConverted = true;
+    }
+
     service.model = model;
 
     if(!service.isCompiled()) {
