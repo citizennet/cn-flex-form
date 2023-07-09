@@ -741,7 +741,11 @@ function CNFlexFormService(
               else if(adjustment.math) {
                 //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
                 //let result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
-                let result = $parse(from.get() + adjustment.math[1] + adjustment.adjuster.get())();
+                adjustment.adjuster = service.parseExpression(replaceArrayIndex(adjustment.math[2], key));
+                const operand1 = from.get(); 
+                const operand2 = adjustment.adjuster.get();
+                const operator = adjustment.math[1];
+                let result = $parse(operand1 + operator + operand2)();
                 schema = schema || field.items && (field.items[0].schema || (field.items[0].items && field.items[0].items[0].schema));
                 if(field.type === 'cn-currency') {
                   let p = schema && schema.format === 'currency-dollars' ? 2 : 0;
