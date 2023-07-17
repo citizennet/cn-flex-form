@@ -194,7 +194,8 @@ function CNFlexFormService(
     setupConfig,
     setupSchemaRefresh,
     silenceListeners,
-    skipDefaults, 
+    skipDefaults,
+    parseStringKey,
   };
 
   function getService(fn) {
@@ -1882,9 +1883,11 @@ function CNFlexFormService(
           //var key = form.key;
           //delete form.key;
 
+          // currentForm: cached form, means processed form from original. 
+          // form: received from backend, need to update the current form 
           _.each(
             service.getFormsToProcess(key),
-            (copy) => copy && service.reprocessField(copy, form)
+            (currentForm) => currentForm && service.reprocessField(currentForm, form)
           );
         });
       }
@@ -1895,6 +1898,13 @@ function CNFlexFormService(
             service.getFormsToProcess(key),
             (copy) => copy && service.processField(copy)
           );
+        });
+      }
+
+      if (schema.diff.updates) {
+        _.each(schema.diff.updates, function(val, key) {
+          const dotKey = getDotKey(key);
+          service.parseStringKey(service.model, dotKey, val);
         });
       }
 
@@ -1921,7 +1931,7 @@ function CNFlexFormService(
     const service = this;
     const key = service.getKey(current.key);
 
-    // other logic in the service will add conition = 'true' to force
+    // other logic in the service will add condition = 'true' to force
     // condition to eval true, so we set the update condition to 'true'
     // before comparing
     if(!update.condition && current.condition) update.condition = 'true';
@@ -1967,6 +1977,31 @@ function CNFlexFormService(
   function getDotKey(key) {
     return (_.isString(key) ? ObjectPath.parse(key) : key).join('.');
   }
+
+  function parseStringKey(obj, keyStr, value) {
+    const pathParts = keyStr.split('.');
+    if(pathParts.length === 1) {
+      obj[keyStr] =  value;
+    }
+    for (let i = 0; i < pathParts.length; i++) {
+      const part = pathParts[i];
+      if (i === pathParts.length - 1) {
+        obj[part] = value;
+      } else {
+        if (!obj[part]) {
+          const nextPart = pathParts[i + 1];
+          if (isNaN(nextPart)) {
+            obj[part] = {};
+          } else {
+            obj[part] = [];
+          }
+        }
+        obj = obj[part];
+      }
+    }
+    return obj;
+  }
+
 
   function buildError(field) {
     return {
