@@ -1550,8 +1550,10 @@ function CNFlexFormService(
     const schema = select.schema;
 
     if(select.titleMapResolve || select.titleMap) {
-      select.getTitleMap = () =>
-        select.titleMap || service.schema.data[select.titleMapResolve];
+      select.getTitleMap = () => {
+        const prop = `${select.titleMapResolve}[${select.arrayIndex}]`;
+        return select.titleMap || service.schema.data[select.titleMapResolve] || service.schema.data[prop];
+      }
 
       select.onInit = function(val, form, event, setter) {
         // make sure we use correct value
