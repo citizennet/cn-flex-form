@@ -275,7 +275,7 @@ function CNFlexFormService(
       service.scope = config.getScope();
     }
     service.schema = schema;
-
+    /** TODO: API-3136-rollback
     if (!service.schema.dateConverted && Object.keys(service.schema.schema.properties || {}).length) {
       _.each(service.schema.schema.properties, function (field) {
         if (field.format === "datetime-local") {
@@ -289,7 +289,7 @@ function CNFlexFormService(
       });
       service.schema.dateConverted = true;
     }
-
+    */
     service.model = model;
 
     if(!service.isCompiled()) {
