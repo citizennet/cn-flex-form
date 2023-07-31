@@ -196,6 +196,7 @@ function CNFlexFormService(
     silenceListeners,
     skipDefaults,
     parseStringKey,
+    reprocessFieldWatch,
   };
 
   function getService(fn) {
@@ -2083,6 +2084,38 @@ function CNFlexFormService(
     const service =  this;
     ++service.updates;
     service.params.updates = service.updates;
+  }
+
+  function reprocessFieldWatch() {
+    const service = this;
+    field.watch = _.isArray(field.watch) ? field.watch : [field.watch];
+
+    _.each(field.watch, function(watch) {
+      if(watch.resolution) {
+        let condition;
+        if(_.isString(field.condition)) {
+          condition = /^\(.*\)$/.test(field.condition) ?
+            field.condition :
+            `(${field.condition})`;
+        }
+        if(_.isString(watch.condition)) {
+          condition = condition ?
+            `${condition} && ${watch.condition}` :
+            watch.condition;
+        }
+        let resolution = watch.resolution;
+        let handler;
+
+        if(_.isFunction(resolution)) {
+          handler = function(cur, prev) {
+            if(!condition || service.parseCondition(condition)) {
+              resolution(cur, prev);
+            }
+          };
+        }
+        service.registerHandler(field, handler, field.updateSchema, watch.initialize);
+      }
+    });
   }
 }
 
