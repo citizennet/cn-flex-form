@@ -196,7 +196,6 @@ function CNFlexFormService(
     silenceListeners,
     skipDefaults,
     parseStringKey,
-    reprocessFieldWatch,
   };
 
   function getService(fn) {
@@ -422,6 +421,20 @@ function CNFlexFormService(
 
   function processField(field, pos) {
     const service = this;
+    
+    if((field.key || '').includes('objective_goal') && !(field.key || '').includes('dropSources')) {
+      console.log("field", field, pos);
+      service.processFieldWatch(field);
+      (field.watch || []).forEach(watch => {
+        const exp = (watch.resolution || '').replace(/model\./g, '');
+        const result = (exp || '').split('=')[0].trim();
+        const right = (exp || '').split('=')[1].trim();
+        const toDevide = service.parseExpression(right.split('/')[0].trim(), service.model).get() || 0;
+        const devideBy  = service.parseExpression(right.split('/')[1].trim(), service.model).get() || 0;
+        const resultIn = (toDevide && devideBy) ? (toDevide / devideBy) : 0;
+        service.parseStringKey(service.model, result, resultIn);
+      });
+    }
 
     if(angular.isDefined(pos)) {
       field.pos = pos;
@@ -2086,37 +2099,6 @@ function CNFlexFormService(
     service.params.updates = service.updates;
   }
 
-  function reprocessFieldWatch() {
-    const service = this;
-    field.watch = _.isArray(field.watch) ? field.watch : [field.watch];
-
-    _.each(field.watch, function(watch) {
-      if(watch.resolution) {
-        let condition;
-        if(_.isString(field.condition)) {
-          condition = /^\(.*\)$/.test(field.condition) ?
-            field.condition :
-            `(${field.condition})`;
-        }
-        if(_.isString(watch.condition)) {
-          condition = condition ?
-            `${condition} && ${watch.condition}` :
-            watch.condition;
-        }
-        let resolution = watch.resolution;
-        let handler;
-
-        if(_.isFunction(resolution)) {
-          handler = function(cur, prev) {
-            if(!condition || service.parseCondition(condition)) {
-              resolution(cur, prev);
-            }
-          };
-        }
-        service.registerHandler(field, handler, field.updateSchema, watch.initialize);
-      }
-    });
-  }
 }
 
 //angular
