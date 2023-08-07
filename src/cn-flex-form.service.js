@@ -484,15 +484,14 @@ function CNFlexFormService(
 
     // handle if generic_creative presents in diff.update
     if(!_.isUndefined(field.arrayIndex)) {
-      let key = service.getKey(field.key);
-      key = key.replace('[]', '');
       _.each(service.schema.data, function(val, prop) {
         if(prop.includes(key)) {
           const diffArr = _.difference(prop.split('.'), key.split('.'));
           if(diffArr.length) {
             if(field.items) {
               _.each(field.items, function(item) {
-                service.parseStringKey(item, diffArr.filter(d => d != item.previewPath).join('.'), val);
+                const _field = diffArr.filter(d => d != item.previewPath).join('.');
+                service.parseStringKey(field, _field, val);
               })
             } else {
               service.parseStringKey(field, diffArr.join('.'), val);
