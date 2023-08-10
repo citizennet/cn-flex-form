@@ -481,6 +481,28 @@ function CNFlexFormService(
         }
       }
     }
+
+    // handle if generic_creative presents in diff.update
+    if(!_.isUndefined(field.arrayIndex)) {
+      _.each(service.schema.data, function(val, prop) {
+        if(prop.includes(key)) {
+          const diffArr = _.difference(prop.split('.'), key.split('.'));
+          if(diffArr.length) {
+            if(field.items) {
+              _.each(field.items, function(item) {
+                const _field = diffArr.filter(d => d != item.previewPath).join('.');
+                service.parseStringKey(field, _field, val);
+              })
+            } else {
+              service.parseStringKey(field, diffArr.join('.'), val);
+            }
+            // delete service.schema.data[prop];
+          }
+        }
+      });
+      service.scope.$broadcast('cnFlexFormReprocessField', key);
+    }
+
   }
 
   function processFieldProps(field, secondPass) {
@@ -1887,6 +1909,22 @@ function CNFlexFormService(
         });
       }
 
+      if (schema.diff.updates) {
+        _.each(schema.diff.updates, function(val, key) {
+          if(key.includes('dropSources')) {
+            // I know this is poor condition to check
+            // this will populate them to the model
+            const dotKey = getDotKey(key);
+            service.parseStringKey(service.model, dotKey, val);
+            console.log("check the debug");
+          }
+          if(key.includes('generic_creative')) {
+            // should update the form/field.resolveMap = val;
+            service.schema.data[key] = val;
+          }
+        });
+      }
+
       if(schema.diff.form) {
         service.scope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
         _.each(schema.diff.form, (form, key) => {
@@ -1917,12 +1955,7 @@ function CNFlexFormService(
         });
       }
 
-      if (schema.diff.updates) {
-        _.each(schema.diff.updates, function(val, key) {
-          const dotKey = getDotKey(key);
-          service.parseStringKey(service.model, dotKey, val);
-        });
-      }
+      
 
       service.broadcastErrors();
     }
