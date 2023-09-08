@@ -307,6 +307,28 @@ function CNFlexFormService(
       service.initModelWatch();
       service.initArrayCopyWatch();
       service.isCompiled(true);
+    } else {
+      const initUpdates = _.debounce(() => {
+        if (schema.updates) {
+          _.each(schema.updates, function(val, key) {
+            if(key.includes('generic_creative') && key !== 'generic_creative_keys') {
+              service.schema.data[key] = val;
+            }
+          });
+          if (schema.updates['generic_creative_keys']) {
+            var keys = schema.updates['generic_creative_keys'];
+            if(keys.length) {
+              _.each(keys, (key) => {
+                _.each(
+                  service.getFormsToProcess(key),
+                  (copy) => copy && service.processField(copy)
+                );
+              });
+            }
+          }
+        }
+      }, 100);
+      initUpdates();
     }
 
     service.broadcastErrors();
