@@ -327,7 +327,7 @@ function CNFlexFormService(
             }
           }
         }
-      }, 100);
+      }, 200);
       initUpdates();
     }
 
