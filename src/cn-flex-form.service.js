@@ -393,7 +393,7 @@ function CNFlexFormService(
     }
     service.defaults[key] = angular.copy(curDefault);
 
-    if(schema.format === 'url' && !field.validationMessage) {
+    if(schema && schema.format === 'url' && !field.validationMessage) {
       if(!field.type) field.type = 'cn-url';
       field.validationMessage = 'Must be a valid url (https://...)';
     }
