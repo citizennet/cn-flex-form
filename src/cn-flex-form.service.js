@@ -863,7 +863,9 @@ function CNFlexFormService(
     if(!service.updates && field.updateSchema && !service.schema.params[key]) {
       // by this point defaults should be processed so we can get value directly from model
       const curVal = service.parseExpression(key, service.model).get();
-      if(!_.isUndefined(curVal)) service.schema.params[key] = curVal;
+      if(!_.isUndefined(curVal)) {
+        service.schema.params[key] = curVal;
+      }
     }
     service.registerHandler(field, null, field.updateSchema);
   }
@@ -1023,6 +1025,11 @@ function CNFlexFormService(
     // we always run through the listeners on the first update because angular seems to mess up
     // when the defaults are applied and uses the same object for both cur and prev
     if(service.firstUpdate || !angular.equals(cur, prev)) {
+
+      if (service.firstUpdate) {
+        service.schema.params = angular.copy(service.params);
+      }
+
       service.firstUpdate = false;
       cnUtil.cleanModel(service.model);
 
@@ -1938,7 +1945,6 @@ function CNFlexFormService(
             // this will populate them to the model
             const dotKey = getDotKey(key);
             service.parseStringKey(service.model, dotKey, val);
-            console.log("check the debug");
           }
           if(key.includes('generic_creative')) {
             // should update the form/field.resolveMap = val;
