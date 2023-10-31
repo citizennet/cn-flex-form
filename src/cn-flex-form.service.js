@@ -1622,11 +1622,16 @@ function CNFlexFormService(
 
       select.onInit = function(val, form, event, setter) {
         // make sure we use correct value
-        var modelValue = service.parseExpression(form.key, service.model);
-        if(event === 'tag-init') {
-          let newVal = getAllowedSelectValue(select, modelValue.get());
-          if(newVal !== undefined) setter(newVal);
-        }
+        const temp = _.debounce(() => {
+          var modelValue = service.parseExpression(form.key, service.model);
+          if(event === 'tag-init') {
+            let newVal = getAllowedSelectValue(select, modelValue.get());
+            if(newVal !== undefined) {
+              setter(newVal); 
+            }
+          }
+        }, 300);
+        temp();
       };
     }
 
