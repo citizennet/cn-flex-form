@@ -1091,6 +1091,7 @@ function CNFlexFormService(
         }
       }
     });
+    service.schema.params = angular.copy(service.params);
   }
 
   function stripIndexes(key) {
