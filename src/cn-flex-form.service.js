@@ -1091,7 +1091,9 @@ function CNFlexFormService(
         }
       }
     });
-    service.schema.params = angular.copy(service.params);
+    if (service.schema.updates) {
+      service.schema.params = angular.copy(service.params);
+    }
   }
 
   function stripIndexes(key) {
@@ -1623,17 +1625,26 @@ function CNFlexFormService(
 
       select.onInit = function(val, form, event, setter) {
         // make sure we use correct value
-        const temp = _.debounce(() => {
+        if (service.schema.updates) {
+          const temp = _.debounce(() => {
+            var modelValue = service.parseExpression(form.key, service.model);
+            if(event === 'tag-init') {
+              let newVal = getAllowedSelectValue(select, modelValue.get());
+              if(newVal !== undefined) {
+                setter(newVal); 
+              }
+            }
+          }, 300);
+          temp();
+        } else {
           var modelValue = service.parseExpression(form.key, service.model);
           if(event === 'tag-init') {
             let newVal = getAllowedSelectValue(select, modelValue.get());
-            if(newVal !== undefined) {
-              setter(newVal); 
-            }
+            if(newVal !== undefined) setter(newVal);
           }
-        }, 300);
-        temp();
+        }
       };
+
     }
 
     if(select.titleMapQuery) {
