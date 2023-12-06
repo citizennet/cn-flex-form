@@ -1973,7 +1973,6 @@ function CNFlexFormService(
             // I know this is poor condition to check
             // this will populate them to the model
             const dotKey = getDotKey(key);
-            service.parseStringKey(service.model, dotKey, val);
             if (key.endsWith('readonly')) {
               const realKey = key.replace(".readonly", "");
               _.each(
@@ -1985,6 +1984,8 @@ function CNFlexFormService(
                   }
                 }
               );
+            } else {
+              service.parseStringKey(service.model, dotKey, val);
             }
           }
           if(key.includes('generic_creative')) {
@@ -2109,7 +2110,7 @@ function CNFlexFormService(
         if (!obj[part]) {
           const nextPart = pathParts[i + 1];
           if (isNaN(nextPart)) {
-            // if (!isNaN(part) && i === 1 && pathParts[0] === "dropSources") break;
+            if (!isNaN(part) && i === 1 && pathParts[0] === "dropSources") break;
             obj[part] = {};
           } else {
             obj[part] = [];
