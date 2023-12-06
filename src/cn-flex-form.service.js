@@ -2110,7 +2110,7 @@ function CNFlexFormService(
         if (!obj[part]) {
           const nextPart = pathParts[i + 1];
           if (isNaN(nextPart)) {
-            if (!isNaN(part) && i === 1 && pathParts[0] === "dropSources") break;
+            // if (!isNaN(part) && i === 1 && pathParts[0] === "dropSources") break;
             obj[part] = {};
           } else {
             obj[part] = [];
