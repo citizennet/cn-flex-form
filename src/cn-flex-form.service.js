@@ -314,6 +314,18 @@ function CNFlexFormService(
             if(key.includes('generic_creative') && key !== 'generic_creative_keys') {
               service.schema.data[key] = val;
             }
+            if (key.includes('dropSources') && key.endsWith('readonly')) {
+              const realKey = key.replace(".readonly", "");
+              _.each(
+                service.getFormsToProcess(realKey),
+                (copy) => {
+                  if (copy) {
+                    copy.readonly = val;
+                    service.processField(copy);
+                  }
+                }
+              );
+            }
           });
           if (schema.updates['generic_creative_keys']) {
             var keys = schema.updates['generic_creative_keys'];
@@ -1962,6 +1974,18 @@ function CNFlexFormService(
             // this will populate them to the model
             const dotKey = getDotKey(key);
             service.parseStringKey(service.model, dotKey, val);
+            if (key.endsWith('readonly')) {
+              const realKey = key.replace(".readonly", "");
+              _.each(
+                service.getFormsToProcess(realKey),
+                (copy) => {
+                  if (copy) {
+                    copy.readonly = val;
+                    service.processField(copy);
+                  }
+                }
+              );
+            }
           }
           if(key.includes('generic_creative')) {
             // should update the form/field.resolveMap = val;
