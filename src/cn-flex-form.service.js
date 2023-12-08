@@ -1985,7 +1985,10 @@ function CNFlexFormService(
                 }
               );
             } else {
-              service.parseStringKey(service.model, dotKey, val);
+              const currentIndex = dotKey.split('.')[1];
+              if (currentIndex && !isDeletedDropSource(currentIndex, schema.params)) {
+                service.parseStringKey(service.model, dotKey, val);
+              }
             }
           }
           if(key.includes('generic_creative')) {
@@ -2201,6 +2204,16 @@ function CNFlexFormService(
     const service =  this;
     ++service.updates;
     service.params.updates = service.updates;
+  }
+
+  function isDeletedDropSource(currentIndex, params) {
+    const regex = /dropSources\[(\d+)\]/;
+    const dropSourceIndexs = new Set(
+      Object.keys(params)
+      .filter(key => key.match(regex))
+      .map(key => key.match(regex)[1])
+    );
+    return !dropSourceIndexs.has(currentIndex);
   }
 
 }
