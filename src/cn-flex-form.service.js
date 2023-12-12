@@ -1981,12 +1981,24 @@ function CNFlexFormService(
                   if (copy) {
                     copy.readonly = val;
                     service.processField(copy);
+                  } else {
+                    const debouncedFunc = _.debounce(() => {
+                      _.each(service.getFormsToProcess(realKey), (copy) => {
+                        if (copy) {
+                          copy.readonly = val;
+                          service.processField(copy);      
+                        }
+                      });
+                    }, 200);
+                    debouncedFunc();
                   }
                 }
               );
             } else {
               const currentIndex = dotKey.split('.')[1];
-              if (currentIndex && !isDeletedDropSource(currentIndex, schema.params)) {
+              if ((currentIndex && !isDeletedDropSource(currentIndex, schema.params))
+                || schema.params.updateSchema === "admin.package_id"
+              ) {
                 service.parseStringKey(service.model, dotKey, val);
               }
             }
