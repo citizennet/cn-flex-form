@@ -314,6 +314,18 @@ function CNFlexFormService(
             if(key.includes('generic_creative') && key !== 'generic_creative_keys') {
               service.schema.data[key] = val;
             }
+            if (key.includes('dropSources') && key.endsWith('readonly')) {
+              const realKey = key.replace(".readonly", "");
+              _.each(
+                service.getFormsToProcess(realKey),
+                (copy) => {
+                  if (copy) {
+                    copy.readonly = val;
+                    service.processField(copy);
+                  }
+                }
+              );
+            }
           });
           if (schema.updates['generic_creative_keys']) {
             var keys = schema.updates['generic_creative_keys'];
@@ -1961,7 +1973,35 @@ function CNFlexFormService(
             // I know this is poor condition to check
             // this will populate them to the model
             const dotKey = getDotKey(key);
-            service.parseStringKey(service.model, dotKey, val);
+            if (key.endsWith('readonly')) {
+              const realKey = key.replace(".readonly", "");
+              _.each(
+                service.getFormsToProcess(realKey),
+                (copy) => {
+                  if (copy) {
+                    copy.readonly = val;
+                    service.processField(copy);
+                  } else {
+                    const debouncedFunc = _.debounce(() => {
+                      _.each(service.getFormsToProcess(realKey), (copy) => {
+                        if (copy) {
+                          copy.readonly = val;
+                          service.processField(copy);      
+                        }
+                      });
+                    }, 200);
+                    debouncedFunc();
+                  }
+                }
+              );
+            } else {
+              const currentIndex = dotKey.split('.')[1];
+              if ((currentIndex && !isDeletedDropSource(currentIndex, schema.params))
+                || schema.params.updateSchema === "admin.package_id"
+              ) {
+                service.parseStringKey(service.model, dotKey, val);
+              }
+            }
           }
           if(key.includes('generic_creative')) {
             // should update the form/field.resolveMap = val;
@@ -2085,6 +2125,7 @@ function CNFlexFormService(
         if (!obj[part]) {
           const nextPart = pathParts[i + 1];
           if (isNaN(nextPart)) {
+            // if (!isNaN(part) && i === 1 && pathParts[0] === "dropSources") break;
             obj[part] = {};
           } else {
             obj[part] = [];
@@ -2175,6 +2216,16 @@ function CNFlexFormService(
     const service =  this;
     ++service.updates;
     service.params.updates = service.updates;
+  }
+
+  function isDeletedDropSource(currentIndex, params) {
+    const regex = /dropSources\[(\d+)\]/;
+    const dropSourceIndexs = new Set(
+      Object.keys(params)
+      .filter(key => key.match(regex))
+      .map(key => key.match(regex)[1])
+    );
+    return !dropSourceIndexs.has(currentIndex);
   }
 
 }
