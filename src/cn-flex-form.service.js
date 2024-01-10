@@ -108,7 +108,8 @@ function CNFlexFormService(
   $interpolate,
   $timeout,
   cnUtil,
-  $stateParams
+  $stateParams,
+  EVENTS,
 ) {
   'ngInject';
 
@@ -193,7 +194,8 @@ function CNFlexFormService(
     setupConfig,
     setupSchemaRefresh,
     silenceListeners,
-    skipDefaults
+    skipDefaults,
+    parseStringKey,
   };
 
   function getService(fn) {
@@ -273,6 +275,21 @@ function CNFlexFormService(
       service.scope = config.getScope();
     }
     service.schema = schema;
+    /** TODO: API-3136-rollback
+    if (!service.schema.dateConverted && Object.keys(service.schema.schema.properties || {}).length) {
+      _.each(service.schema.schema.properties, function (field) {
+        if (field.format === "datetime-local") {
+          const curVal = service.parseExpression(field.key, service.model).get();
+          try {
+            model[field.key] = cnUtil.convertToLocalTime(curVal);
+          } catch (error) {
+            service.scope.$emit(EVENTS.notify, error);
+          }
+        }
+      });
+      service.schema.dateConverted = true;
+    }
+    */
     service.model = model;
 
     if(!service.isCompiled()) {
@@ -290,6 +307,28 @@ function CNFlexFormService(
       service.initModelWatch();
       service.initArrayCopyWatch();
       service.isCompiled(true);
+    } else {
+      const initUpdates = _.debounce(() => {
+        if (schema.updates) {
+          _.each(schema.updates, function(val, key) {
+            if(key.includes('generic_creative') && key !== 'generic_creative_keys') {
+              service.schema.data[key] = val;
+            }
+          });
+          if (schema.updates['generic_creative_keys']) {
+            var keys = schema.updates['generic_creative_keys'];
+            if(keys.length) {
+              _.each(keys, (key) => {
+                _.each(
+                  service.getFormsToProcess(key),
+                  (copy) => copy && service.processField(copy)
+                );
+              });
+            }
+          }
+        }
+      }, 200);
+      initUpdates();
     }
 
     service.broadcastErrors();
@@ -354,7 +393,7 @@ function CNFlexFormService(
     }
     service.defaults[key] = angular.copy(curDefault);
 
-    if(schema.format === 'url' && !field.validationMessage) {
+    if(schema && schema.format === 'url' && !field.validationMessage) {
       if(!field.type) field.type = 'cn-url';
       field.validationMessage = 'Must be a valid url (https://...)';
     }
@@ -404,6 +443,20 @@ function CNFlexFormService(
 
   function processField(field, pos) {
     const service = this;
+    
+    if((field.key || '').includes('objective_goal') && !(field.key || '').includes('dropSources')) {
+      console.log("field", field, pos);
+      service.processFieldWatch(field);
+      (field.watch || []).forEach(watch => {
+        const exp = (watch.resolution || '').replace(/model\./g, '');
+        const result = (exp || '').split('=')[0].trim();
+        const right = (exp || '').split('=')[1].trim();
+        const toDevide = service.parseExpression(right.split('/')[0].trim(), service.model).get() || 0;
+        const devideBy  = service.parseExpression(right.split('/')[1].trim(), service.model).get() || 0;
+        const resultIn = (toDevide && devideBy) ? (toDevide / devideBy) : 0;
+        service.parseStringKey(service.model, result, resultIn);
+      });
+    }
 
     if(angular.isDefined(pos)) {
       field.pos = pos;
@@ -450,6 +503,28 @@ function CNFlexFormService(
         }
       }
     }
+
+    // handle if generic_creative presents in diff.update
+    if(!_.isUndefined(field.arrayIndex)) {
+      _.each(service.schema.data, function(val, prop) {
+        if(prop.includes(key)) {
+          const diffArr = _.difference(prop.split('.'), key.split('.'));
+          if(diffArr.length) {
+            if(field.items) {
+              _.each(field.items, function(item) {
+                const _field = diffArr.filter(d => d != item.previewPath).join('.');
+                service.parseStringKey(field, _field, val);
+              })
+            } else {
+              service.parseStringKey(field, diffArr.join('.'), val);
+            }
+            // delete service.schema.data[prop];
+          }
+        }
+      });
+      service.scope.$broadcast('cnFlexFormReprocessField', key);
+    }
+
   }
 
   function processFieldProps(field, secondPass) {
@@ -725,7 +800,11 @@ function CNFlexFormService(
               else if(adjustment.math) {
                 //var result = _[adjustment.operator](from.get(), adjustment.adjuster.get());
                 //let result = eval(from.get() + adjustment.math[1] + adjustment.adjuster.get());
-                let result = $parse(from.get() + adjustment.math[1] + adjustment.adjuster.get())();
+                adjustment.adjuster = service.parseExpression(replaceArrayIndex(adjustment.math[2], key));
+                const operand1 = from.get(); 
+                const operand2 = adjustment.adjuster.get();
+                const operator = adjustment.math[1];
+                let result = $parse(operand1 + operator + operand2)();
                 schema = schema || field.items && (field.items[0].schema || (field.items[0].items && field.items[0].items[0].schema));
                 if(field.type === 'cn-currency') {
                   let p = schema && schema.format === 'currency-dollars' ? 2 : 0;
@@ -784,7 +863,9 @@ function CNFlexFormService(
     if(!service.updates && field.updateSchema && !service.schema.params[key]) {
       // by this point defaults should be processed so we can get value directly from model
       const curVal = service.parseExpression(key, service.model).get();
-      if(!_.isUndefined(curVal)) service.schema.params[key] = curVal;
+      if(!_.isUndefined(curVal)) {
+        service.schema.params[key] = curVal;
+      }
     }
     service.registerHandler(field, null, field.updateSchema);
   }
@@ -944,6 +1025,11 @@ function CNFlexFormService(
     // we always run through the listeners on the first update because angular seems to mess up
     // when the defaults are applied and uses the same object for both cur and prev
     if(service.firstUpdate || !angular.equals(cur, prev)) {
+
+      if (service.firstUpdate) {
+        service.schema.params = angular.copy(service.params);
+      }
+
       service.firstUpdate = false;
       cnUtil.cleanModel(service.model);
 
@@ -1005,6 +1091,9 @@ function CNFlexFormService(
         }
       }
     });
+    if (service.schema.updates) {
+      service.schema.params = angular.copy(service.params);
+    }
   }
 
   function stripIndexes(key) {
@@ -1529,17 +1618,33 @@ function CNFlexFormService(
     const schema = select.schema;
 
     if(select.titleMapResolve || select.titleMap) {
-      select.getTitleMap = () =>
-        select.titleMap || service.schema.data[select.titleMapResolve];
+      select.getTitleMap = () => {
+        const prop = `${select.titleMapResolve}[${select.arrayIndex}]`;
+        return select.titleMap || service.schema.data[select.titleMapResolve] || service.schema.data[prop];
+      }
 
       select.onInit = function(val, form, event, setter) {
         // make sure we use correct value
-        var modelValue = service.parseExpression(form.key, service.model);
-        if(event === 'tag-init') {
-          let newVal = getAllowedSelectValue(select, modelValue.get());
-          if(newVal !== undefined) setter(newVal);
+        if (service.schema.updates) {
+          const temp = _.debounce(() => {
+            var modelValue = service.parseExpression(form.key, service.model);
+            if(event === 'tag-init') {
+              let newVal = getAllowedSelectValue(select, modelValue.get());
+              if(newVal !== undefined) {
+                setter(newVal); 
+              }
+            }
+          }, 300);
+          temp();
+        } else {
+          var modelValue = service.parseExpression(form.key, service.model);
+          if(event === 'tag-init') {
+            let newVal = getAllowedSelectValue(select, modelValue.get());
+            if(newVal !== undefined) setter(newVal);
+          }
         }
       };
+
     }
 
     if(select.titleMapQuery) {
@@ -1850,6 +1955,21 @@ function CNFlexFormService(
         });
       }
 
+      if (schema.diff.updates) {
+        _.each(schema.diff.updates, function(val, key) {
+          if(key.includes('dropSources')) {
+            // I know this is poor condition to check
+            // this will populate them to the model
+            const dotKey = getDotKey(key);
+            service.parseStringKey(service.model, dotKey, val);
+          }
+          if(key.includes('generic_creative')) {
+            // should update the form/field.resolveMap = val;
+            service.schema.data[key] = val;
+          }
+        });
+      }
+
       if(schema.diff.form) {
         service.scope.$broadcast('cnFlexFormDiff:form', schema.diff.form);
         _.each(schema.diff.form, (form, key) => {
@@ -1862,9 +1982,11 @@ function CNFlexFormService(
           //var key = form.key;
           //delete form.key;
 
+          // currentForm: cached form, means processed form from original. 
+          // form: received from backend, need to update the current form 
           _.each(
             service.getFormsToProcess(key),
-            (copy) => copy && service.reprocessField(copy, form)
+            (currentForm) => currentForm && service.reprocessField(currentForm, form)
           );
         });
       }
@@ -1877,6 +1999,8 @@ function CNFlexFormService(
           );
         });
       }
+
+      
 
       service.broadcastErrors();
     }
@@ -1901,7 +2025,7 @@ function CNFlexFormService(
     const service = this;
     const key = service.getKey(current.key);
 
-    // other logic in the service will add conition = 'true' to force
+    // other logic in the service will add condition = 'true' to force
     // condition to eval true, so we set the update condition to 'true'
     // before comparing
     if(!update.condition && current.condition) update.condition = 'true';
@@ -1947,6 +2071,31 @@ function CNFlexFormService(
   function getDotKey(key) {
     return (_.isString(key) ? ObjectPath.parse(key) : key).join('.');
   }
+
+  function parseStringKey(obj, keyStr, value) {
+    const pathParts = keyStr.split('.');
+    if(pathParts.length === 1) {
+      obj[keyStr] =  value;
+    }
+    for (let i = 0; i < pathParts.length; i++) {
+      const part = pathParts[i];
+      if (i === pathParts.length - 1) {
+        obj[part] = value;
+      } else {
+        if (!obj[part]) {
+          const nextPart = pathParts[i + 1];
+          if (isNaN(nextPart)) {
+            obj[part] = {};
+          } else {
+            obj[part] = [];
+          }
+        }
+        obj = obj[part];
+      }
+    }
+    return obj;
+  }
+
 
   function buildError(field) {
     return {
@@ -2027,6 +2176,7 @@ function CNFlexFormService(
     ++service.updates;
     service.params.updates = service.updates;
   }
+
 }
 
 //angular

@@ -118,3 +118,11 @@ test('replaceArrayIndex', t => {
   t.equal(ff.replaceArrayIndex('foo[arrayIndex].bar', 'foo[].fiz'), 'foo[arrayIndex].bar', 'no key index');
   t.end();
 });
+
+test('parseStringKey', t => {
+  t.assert(ff.parseStringKey({}, 'foo', 1), {foo: 1}, 'simple key and value');
+  t.assert(ff.parseStringKey({foo: {bar: 0}}, 'foo.bar', 1), {foo: {bar: 1}}, 'overwrite existing value');
+  t.assert(ff.parseStringKey({}, 'foo[0].bar', 1), {foo : [{bar: 1}]}, 'pass index 0');
+  t.assert(ff.parseStringKey({}, 'foo[0].bar', {fiz: 1}), {foo : [{bar: {fiz: 1}}]}, 'any value');
+  t.end();
+});
