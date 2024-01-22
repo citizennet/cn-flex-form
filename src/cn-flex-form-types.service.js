@@ -10,7 +10,7 @@ function cnFlexFormTypesProvider() {
     condition: field => field.type.includes('radiobuttons'),
     type: 'cn-radiobuttons'
   }, {
-    condition: field => field.type.includes('autocomplete') || field.titleMap || field.titleMapResolve || field.titleMapQuery,
+    condition: field => field.type.includes('autocomplete') || field.titleMapResolve || field.titleMap || field.titleMapQuery,
     type: 'cn-autocomplete'
   }, {
     condition: field => field.type === 'cn-datetimepicker' || field.type === 'datetime-local' || field.type === 'time-minutes',
