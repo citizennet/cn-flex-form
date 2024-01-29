@@ -252,6 +252,7 @@ function CNFlexFormService(
     this.model = model;
     this.updates = 0;
     this.skipDefault = {};
+    this.schemaUpdated = false;
 
     const overrides = config.getParams ? config.getParams() : {};
     this.params = cnFlexFormConfig.getStateParams(overrides);
@@ -339,6 +340,8 @@ function CNFlexFormService(
             }
           }
         }
+
+        service.schemaUpdated = true;
       }, 200);
       initUpdates();
     }
@@ -1638,7 +1641,7 @@ function CNFlexFormService(
       select.onInit = function(val, form, event, setter) {
         // make sure we use correct value
         if (service.schema.updates) {
-          const temp = _.debounce(() => {
+          const debouncedInit = _.debounce(() => {
             var modelValue = service.parseExpression(form.key, service.model);
             if(event === 'tag-init') {
               let newVal = getAllowedSelectValue(select, modelValue.get());
@@ -1646,8 +1649,8 @@ function CNFlexFormService(
                 setter(newVal); 
               }
             }
-          }, 1000);
-          temp();
+          },  service.schemaUpdated ? 1200 : 100);
+          debouncedInit();
         } else {
           var modelValue = service.parseExpression(form.key, service.model);
           if(event === 'tag-init') {
