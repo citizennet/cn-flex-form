@@ -1649,7 +1649,7 @@ function CNFlexFormService(
                 setter(newVal); 
               }
             }
-          },  service.schemaUpdated ? 1200 : 100);
+          },  service.schemaUpdated ? 3000 : 100);
           debouncedInit();
         } else {
           var modelValue = service.parseExpression(form.key, service.model);
