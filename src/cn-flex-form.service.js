@@ -252,6 +252,7 @@ function CNFlexFormService(
     this.model = model;
     this.updates = 0;
     this.skipDefault = {};
+    this.schemaUpdated = false;
 
     const overrides = config.getParams ? config.getParams() : {};
     this.params = cnFlexFormConfig.getStateParams(overrides);
@@ -339,6 +340,8 @@ function CNFlexFormService(
             }
           }
         }
+
+        service.schemaUpdated = true;
       }, 200);
       initUpdates();
     }
@@ -1632,13 +1635,13 @@ function CNFlexFormService(
     if(select.titleMapResolve || select.titleMap) {
       select.getTitleMap = () => {
         const prop = `${select.titleMapResolve}[${select.arrayIndex}]`;
-        return select.titleMap || service.schema.data[select.titleMapResolve] || service.schema.data[prop];
+        return  service.schema.data[prop] || service.schema.data[select.titleMapResolve] || select.titleMap;
       }
 
       select.onInit = function(val, form, event, setter) {
         // make sure we use correct value
         if (service.schema.updates) {
-          const temp = _.debounce(() => {
+          const debouncedInit = _.debounce(() => {
             var modelValue = service.parseExpression(form.key, service.model);
             if(event === 'tag-init') {
               let newVal = getAllowedSelectValue(select, modelValue.get());
@@ -1646,8 +1649,8 @@ function CNFlexFormService(
                 setter(newVal); 
               }
             }
-          }, 300);
-          temp();
+          },  service.schemaUpdated ? 1200 : 100);
+          debouncedInit();
         } else {
           var modelValue = service.parseExpression(form.key, service.model);
           if(event === 'tag-init') {
@@ -2003,10 +2006,26 @@ function CNFlexFormService(
               }
             }
           }
+
+          if (key === 'dropSource_keys') {
+              var keys = val;
+              if(keys.length > 0) {
+                _.each(keys, (k) => {
+                  const form = service.getFromFormCache(k.replace(/\[\d+]/g, '[]'));
+                  _.each(
+                    service.getFormsToProcess(k),
+                    (copy) => {
+                      return copy && service.processField(copy);
+                    }
+                  );
+                });
+              }
+          }
+        
           if(key.includes('generic_creative')) {
             // should update the form/field.resolveMap = val;
             service.schema.data[key] = val;
-          }
+          } 
         });
       }
 
